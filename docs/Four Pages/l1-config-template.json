@@ -1,0 +1,97 @@
+{
+  "domain": "DOMAIN.com",
+  "gyg_url": "https://www.getyourguide.com/LOCATION-lNNNNNN/?partner_id=9BAL9K3&cmp=PREFIX-{slug}",
+  "sheet_name": "Master Article List",
+  "explore_label": "Continue exploring ATTRACTION_NAME.",
+  "pages": {
+    "Tickets & Tours": {
+      "slug": "tickets-tours",
+      "rc": "Tickets & Tours",
+      "template": "tickets-tours",
+      "seo_t": "ATTRACTION_NAME Tickets & Tours — Compare Prices & Book Online (2026)",
+      "seo_d": "Compare all ATTRACTION_NAME tickets and tours in one place.",
+      "badge": "Tickets & Tours",
+      "h1": "ATTRACTION_NAME Tickets &amp; Tours",
+      "desc": "Every ticket and tour option for ATTRACTION_NAME.",
+      "cta1": ["Browse All Tickets", "GYG_URL"],
+      "cta2": ["Plan Your Visit", "/plan-your-visit/"],
+      "tips": [
+        ["Tickets", "Entry costs €XX. Guided tours start at €XX including transport."],
+        ["Booking", "Book online to skip the walk-up queue and guarantee your time slot."],
+        ["Cancellation", "Most tickets offer free cancellation up to 24 hours before your visit."],
+        ["Duration", "Self-guided visits take X–X hours. Full guided tours run X–X hours."]
+      ],
+      "cta_h": "Ready to book?",
+      "cta_d": "Compare all ATTRACTION_NAME tickets and tours.",
+      "cta_b": "Browse All Tickets & Tours",
+      "xlinks": [
+        ["Plan Your Visit", "/plan-your-visit/", "Practical visitor tips.", "Explore planning guides"],
+        ["What to See", "/what-to-see/", "Must-see highlights.", "Explore highlights"]
+      ],
+      "sg_desc": {},
+      "faqs": [],
+      "practical": [],
+      "know_tips": [],
+      "guide_cards": []
+    },
+    "Plan Your Visit": {
+      "slug": "plan-your-visit",
+      "rc": "Plan Your Visit",
+      "template": "plan-your-visit",
+      "seo_t": "Plan Your Visit to ATTRACTION_NAME (2026)",
+      "seo_d": "Everything you need to plan a trip to ATTRACTION_NAME.",
+      "badge": "Plan Your Visit",
+      "h1": "Plan Your Visit to ATTRACTION_NAME",
+      "desc": "Everything you need to know before visiting ATTRACTION_NAME.",
+      "cta1": ["Book Entry Ticket", "TICKET_URL"],
+      "cta2": ["Browse All Tickets", "/tickets/"],
+      "tips": [
+        ["Entry", "Description of entry requirements or pricing."],
+        ["Duration", "How long a typical visit takes."],
+        ["Getting There", "Key transport information."],
+        ["On Arrival", "What to expect when you arrive."]
+      ],
+      "cta_h": "Ready to visit?",
+      "cta_d": "Book your entry ticket online.",
+      "cta_b": "Book Entry Ticket",
+      "xlinks": [
+        ["Tickets & Tours", "/tickets/", "Compare all options.", "Explore ticket options"],
+        ["What to See", "/what-to-see/", "Must-see highlights.", "Explore highlights"]
+      ],
+      "sg_desc": {},
+      "faqs": [],
+      "practical": [],
+      "know_tips": []
+    },
+    "What to See": {
+      "slug": "what-to-see",
+      "rc": "What to See",
+      "template": "what-to-see",
+      "seo_t": "What to See at ATTRACTION_NAME (2026)",
+      "seo_d": "Discover what to see at ATTRACTION_NAME.",
+      "badge": "What to See",
+      "h1": "What to See at ATTRACTION_NAME",
+      "desc": "Everything worth seeing at ATTRACTION_NAME.",
+      "cta1": ["Book Entry Ticket", "TICKET_URL"],
+      "cta2": ["Plan Your Visit", "/plan-your-visit/"],
+      "tips": [
+        ["Top Sight", "The must-see highlight of ATTRACTION_NAME."],
+        ["Hidden Gem", "A lesser-known spot worth seeking out."],
+        ["Photography", "Best spot and time for photos."],
+        ["Timing", "How long to spend and when to visit each area."]
+      ],
+      "cta_h": "Ready to explore?",
+      "cta_d": "Book your entry ticket online.",
+      "cta_b": "Book Entry Ticket",
+      "xlinks": [
+        ["Tickets & Tours", "/tickets/", "Compare all options.", "tickets-tours"],
+        ["Plan Your Visit", "/plan-your-visit/", "Practical tips.", "Explore planning guides"]
+      ],
+      "sg_desc": {},
+      "faqs": [],
+      "practical": [],
+      "know_tips": [],
+      "highlights": []
+    }
+  }
+}

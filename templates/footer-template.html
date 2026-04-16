@@ -1,0 +1,117 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<footer class="site-footer">
+  <div class="footer-container">
+    <div class="footer-social">
+      <a href="https://www.facebook.com/thebettervacation" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+        <i class="fab fa-facebook-f facebook"></i>
+      </a>
+      <a href="https://www.youtube.com/channel/UCmSy2vAcpu2ULN0tHV6aA1A" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+        <i class="fab fa-youtube youtube"></i>
+      </a>
+      <a href="https://twitter.com/bettervacation_" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+        <i class="fab fa-twitter twitter"></i>
+      </a>
+      <a href="https://www.instagram.com/thebettervacation/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+        <i class="fab fa-instagram instagram"></i>
+      </a>
+      <a href="https://www.pinterest.com/thebettervacation/" target="_blank" rel="noopener noreferrer" aria-label="Pinterest">
+        <i class="fab fa-pinterest-p pinterest"></i>
+      </a>
+      <a href="https://www.linkedin.com/company/thebettervacation/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+        <i class="fab fa-linkedin-in linkedin"></i>
+      </a>
+    </div>
+
+    <div class="footer-center">
+      &copy; 2026 Firestorm Internet
+    </div>
+
+    <div class="footer-links">
+      <a href="{{SITE_URL}}/about-us/">About Us</a>
+      <a href="{{SITE_URL}}/contact-us/">Contact Us</a>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: #ffffff !important;
+    padding: 22px 36px;
+  }
+
+  .footer-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .footer-social,
+  .footer-links {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-width: 220px;
+  }
+
+  .footer-social a {
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .footer-links a {
+    color: #222222;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .footer-social a:hover,
+  .footer-links a:hover {
+    opacity: 0.75;
+  }
+
+  .footer-social i {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .facebook { color: #1877f2; }
+  .youtube { color: #ff0000; }
+  .twitter { color: #1da1f2; }
+  .instagram { color: #e1306c; }
+  .pinterest { color: #e60023; }
+  .linkedin { color: #0a66c2; }
+
+  .footer-center {
+    flex: 1;
+    text-align: center;
+    font-size: 16px;
+    color: #222222;
+    min-width: 220px;
+  }
+
+  .footer-links {
+    justify-content: flex-end;
+  }
+
+  .footer-links a {
+    font-size: 16px;
+  }
+
+  @media (max-width: 900px) {
+    .footer-container {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .footer-social,
+    .footer-links {
+      justify-content: center;
+      min-width: auto;
+    }
+  }
+</style>

@@ -1,0 +1,239 @@
+<!-- wp:html -->
+<!-- ABOUT US (WordPress-friendly • Fluid, minimal, less boxy) -->
+<div class="tbv-about-fluid">
+
+  <style>
+    .tbv-about-fluid{
+      max-width:1300px;margin:0 auto;padding:18px 0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      color:inherit;
+    }
+    .tbv-about-fluid *{box-sizing:border-box}
+    .tbv-about-fluid a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+    .tbv-about-fluid a:hover{opacity:.85}
+
+    .tbv-about-fluid .hero{
+      padding:18px 0 12px;
+      border-bottom:1px solid rgba(0,0,0,.10);
+      margin-bottom:18px;
+    }
+    .tbv-about-fluid h1{
+      margin:0 0 8px;
+      font-size:clamp(26px,3.2vw,40px);
+      line-height:1.15;
+      letter-spacing:-.01em;
+    }
+    .tbv-about-fluid .sub{margin:0;opacity:.78;max-width:78ch;line-height:1.6}
+
+    .tbv-about-fluid .layout{
+      display:grid;gap:28px;grid-template-columns:1.2fr .8fr;align-items:start
+    }
+    @media(max-width:920px){.tbv-about-fluid .layout{grid-template-columns:1fr}}
+
+    .tbv-about-fluid .section-title{
+      margin:0 0 8px;font-size:18px;letter-spacing:-.01em
+    }
+    .tbv-about-fluid .section-sub{
+      margin:0 0 14px;opacity:.75;max-width:82ch
+    }
+    .tbv-about-fluid .p{margin:0 0 12px;opacity:.92;max-width:82ch;line-height:1.65}
+
+    .tbv-about-fluid .meta{
+      padding-left:18px;border-left:1px solid rgba(0,0,0,.10);
+    }
+    @media(max-width:920px){
+      .tbv-about-fluid .meta{
+        padding-left:0;border-left:none;border-top:1px solid rgba(0,0,0,.10);
+        padding-top:18px;
+      }
+    }
+    .tbv-about-fluid .kv{display:grid;gap:12px;margin:0;padding:0;list-style:none}
+    .tbv-about-fluid .k{font-size:13px;opacity:.7;margin-bottom:3px}
+    .tbv-about-fluid .v{font-weight:750;line-height:1.35}
+    .tbv-about-fluid .small{font-size:13px;opacity:.78;line-height:1.55}
+
+    .tbv-about-fluid .hr{
+      margin:18px 0;border-top:1px solid rgba(0,0,0,.10);
+    }
+
+    .tbv-about-fluid .list{
+      margin:8px 0 0;padding-left:18px;opacity:.92;line-height:1.7;max-width:84ch
+    }
+
+    .tbv-about-fluid .callout{
+      margin-top:16px;
+      padding:14px 14px;
+      border:1px solid rgba(0,0,0,.10);
+      background:rgba(0,0,0,.03);
+      border-radius:16px;
+    }
+  </style>
+
+  <!-- HERO -->
+  <header class="hero">
+    <h1>About {{SITE_NAME}}</h1>
+    <p class="sub">
+      <a href="{{SITE_URL}}/" rel="noopener">{{SITE_NAME}}</a> is an independent visitor-planning website dedicated to helping travelers prepare for a respectful and well-informed visit to
+      <strong>{{ATTRACTION_NAME}}</strong>.
+      We focus on practical details like <strong>{{ATTRACTION_SLUG}} tours</strong>, <strong>entry procedures</strong>,
+      <strong>timed visits</strong>, <strong>opening hours</strong>, <strong>transport options</strong>,
+      <strong>guided visit planning</strong>, and what to expect on the day.
+    </p>
+  </header>
+
+  <div class="layout">
+    <!-- MAIN -->
+    <section aria-labelledby="tbv-about-title">
+      <h2 class="section-title" id="tbv-about-title">Who we are</h2>
+      <p class="section-sub">
+        {{SITE_NAME}} is published by <strong>Firestorm Internet</strong>.
+      </p>
+
+      <p class="p">
+        Firestorm Internet was started by <strong>Jamshed V Rajan</strong> in 2016 with one simple goal:
+        help travelers feel confident before they arrive—especially at places where planning, timing, and local logistics matter.
+        Our objective is to help tourists feel at home even when they are in a foreign place.
+      </p>
+
+      <div class="hr"></div>
+
+      <h2 class="section-title">What we cover on {{SITE_NAME}}</h2>
+      <p class="p">
+        Our {{ATTRACTION_SLUG}} visitor guides prioritize the details people usually need before planning a visit:
+      </p>
+      <ul class="list">
+        <li><strong>{{ATTRACTION_NAME}} tours</strong> and planning guidance, including common tour formats and day-trip expectations</li>
+        <li><strong>Entry procedures</strong>, security expectations, and visitor rules</li>
+        <li><strong>Opening hours</strong>, availability, and seasonal planning basics</li>
+        <li><strong>Transport information</strong> from nearby cities and areas</li>
+        <li><strong>Guided visit planning</strong>, realistic duration, and how to structure the day</li>
+        <li>Visitor essentials such as accessibility considerations, etiquette, and practical preparation tips</li>
+      </ul>
+
+      <div class="hr"></div>
+
+      <h2 class="section-title">Our editorial standard: accuracy first</h2>
+      <p class="p">
+        Our editorial standard is <strong>accuracy first</strong>. Each guide is produced using structured research,
+        verification through official channels, and reliable local sources where possible.
+        We review our guides regularly to keep information current.
+      </p>
+      <p class="p">
+        When something changes, we update pages promptly and note major revisions—because the best travel advice is the advice you can depend on.
+        Our recommendations are always what's best to our knowledge, inspired by other travelers who've been there before.
+      </p>
+
+      <div class="callout" role="note" aria-label="Corrections policy">
+        <strong>Corrections:</strong> If you spot an error, tell us—accuracy matters here.
+        Email us at <a href="mailto:jamshed@firestorm-internet.com">jamshed@firestorm-internet.com</a>.
+      </div>
+
+      <div class="hr"></div>
+
+      <h2 class="section-title">Transparency</h2>
+      <p class="p">
+        Some pages may include affiliate links or sponsored content. When they do, we disclose it clearly.
+        We maintain editorial independence so recommendations stay honest and focused on what helps visitors most.
+      </p>
+    </section>
+
+    <!-- SIDEBAR -->
+    <aside class="meta" aria-label="Company and contact details">
+      <h2 class="section-title">Company details</h2>
+
+      <ul class="kv">
+        <li>
+          <div class="k">Publisher</div>
+          <div class="v"><a href="https://firestorm-internet.com/" target="_blank" rel="noopener">Firestorm Internet</a></div>
+          <div class="small">Based in <strong>Chennai, India</strong> • Founded 2016</div>
+        </li>
+
+        <li>
+          <div class="k">Leadership</div>
+          <div class="v">Jamshed V Rajan — CEO</div>
+          <div class="small">
+            <a href="https://www.linkedin.com/in/jamshedvrajan/" target="_blank" rel="noopener">LinkedIn</a>
+          </div>
+          <div class="v" style="margin-top:10px;">Rekha Rajan — COO</div>
+          <div class="small">
+            <a href="https://www.linkedin.com/in/rekharajan1/" target="_blank" rel="noopener">LinkedIn</a>
+          </div>
+        </li>
+
+        <li>
+          <div class="k">Email</div>
+          <div class="v"><a href="mailto:jamshed@firestorm-internet.com">jamshed@firestorm-internet.com</a></div>
+          <div class="small">For questions, corrections, partnerships, or media inquiries</div>
+        </li>
+
+        <li>
+          <div class="k">GSTIN</div>
+          <div class="v">33ADXPJ2389R1ZH</div>
+        </li>
+
+        <li>
+          <div class="k">Important note</div>
+          <div class="small">
+            {{SITE_NAME}} provides visitor planning information.
+            It is not the official {{ATTRACTION_NAME}} website or official ticketing portal.
+          </div>
+        </li>
+      </ul>
+    </aside>
+  </div>
+
+  <!-- SCHEMA -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@graph":[
+      {
+        "@type":"WebSite",
+        "@id":"{{SITE_URL}}/#website",
+        "name":"{{SITE_NAME}}",
+        "url":"{{SITE_URL}}/",
+        "publisher":{"@id":"{{SITE_URL}}/#org"}
+      },
+      {
+        "@type":"Organization",
+        "@id":"{{SITE_URL}}/#org",
+        "name":"Firestorm Internet",
+        "url":"https://firestorm-internet.com/",
+        "foundingDate":"2016",
+        "taxID":"33ADXPJ2389R1ZH",
+        "address":{
+          "@type":"PostalAddress",
+          "addressLocality":"Chennai",
+          "addressCountry":"IN"
+        },
+        "email":"jamshed@firestorm-internet.com",
+        "founder":{
+          "@type":"Person",
+          "name":"Jamshed V Rajan",
+          "jobTitle":"Founder & CEO",
+          "sameAs":["https://www.linkedin.com/in/jamshedvrajan/"]
+        },
+        "employee":[
+          {
+            "@type":"Person",
+            "name":"Rekha Rajan",
+            "jobTitle":"COO",
+            "sameAs":["https://www.linkedin.com/in/rekharajan1/"]
+          }
+        ]
+      },
+      {
+        "@type":"AboutPage",
+        "@id":"{{SITE_URL}}/about-us/#aboutpage",
+        "name":"About {{SITE_NAME}}",
+        "url":"{{SITE_URL}}/about-us/",
+        "isPartOf":{"@id":"{{SITE_URL}}/#website"},
+        "about":{"@id":"{{SITE_URL}}/#org"},
+        "description":"About {{SITE_NAME}} and Firestorm Internet. Accuracy-first visitor planning information for {{ATTRACTION_NAME}}: tours, entry procedures, opening hours, transport planning, guided visits, etiquette, and practical visitor essentials."
+      }
+    ]
+  }
+  </script>
+
+</div>
+<!-- /wp:html -->

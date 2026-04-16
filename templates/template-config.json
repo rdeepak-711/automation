@@ -1,0 +1,50 @@
+{
+  "site_themes": {
+    "auschwitz-guide.com": {
+      "accent_color": "#ff0000",
+      "accent_color_rgb": "255,0,0",
+      "accent_color_bg_light": "#fff5f5",
+      "accent_color_bg_lighter": "#ffe5e5",
+      "accent_color_dark": "#cc0000",
+      "site_theme": "Auschwitz",
+      "attraction_name": "Auschwitz-Birkenau Memorial and Museum"
+    },
+    "operagarnier-guide.com": {
+      "accent_color": "#c4956c",
+      "accent_color_rgb": "196,149,108",
+      "accent_color_bg_light": "#fef7f0",
+      "accent_color_bg_lighter": "#fef1e6",
+      "accent_color_dark": "#8b6914",
+      "site_theme": "Opera Garnier",
+      "attraction_name": "Opera Garnier"
+    },
+    "hagiasophia-guide.com": {
+      "accent_color": "#2563eb",
+      "accent_color_rgb": "37,99,235",
+      "accent_color_bg_light": "#f0f6fe",
+      "accent_color_bg_lighter": "#e6f2fe",
+      "accent_color_dark": "#1d4ed8",
+      "site_theme": "Hagia Sophia",
+      "attraction_name": "Hagia Sophia"
+    },
+    "default": {
+      "accent_color": "#3b82f6",
+      "accent_color_rgb": "59,130,246",
+      "accent_color_bg_light": "#f8fafc",
+      "accent_color_bg_lighter": "#f1f5f9",
+      "accent_color_dark": "#2563eb",
+      "site_theme": "Generic",
+      "attraction_name": "{{ATTRACTION_NAME}}"
+    }
+  },
+  "template_variables": {
+    "site_url": "{{SITE_URL}}",
+    "site_name": "{{SITE_NAME}}",
+    "site_slug": "{{SITE_SLUG}}",
+    "attraction_name": "{{ATTRACTION_NAME}}",
+    "attraction_slug": "{{ATTRACTION_SLUG}}",
+    "book_now_url": "{{BOOK_NOW_URL}}",
+    "menu_items": "{{MENU_ITEMS}}",
+    "mobile_menu_items": "{{MOBILE_MENU_ITEMS}}"
+  }
+}

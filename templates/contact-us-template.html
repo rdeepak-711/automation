@@ -1,0 +1,261 @@
+<!-- wp:html -->
+<!-- CONTACT US (WordPress-friendly • Fluid, minimal, less boxy) -->
+<div class="tbv-contact-fluid">
+
+  <style>
+    .tbv-contact-fluid{
+      max-width:1100px;margin:0 auto;padding:18px 0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      color:inherit;
+    }
+    .tbv-contact-fluid *{box-sizing:border-box}
+    .tbv-contact-fluid a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+    .tbv-contact-fluid a:hover{opacity:.85}
+
+    .tbv-contact-fluid .hero{
+      padding:18px 0 10px;
+      border-bottom:1px solid rgba(0,0,0,.10);
+      margin-bottom:18px;
+    }
+    .tbv-contact-fluid h1{
+      margin:0 0 8px;
+      font-size:clamp(26px,3.2vw,40px);
+      line-height:1.15;
+      letter-spacing:-.01em;
+    }
+    .tbv-contact-fluid .sub{margin:0;opacity:.78;max-width:72ch}
+    .tbv-contact-fluid .pillrow{
+      display:flex;flex-wrap:wrap;gap:10px;margin-top:12px
+    }
+    .tbv-contact-fluid .pill{
+      display:inline-flex;align-items:center;
+      padding:7px 12px;border-radius:999px;
+      background:rgba(0,0,0,.04);
+      border:1px solid rgba(0,0,0,.08);
+      font-size:13px;opacity:.85;text-decoration:none
+    }
+
+    .tbv-contact-fluid .layout{
+      display:grid;gap:28px;grid-template-columns:1.25fr .75fr;align-items:start
+    }
+    @media(max-width:920px){.tbv-contact-fluid .layout{grid-template-columns:1fr}}
+
+    .tbv-contact-fluid .section-title{
+      margin:0 0 8px;font-size:18px;letter-spacing:-.01em
+    }
+    .tbv-contact-fluid .section-sub{
+      margin:0 0 14px;opacity:.75
+    }
+
+    .tbv-contact-fluid .note{font-size:12px;opacity:.72;margin-top:10px}
+
+    .tbv-contact-fluid .meta{
+      padding-left:18px;
+      border-left:1px solid rgba(0,0,0,.10);
+    }
+    @media(max-width:920px){
+      .tbv-contact-fluid .meta{
+        padding-left:0;border-left:none;border-top:1px solid rgba(0,0,0,.10);
+        padding-top:18px;
+      }
+    }
+
+    .tbv-contact-fluid .kv{display:grid;gap:12px;margin:0;padding:0;list-style:none}
+    .tbv-contact-fluid .k{font-size:13px;opacity:.7;margin-bottom:3px}
+    .tbv-contact-fluid .v{font-weight:700;line-height:1.35}
+    .tbv-contact-fluid .small{font-size:13px;opacity:.75}
+
+    .tbv-contact-fluid .social{
+      display:flex;flex-wrap:wrap;gap:10px;margin-top:10px
+    }
+    .tbv-contact-fluid .social a{
+      text-decoration:none;
+      padding:7px 12px;border-radius:999px;
+      background:rgba(0,0,0,.04);
+      border:1px solid rgba(0,0,0,.08);
+      font-size:13px;
+    }
+
+    .tbv-contact-fluid .map{
+      margin-top:26px;
+      padding-top:18px;
+      border-top:1px solid rgba(0,0,0,.10);
+    }
+    .tbv-contact-fluid .map iframe{
+      width:100%;
+      height:360px;
+      border:0;
+      border-radius:18px;
+    }
+
+    .tbv-contact-fluid .footer{
+      margin-top:18px;
+      padding-top:14px;
+      border-top:1px solid rgba(0,0,0,.10);
+      font-size:13px;
+      opacity:.8;
+      display:grid;
+      gap:6px;
+    }
+
+    .tbv-contact-fluid .ff-el-group button,
+    .tbv-contact-fluid .ff-btn,
+    .tbv-contact-fluid button.ff-btn{
+      background:#111827 !important;
+      color:#ffffff !important;
+      border-radius:999px !important;
+      border:1px solid rgba(0,0,0,.18) !important;
+      padding:12px 18px !important;
+      font-weight:800 !important;
+    }
+    .tbv-contact-fluid .ff-el-group button:hover,
+    .tbv-contact-fluid .ff-btn:hover,
+    .tbv-contact-fluid button.ff-btn:hover{
+      background:#0b1220 !important;
+    }
+  </style>
+
+  <!-- HERO -->
+  <header class="hero">
+    <h1>Contact Us for {{ATTRACTION_NAME}} Visit Help</h1>
+    <p class="sub">
+      Reach our team for {{ATTRACTION_SLUG}} tour questions, entry guidance, transport planning, itineraries, and visitor information.
+      We reply during business hours.
+    </p>
+
+    <div class="pillrow" aria-label="Quick topics">
+      <span class="pill">{{ATTRACTION_NAME}} tours</span>
+      <span class="pill">Entry & timings</span>
+      <span class="pill">Transport help</span>
+      <span class="pill">Visitor tips</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- FORM -->
+    <section aria-labelledby="tbv-form-title">
+      <h2 class="section-title" id="tbv-form-title">Send us a message</h2>
+      <p class="section-sub">Share your plan, query, doubt, or concern — we'll get back to you as soon as possible.</p>
+
+      [fluentform id="1"]
+
+      <div class="note">
+        By submitting this form, you agree that we may contact you back regarding your inquiry.
+      </div>
+    </section>
+
+    <!-- DETAILS -->
+    <aside class="meta" aria-label="Contact details">
+      <h2 class="section-title">Contact details</h2>
+
+      <ul class="kv">
+        <li>
+          <div class="k">WhatsApp us</div>
+          <div class="v">
+            <a href="https://wa.me/917358808488" target="_blank" rel="noopener" aria-label="WhatsApp us">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 32 32" style="vertical-align:-3px;margin-right:6px;">
+                <path d="M19.11 17.38c-.27-.14-1.6-.79-1.85-.88-.25-.09-.43-.14-.61.14-.18.27-.7.88-.86 1.06-.16.18-.31.2-.58.07-.27-.14-1.14-.42-2.17-1.35-.8-.71-1.34-1.59-1.5-1.86-.16-.27-.02-.42.12-.56.12-.12.27-.31.41-.47.14-.16.18-.27.27-.45.09-.18.05-.34-.02-.47-.07-.14-.61-1.47-.84-2.01-.22-.53-.45-.46-.61-.47h-.52c-.18 0-.47.07-.71.34-.25.27-.93.91-.93 2.22 0 1.31.95 2.57 1.08 2.75.14.18 1.87 2.86 4.53 4.01.63.27 1.12.43 1.5.55.63.2 1.2.17 1.65.1.5-.07 1.6-.65 1.83-1.27.23-.61.23-1.14.16-1.27-.07-.14-.25-.2-.52-.34z"/>
+                <path d="M26.66 5.34C23.83 2.52 20.07 .97 16.07 .97 7.83 .97 1.13 7.67 1.13 15.91c0 2.63.69 5.2 2.01 7.46L.99 31.03l7.85-2.06c2.16 1.18 4.6 1.8 7.1 1.8h.01c8.24 0 14.94-6.7 14.94-14.94 0-3.99-1.55-7.76-4.23-10.49zm-10.59 22.9h-.01c-2.23 0-4.42-.6-6.32-1.74l-.45-.27-4.66 1.22 1.24-4.54-.29-.47c-1.23-1.96-1.88-4.23-1.88-6.56 0-6.86 5.58-12.44 12.45-12.44 3.33 0 6.47 1.3 8.82 3.65 2.35 2.35 3.64 5.49 3.64 8.82 0 6.86-5.58 12.44-12.54 12.44z"/>
+              </svg>
+              +91-7358808488
+            </a>
+          </div>
+          <div class="small">Fastest for quick questions during working hours</div>
+        </li>
+
+        <li>
+          <div class="k">Call us</div>
+          <div class="v">
+            <a href="tel:+917358808488" aria-label="Call us">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-3px;margin-right:6px;">
+                <path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 011 1V20a1 1 0 01-1 1C10.3 21 3 13.7 3 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.24.2 2.45.57 3.57a1 1 0 01-.24 1.02l-2.2 2.2z"/>
+              </svg>
+              +91-7358808488
+            </a>
+          </div>
+          <div class="small">Mon–Fri: 10:00–18:00 • Sat: 10:00–13:00 (IST) • Sun: Closed</div>
+        </li>
+
+        <li>
+          <div class="k">Email</div>
+          <div class="v"><a href="mailto:jamshed@firestorm-internet.com">jamshed@firestorm-internet.com</a></div>
+        </li>
+
+        <li>
+          <div class="k">Office address</div>
+          <div class="v">2nd floor, 189, Work EZ – The Ark, Rajiv Gandhi Salai, OMR, Sholinganallur, Chennai, India.</div>
+        </li>
+
+        <li>
+          <div class="k">Company</div>
+          <div class="v">
+            <strong>Firestorm Internet</strong> •
+            <a href="https://firestorm-internet.com/" target="_blank" rel="noopener">firestorm-internet.com</a>
+          </div>
+        </li>
+
+        <li>
+          <div class="k">Social</div>
+          <div class="social">
+            <a href="https://www.facebook.com/thebettervacation" rel="noopener" target="_blank">Facebook</a>
+            <a href="https://www.linkedin.com/company/thebettervacation/" rel="noopener" target="_blank">LinkedIn</a>
+            <a href="https://www.instagram.com/thebettervacation/" rel="noopener" target="_blank">Instagram</a>
+            <a href="https://twitter.com/bettervacation_" rel="noopener" target="_blank">X</a>
+            <a href="https://www.youtube.com/channel/UCmSy2vAcpu2ULN0tHV6aA1A" rel="noopener" target="_blank">YouTube</a>
+          </div>
+        </li>
+      </ul>
+    </aside>
+  </div>
+
+  <!-- MAP -->
+  <section class="map" aria-label="Map and location">
+    <h2 class="section-title">Find our office (Chennai, India)</h2>
+
+    <iframe
+      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3889.018970559909!2d80.22609121002365!3d12.906501616250972!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a525debed8f8a97%3A0x7a37ba699c91ecdb!2sWorkEZ%20The%20Ark%20-%20Managed%20Offices%20and%20Coworking%20Spaces!5e0!3m2!1sen!2sin!4v1725545449841!5m2!1sen!2sin"
+      width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"></iframe>
+  </section>
+
+  <!-- SCHEMA -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"ContactPage",
+    "name":"Contact Us for {{ATTRACTION_NAME}} Visit Help",
+    "description":"Contact Firestorm Internet for {{ATTRACTION_SLUG}} visitor support: tours, entry info, transport planning, itineraries, and visitor information.",
+    "url":"{{SITE_URL}}/contact-us/",
+    "mainEntity":{
+      "@type":"LocalBusiness",
+      "name":"Firestorm Internet",
+      "url":"https://firestorm-internet.com/",
+      "telephone":"+91-7358808488",
+      "email":"jamshed@firestorm-internet.com",
+      "address":{
+        "@type":"PostalAddress",
+        "streetAddress":"2nd floor, 189, Work EZ – The Ark, Rajiv Gandhi Salai, OMR, Sholinganallur",
+        "addressLocality":"Chennai",
+        "addressCountry":"IN"
+      },
+      "openingHoursSpecification":[
+        {"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"10:00","closes":"18:00"},
+        {"@type":"OpeningHoursSpecification","dayOfWeek":"Saturday","opens":"10:00","closes":"13:00"}
+      ],
+      "sameAs":[
+        "https://www.facebook.com/thebettervacation",
+        "https://www.linkedin.com/company/thebettervacation/",
+        "https://www.instagram.com/thebettervacation/",
+        "https://twitter.com/bettervacation_",
+        "https://www.youtube.com/channel/UCmSy2vAcpu2ULN0tHV6aA1A"
+      ]
+    }
+  }
+  </script>
+
+  <div class="footer">
+    <div class="note">Note: This website provides visitor planning information for {{ATTRACTION_NAME}}. It is not the official {{ATTRACTION_NAME}} website.</div>
+  </div>
+
+</div>
+<!-- /wp:html -->

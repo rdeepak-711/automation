@@ -1,0 +1,744 @@
+<!--
+  ============================================================
+  INDIVIDUAL ARTICLE/POST TEMPLATE &mdash; Body Content Only
+  Paste into WordPress Custom HTML block or page template.
+  
+  STRUCTURE:
+  1. H1 (black) + Subtitle (brand color) + Featured Image
+  2. Introduction paragraph(s)
+  3. Top Tickets promotion (3 cards)
+  4. Rest of article content flows below
+  ============================================================
+-->
+
+<style>
+  :root {
+    --accent: #ff0000;
+    --accent-light: #ffe5e5;
+    --accent-dark: #cc0000;
+    --text-primary: #2a2725;
+    --text-secondary: #5a5550;
+    --text-muted: #8a837c;
+    --bg-warm: #faf8f6;
+    --bg-white: #ffffff;
+    --border: #ece8e4;
+    --border-light: #f4f2f0;
+  }
+
+  @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Source+Sans+3:wght@400;500;600;700&display=swap");
+
+  .att-article-page,
+  .att-article-page *,
+  .att-article-page *::before,
+  .att-article-page *::after {
+    box-sizing: border-box;
+  }
+  .att-article-page {
+    font-family: "Source Sans 3", "Segoe UI", sans-serif;
+    color: var(--text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .att-article-page h1,
+  .att-article-page h2,
+  .att-article-page h3,
+  .att-article-page h4 {
+    font-family: "Playfair Display", Georgia, serif;
+    line-height: 1.2;
+  }
+  .att-article-page a {
+    text-decoration: none;
+  }
+
+  .att-article-page .att-container {
+    width: 74%;
+    margin: 0 auto;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* ══════════════════════════════════
+     ARTICLE HEADER &mdash; H1 + Subtitle + Featured Image
+     ══════════════════════════════════ */
+  .att-article-header {
+    padding: 0;
+  }
+  .att-article-page .att-article-header h1 {
+    font-size: clamp(28px, 4.5vw, 44px);
+    color: var(--text-primary);
+    margin: 0 0 10px 0;
+    padding: 0;
+    text-align: center;
+  }
+  .att-article-header__subtitle {
+    font-family: "Source Sans 3", sans-serif;
+    font-size: clamp(16px, 2.2vw, 20px);
+    font-weight: 600;
+    color: var(--accent);
+    margin: 0 0 28px 0;
+    text-align: center;
+  }
+  .att-article-header__image {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 14px;
+    background: var(--border);
+  }
+
+  /* ══════════════════════════════════
+     ARTICLE BODY &mdash; Prose content
+     ══════════════════════════════════ */
+  .att-article-body {
+    padding: 40px 0 60px 0;
+  }
+  .att-article-page .att-article-body p {
+    font-size: 16px;
+    color: var(--text-secondary);
+    line-height: 1.85;
+    margin: 0 0 20px 0;
+    padding: 0;
+  }
+  .att-article-page .att-article-body h2 {
+    font-size: clamp(22px, 3vw, 30px);
+    color: var(--text-primary);
+    margin: 48px 0 16px 0;
+    padding: 0;
+  }
+  .att-article-page .att-article-body h3 {
+    font-size: clamp(18px, 2.5vw, 24px);
+    color: var(--text-primary);
+    margin: 36px 0 12px 0;
+    padding: 0;
+  }
+  .att-article-page .att-article-body ul,
+  .att-article-page .att-article-body ol {
+    margin: 0 0 20px 0;
+    padding: 0 0 0 24px;
+  }
+  .att-article-page .att-article-body li {
+    font-size: 16px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin: 0 0 8px 0;
+  }
+  .att-article-page .att-article-body a {
+    color: var(--accent);
+  }
+  .att-article-page .att-article-body a:hover {
+    text-decoration: underline;
+  }
+  .att-article-page .att-article-body img {
+    width: 100%;
+    border-radius: 12px;
+    margin: 28px 0;
+    display: block;
+  }
+
+  /* ══════════════════════════════════
+     TOP TICKETS &mdash; Text links
+     ══════════════════════════════════ */
+  .att-top-tickets {
+    padding: 18px 0;
+    margin: 32px 0 36px 0;
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .att-top-tickets__label {
+    font-family: "Source Sans 3", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 !important;
+    padding: 0 !important;
+    white-space: nowrap;
+    line-height: 1.6;
+  }
+  .att-top-tickets .att-top-tickets__list {
+    list-style: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+  .att-top-tickets .att-top-tickets__list li {
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .att-top-tickets .att-top-tickets__list li a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--accent-dark);
+    font-weight: 600;
+    line-height: 1.6;
+  }
+  .att-top-tickets .att-top-tickets__list li a:hover {
+    text-decoration: underline;
+  }
+  .att-top-tickets__arrow {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+
+  /* ══════════════════════════════════
+     RESPONSIVE
+     ══════════════════════════════════ */
+  /* ══════════════════════════════════
+     AEO ANSWER BLOCK
+     ══════════════════════════════════ */
+  .att-aeo-block {
+    background: var(--bg-warm);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 18px 20px;
+    margin: 0 0 28px 0;
+  }
+  .att-aeo-block__a {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.8;
+  }
+
+  /* ══════════════════════════════════
+     PRICE / DATA TABLE
+     ══════════════════════════════════ */
+  .att-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 32px 0;
+  }
+  .att-price-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+    margin: 0;
+  }
+  .att-price-table th {
+    background: var(--bg-warm);
+    color: var(--text-primary);
+    font-family: "Source Sans 3", sans-serif;
+    font-weight: 700;
+    text-align: left;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+  }
+  .att-price-table td {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .att-price-table tr:nth-child(even) td {
+    background: var(--bg-warm);
+  }
+  .att-price-table .att-price-table__price {
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  /* ══════════════════════════════════
+     INSIDER TIP BOX &mdash; AND BUY NOW
+     ══════════════════════════════════ */
+  .att-buy-now-btn {
+    display: block;
+    width: fit-content;
+    margin-left: 0;
+    background-color: var(--accent);
+    color: #ffffff !important;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 16px;
+    text-align: center;
+    margin: 32px 0 8px 0;
+    transition: background-color 0.2s ease;
+  }
+  .att-buy-now-btn:hover {
+    background-color: var(--accent-dark);
+    text-decoration: none !important;
+  }
+
+  .att-tip-box {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-left: 4px solid #f59e0b;
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 0 0 32px 0;
+  }
+  .att-tip-box__label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #92400e;
+    margin: 0 0 6px 0;
+  }
+  .att-tip-box p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  /* ══════════════════════════════════
+     PRACTICAL VISIT REALITY BOX
+     ══════════════════════════════════ */
+  .att-visit-reality {
+    display: none;
+  }
+  .att-visit-reality__title {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 20px;
+    color: var(--text-primary);
+    margin: 0 0 16px 0;
+  }
+  .att-visit-reality ul {
+    margin: 0;
+    padding: 0 0 0 18px;
+  }
+  .att-visit-reality ul li {
+    font-size: 15px;
+    color: var(--text-secondary);
+    padding: 5px 0;
+    line-height: 1.7;
+  }
+
+  /* ══════════════════════════════════
+     FAQ SECTION &mdash; Native Accordion
+     ══════════════════════════════════ */
+  .att-faq {
+    margin: 48px 0 32px 0;
+  }
+  .att-faq__title {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: clamp(22px, 3vw, 28px);
+    color: var(--text-primary);
+    margin: 0 0 24px 0;
+  }
+  .att-faq-details {
+    border-bottom: 1px solid var(--border);
+  }
+  .att-faq-details[open] {
+    padding-bottom: 16px;
+  }
+  .att-faq-summary {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 0;
+    font-family: "Source Sans 3", sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+  .att-faq-summary::-webkit-details-marker {
+    display: none;
+  }
+  .att-faq-summary::after {
+    content: "+";
+    font-size: 22px;
+    color: var(--accent);
+    font-weight: 400;
+  }
+  .att-faq-details[open] .att-faq-summary::after {
+    content: "\2212";
+  }
+  .att-faq-content {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.8;
+  }
+  .att-faq-content p {
+    margin-bottom: 0 !important;
+  }
+
+  /* ══════════════════════════════════
+     RELATED ARTICLES
+     ══════════════════════════════════ */
+  .att-related {
+    margin: 48px 0 32px 0;
+  }
+  .att-related__title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 0 0 16px 0;
+  }
+  .att-related__list {
+    margin: 0;
+    padding: 0 0 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .att-related__list li {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .att-related__list li a {
+    display: inline-block;
+    font-size: 16px;
+    color: var(--accent);
+    padding: 0;
+  }
+  .att-related__list li a:hover {
+    text-decoration: underline;
+  }
+
+  /* ══════════════════════════════════
+     RESPONSIVE
+     ══════════════════════════════════ */
+  /* Tablet (769px – 1199px) */
+  @media (min-width: 769px) and (max-width: 1199px) {
+    .att-article-page .att-container {
+      width: 85%;
+    }
+  }
+
+  /* Mobile (≤768px) */
+  @media (max-width: 768px) {
+    .att-article-page .att-container {
+      width: 94%;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .att-article-header {
+      padding: 0;
+    }
+    .att-article-header__image {
+      border-radius: 8px;
+      aspect-ratio: 16/9;
+    }
+    .att-article-body {
+      padding: 24px 0 44px 0;
+    }
+    .att-top-tickets {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .att-top-tickets__list {
+      flex-direction: column;
+      gap: 10px;
+    }
+    .att-price-table {
+      font-size: 13px;
+    }
+    .att-price-table th,
+    .att-price-table td {
+      padding: 8px 10px;
+    }
+  }
+</style>
+
+<div class="att-article-page">
+  <!-- ═══════════════════════════════════════════
+       ARTICLE HEADER: H1 + Subtitle + Featured Image
+       ═══════════════════════════════════════════ -->
+  <section class="att-article-header">
+    <div class="att-container">
+      <h1>
+        Opera Garnier Entry Ticket: Price, What&rsquo;s Included &amp; Practical
+        Tips
+      </h1>
+      <p class="att-article-header__subtitle">
+        Everything you need to know about buying the &euro;25 Opera Garnier
+        entry ticket &mdash; what&rsquo;s included, what isn&rsquo;t, and how to
+        visit
+      </p>
+      <img
+        class="att-article-header__image"
+        src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+        alt="Opera Garnier entry ticket and grand staircase"
+        loading="eager"
+      />
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       ARTICLE BODY
+       ═══════════════════════════════════════════ -->
+  <div class="att-container">
+    <div class="att-article-body">
+      <!-- ─── AEO ANSWER BLOCK (before intro) ─── -->
+      <div class="att-aeo-block">
+        <p class="att-aeo-block__a">
+          An Opera Garnier (Palais Garnier) entry ticket costs &euro;25 per
+          adult in 2026. The ticket gives self-guided access to the public areas
+          including the Grand Staircase, Grand Foyer, and Library-Museum.
+          Auditorium access is not guaranteed &mdash; it depends on the
+          rehearsal schedule on the day.
+        </p>
+      </div>
+
+      <!-- ─── INTRODUCTION (2 paragraphs, no repetition) ─── -->
+      <p>
+        Opera Garnier entry tickets are &euro;25 per adult and sell out on
+        weekends &mdash; booking online saves you both the queue and the
+        disappointment of a sold-out desk. The ticket covers a self-guided visit
+        to the building&rsquo;s public areas: the legendary Grand Staircase, the
+        gold-and-marble Grand Foyer, the Avant-Foyer, the decorative salons, and
+        the Library-Museum of the Op&eacute;ra.
+      </p>
+      <p>
+        What the standard ticket does <em>not</em> include: a guided tour, the
+        audio guide (&euro;6.50 extra), or guaranteed access to the main
+        auditorium with Marc Chagall&rsquo;s painted ceiling &mdash; that space
+        is frequently closed for rehearsals without notice. For most visitors,
+        the &euro;25 ticket provides 90 minutes to two hours of genuinely
+        extraordinary architecture.
+      </p>
+
+      <!-- ─── TOP TICKETS BAR ─── -->
+      <div class="att-top-tickets">
+        <span class="att-top-tickets__label">Ticket Options</span>
+        <ul class="att-top-tickets__list">
+          <li>
+            <a
+              href="https://www.example.com/tickets"
+              rel="nofollow sponsored"
+              target="_blank"
+              >Opera Garnier Entry Ticket (&euro;25)<svg
+                class="att-top-tickets__arrow"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M2.5 6h7M6.5 3L9.5 6L6.5 9" /></svg
+              ></a
+            >
+          </li>
+          <li>
+            <a
+              href="https://www.example.com/tours"
+              rel="nofollow sponsored"
+              target="_blank"
+              >Guided Tour with Expert Guide<svg
+                class="att-top-tickets__arrow"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M2.5 6h7M6.5 3L9.5 6L6.5 9" /></svg
+              ></a
+            >
+          </li>
+        </ul>
+      </div>
+
+      <!-- ─── BODY CONTENT ─── -->
+
+      <h2>What Does the &euro;25 Entry Ticket Include?</h2>
+      <div class="att-aeo-block">
+        <p class="att-aeo-block__a">
+          The &euro;25 Opera Garnier entry ticket includes self-guided access to
+          the Grand Staircase, Grand Foyer, Avant-Foyer, Moon and Sun Salons,
+          Rotonde des abonn&eacute;s, Rotonde du Glacier, and the Library-Museum
+          of the Op&eacute;ra. Any temporary exhibitions running at the time of
+          your visit are also included.
+        </p>
+      </div>
+      <p>
+        The building was never just a performance venue &mdash; Charles Garnier
+        designed it as a stage for Parisian society itself. The Grand Staircase,
+        built from white Carrara marble with balustrades of red and green
+        marble, was engineered so audience members could see and be seen as they
+        arrived. The entry ticket puts you on those steps.
+      </p>
+
+      <!-- ─── PRICE TABLE ─── -->
+      <h2>Opera Garnier Ticket Prices 2026</h2>
+      <table class="att-price-table">
+        <thead>
+          <tr>
+            <th>Visitor Type</th>
+            <th>Price</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Adult (18+)</td>
+            <td class="att-price-table__price">&euro;25</td>
+            <td>Standard self-guided entry</td>
+          </tr>
+          <tr>
+            <td>Audio Guide</td>
+            <td class="att-price-table__price">&euro;6.50</td>
+            <td>Add-on at the venue</td>
+          </tr>
+          <tr>
+            <td>Guided Tour</td>
+            <td class="att-price-table__price">From &euro;50+</td>
+            <td>Separate product; see tour tickets</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <a
+        href="https://www.example.com/buy"
+        class="att-buy-now-btn"
+        rel="nofollow sponsored"
+        target="_blank"
+        >Buy this ticket</a
+      >
+
+      <!-- ─── INSIDER TIP BOX ─── -->
+      <div class="att-tip-box">
+        <p class="att-tip-box__label">Insider Tip</p>
+        <p>
+          Weekend entry sells out by Wednesday. If you&rsquo;re visiting on a
+          Saturday or Sunday, check availability on Tuesday and book
+          immediately. For same-day visits, the ticket desk opens at 10:00
+          &mdash; arrive by 09:45 and join the queue before it forms.
+        </p>
+      </div>
+
+      <h2>Is the Auditorium Included?</h2>
+      <div class="att-aeo-block">
+        <p class="att-aeo-block__a">
+          No &mdash; access to the main auditorium (home to Marc Chagall&rsquo;s
+          famous painted ceiling) is not guaranteed with the standard entry
+          ticket. The auditorium is frequently closed to visitors for rehearsals
+          or technical preparations without advance notice. On days when it is
+          open, visitors can enter briefly, but this is not guaranteed.
+        </p>
+      </div>
+
+      <!-- ─── PRACTICAL VISIT REALITY BOX ─── -->
+      <div class="att-visit-reality">
+        <p class="att-visit-reality__title">Before You Arrive</p>
+        <ul>
+          <li>
+            <strong>Metro:</strong> Op&eacute;ra (lines 3, 7, 8) &mdash;
+            2-minute walk from the main entrance
+          </li>
+          <li>
+            <strong>Photography:</strong> Permitted in all public areas; flash
+            off near exhibits
+          </li>
+          <li>
+            <strong>Timed entry:</strong> Arrive within 15 minutes of your
+            booked slot
+          </li>
+          <li>
+            <strong>Accessibility:</strong> Lift access available; contact venue
+            for specific requirements
+          </li>
+        </ul>
+      </div>
+
+      <!-- ─── CLOSING SECTION ─── -->
+      <h2>Ready to Visit Opera Garnier?</h2>
+      <p>
+        The &euro;25 entry ticket is the right choice for independent visitors
+        who want to explore the public rooms at their own pace. You&rsquo;ll
+        have 90 minutes to two hours to move through some of the most
+        elaborately decorated spaces in Paris.
+      </p>
+
+      <!-- ─── FAQ SECTION ─── -->
+      <div class="att-faq">
+        <h2 class="att-faq__title">Frequently Asked Questions</h2>
+
+        <details class="att-faq-details">
+          <summary class="att-faq-summary">
+            Do I need to print my Opera Garnier ticket?
+          </summary>
+          <div class="att-faq-content">
+            <p>
+              No &mdash; mobile tickets are accepted. Show the QR code on your
+              phone at the entrance. It is advisable to download the ticket to
+              your phone before arriving in case of poor mobile signal at the
+              venue.
+            </p>
+          </div>
+        </details>
+
+        <details class="att-faq-details">
+          <summary class="att-faq-summary">
+            How long does a self-guided visit to Opera Garnier take?
+          </summary>
+          <div class="att-faq-content">
+            <p>
+              Most visitors spend 90 minutes to 2 hours on a self-guided visit.
+              If you add the audio guide and spend time in the Library-Museum,
+              budget 2 to 2.5 hours. There is no time limit once you are inside.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <!-- FAQPage Schema -->
+      <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How much is an Opera Garnier entry ticket?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "An Opera Garnier entry ticket costs \u20ac25 per adult in 2026 for a self-guided visit to the public areas."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How long does a self-guided Opera Garnier visit take?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Most visitors spend 90 minutes to 2 hours on a self-guided visit. With the audio guide, budget 2 to 2.5 hours."
+              }
+            }
+          ]
+        }
+      </script>
+
+      <!-- ─── RELATED ARTICLES ─── -->
+      <div class="att-related">
+        <p class="att-related__title">Related Articles</p>
+        <ul class="att-related__list">
+          <li><a href="/tickets-and-tours/">All Opera Garnier Tickets</a></li>
+          <li>
+            <a href="/plan-your-visit/opera-garnier-opening-hours/"
+              >Opening Hours 2026</a
+            >
+          </li>
+          <li>
+            <a href="/what-to-see/opera-garnier-grand-staircase/"
+              >The Grand Staircase</a
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+    <!-- /.att-article-body -->
+  </div>
+  <!-- /.att-container -->
+</div>
+<!-- /.att-article-page -->

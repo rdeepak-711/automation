@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Fix L1 page + homepage card images for any attraction site on either server.
+# Matches each card's href slug to the post's featured image and replaces it.
+# Works on Server 1 (kzrmeomy) and Server 2 (dpskbcmy) via env vars.
+#
+# Usage:
+#   ./scripts/base/17-fix-l1-card-images.sh <hostname>
+#
+# Example:
+#   ./scripts/base/17-fix-l1-card-images.sh auschwitz-guide.com
+#   ./scripts/base/17-fix-l1-card-images.sh hagiasophia-guide.com
+#
+# Env vars (from .env or parent):
+#   WP_SSH_HOST, WP_SSH_USER, WP_SSH_KEY, WP_PATH (optional — auto-discovered)
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: $0 <hostname>"
+    exit 1
+fi
+
+HOSTNAME="$1"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PY_SCRIPT="$SCRIPT_DIR/17-fix-l1-card-images.py"
+
+# Save any env vars passed on command line BEFORE loading .env (so they take precedence)
+_SAVED_HOST="${WP_SSH_HOST:-}"
+_SAVED_USER="${WP_SSH_USER:-}"
+_SAVED_KEY="${WP_SSH_KEY:-}"
+_SAVED_PATH="${WP_PATH:-}"
+
+# Load .env if present
+ENV_FILE="$SCRIPT_DIR/../../.env"
+[[ -f "$ENV_FILE" ]] && { set -a; source "$ENV_FILE"; set +a; }
+
+# Restore passed-in values — they take precedence over .env
+[[ -n "$_SAVED_HOST" ]] && WP_SSH_HOST="$_SAVED_HOST"
+[[ -n "$_SAVED_USER" ]] && WP_SSH_USER="$_SAVED_USER"
+[[ -n "$_SAVED_KEY"  ]] && WP_SSH_KEY="$_SAVED_KEY"
+[[ -n "$_SAVED_PATH" ]] && WP_PATH="$_SAVED_PATH"
+
+# Build SSH key options
+SSH_KEY_OPTS=()
+if [[ -n "${WP_SSH_KEY:-}" ]]; then
+    _KEY="${WP_SSH_KEY/#\~/$HOME}"
+    SSH_KEY_OPTS=(-i "$_KEY" -o IdentitiesOnly=yes)
+fi
+SSH_KEY_OPTS+=(-o StrictHostKeyChecking=no -o ConnectTimeout=15)
+
+# Server 1 needs SSH_AUTH_SOCK="" to avoid agent key conflicts
+_SSH_PREFIX=""
+if [[ "${WP_SSH_KEY:-}" == *"bluehost_old"* ]]; then
+    _SSH_PREFIX="SSH_AUTH_SOCK="
+fi
+
+_SSH() { env ${_SSH_PREFIX} ssh "${SSH_KEY_OPTS[@]}" "${WP_SSH_USER}@${WP_SSH_HOST}" "$@"; }
+_SCP() { env ${_SSH_PREFIX} scp "${SSH_KEY_OPTS[@]}" "$@"; }
+
+# Discover WP_PATH if not already set
+if [[ -z "${WP_PATH:-}" ]]; then
+    echo "Discovering WP path for $HOSTNAME..."
+    WP_PATH=$(_SSH \
+        "for d in /home*/${WP_SSH_USER}/public_html/website_*/; do \
+            wp option get siteurl --path=\"\$d\" 2>/dev/null | grep -q '$HOSTNAME' && echo \"\$d\" && break; \
+         done; \
+         wp option get siteurl --path=\"/home*/${WP_SSH_USER}/public_html/\" 2>/dev/null | grep -q '$HOSTNAME' && echo \"/home*/${WP_SSH_USER}/public_html/\" || true" \
+        2>/dev/null | tr -d '\n' | sed 's|/$||')
+fi
+
+if [[ -z "$WP_PATH" ]]; then
+    echo "❌ Could not find WordPress installation for $HOSTNAME"
+    echo "   Set WP_PATH manually or ensure WP_SSH_HOST/USER/KEY are correct"
+    exit 1
+fi
+
+echo "Found: $WP_PATH"
+
+SITE_URL="https://$HOSTNAME"
+
+# Prompt for per-page hero image URLs
+echo ""
+echo "Enter hero image URLs for each page."
+echo "Leave blank to use post featured image fallback."
+echo ""
+read -p "Homepage hero image URL    : " HERO_HOMEPAGE
+read -p "Tickets hero image URL     : " HERO_TICKETS
+read -p "Plan Your Visit hero URL   : " HERO_PLAN
+read -p "What To See hero URL       : " HERO_WHATS
+echo ""
+
+echo "Uploading script..."
+_SCP "$PY_SCRIPT" "${WP_SSH_USER}@${WP_SSH_HOST}:/tmp/17-fix-l1-card-images.py"
+
+echo "Running..."
+_SSH "python3 /tmp/17-fix-l1-card-images.py '$WP_PATH' '$SITE_URL' '$HERO_HOMEPAGE' '$HERO_TICKETS' '$HERO_PLAN' '$HERO_WHATS'; rm -f /tmp/17-fix-l1-card-images.py"
+
+echo ""
+echo "✅ Done for $HOSTNAME"

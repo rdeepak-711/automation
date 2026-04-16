@@ -1,0 +1,587 @@
+<!--
+  ============================================================
+  PLAN YOUR VISIT PAGE TEMPLATE &mdash; Body Content Only
+  Paste into WordPress Custom HTML block or page template.
+  
+  Uses the same CSS variable system as homepage &amp; tickets templates.
+  ============================================================
+-->
+
+<style>
+  :root {
+    --accent: #ff0000;
+    --accent-light: #ffe5e5;
+    --accent-dark: #cc0000;
+    --accent-glow: rgba(255, 0, 0, 0.2);
+    --text-primary: #2a2725;
+    --text-secondary: #5a5550;
+    --text-muted: #8a837c;
+    --bg-warm: #faf8f6;
+    --bg-white: #ffffff;
+    --border: #ece8e4;
+    --border-light: #f4f2f0;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+
+  .att-plan-page, .att-plan-page *, .att-plan-page *::before, .att-plan-page *::after { box-sizing: border-box; }
+  .att-plan-page { font-family:'Source Sans 3','Segoe UI',sans-serif; color:var(--text-primary); line-height:1.6; -webkit-font-smoothing:antialiased; }
+  .att-plan-page h1, .att-plan-page h2, .att-plan-page h3, .att-plan-page h4 { font-family:'Playfair Display',Georgia,serif; line-height:1.2; font-style:normal; }
+  .att-plan-page .att-hero a, .att-plan-page .att-section a, .att-plan-page .att-cta-banner a, .att-plan-page .att-faq a { text-decoration:none; }
+
+  .att-plan-page .att-container { max-width:100%; margin:0 auto; padding-left:48px; padding-right:48px; }
+  .att-plan-page .att-section { padding:60px 0; }
+
+  /* Section Header */
+  .att-plan-page .att-section-header { margin:0 0 36px 0; }
+  .att-plan-page .att-section-header h2 { font-size:clamp(24px,3.5vw,34px); color:var(--text-primary); margin:0 0 8px 0; padding:0; }
+  .att-plan-page .att-section-header p { font-size:15px; color:var(--text-muted); margin:0; padding:0; }
+  .att-plan-page .att-section-header::after { content:''; display:block; width:48px; height:3px; background:var(--accent); border-radius:3px; margin-top:14px; }
+  .att-plan-page .att-section-header--center { text-align:center; }
+  .att-plan-page .att-section-header--center::after { margin-left:auto; margin-right:auto; }
+
+  /* Buttons */
+  .att-plan-page .att-btn { display:inline-flex; align-items:center; gap:8px; padding:14px 28px; border-radius:8px; font-size:15px; font-weight:600; font-family:'Source Sans 3',sans-serif; cursor:pointer; transition:transform 0.2s,opacity 0.2s,background 0.2s,color 0.2s; border:none; }
+  .att-plan-page .att-btn:hover { transform:translateY(-1px); }
+  .att-plan-page .att-btn--primary { background:var(--accent); color:#fff; }
+  .att-plan-page .att-btn--primary:hover { background:var(--accent-dark); color:#fff; }
+  .att-plan-page .att-btn--outline { background:transparent; color:var(--accent); border:2px solid var(--accent); }
+  .att-plan-page .att-btn--outline:hover { background:var(--accent); color:#fff; }
+  .att-plan-page .att-btn--white { background:#fff; color:var(--accent); font-weight:700; }
+
+  /* Section Link */
+  .att-plan-page .att-section-link { text-align:center; margin:36px 0 0 0; padding:0; }
+  .att-plan-page .att-section-link a { display:inline-flex; align-items:center; gap:6px; font-size:15px; font-weight:600; color:var(--accent); padding:12px 28px; border:2px solid var(--accent); border-radius:8px; transition:background 0.2s,color 0.2s; }
+  .att-plan-page .att-section-link a:hover { background:var(--accent); color:#fff; }
+
+  /* ══════════════════════════════════
+     HERO
+     ══════════════════════════════════ */
+  .att-plan-page .att-hero { background:var(--bg-white); overflow:hidden; }
+  .att-plan-page .att-hero__inner { display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center; min-height:440px; }
+  .att-plan-page .att-hero__content { padding:48px 0; }
+  .att-plan-page .att-hero__badge { display:inline-block; background:var(--accent); color:#fff; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; padding:5px 14px; border-radius:4px; margin:0 0 18px 0; }
+  .att-plan-page .att-hero h1 { font-size:clamp(28px,4.5vw,46px); color:var(--text-primary); margin:0 0 16px 0; padding:0; }
+  .att-plan-page .att-hero__desc { font-size:15.5px; color:var(--text-secondary); line-height:1.78; margin:0 0 28px 0; padding:0; max-width:540px; }
+  .att-plan-page .att-hero__actions { display:flex; gap:12px; flex-wrap:wrap; }
+  .att-plan-page .att-hero__image-wrap { position:relative; border-radius:16px; overflow:hidden; aspect-ratio:4/3; background:var(--border); }
+  .att-plan-page .att-hero__img { width:100%; height:100%; object-fit:cover; display:block; }
+
+  /* Quick-tip strip */
+  .att-quicktips { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:40px; }
+  .att-quicktip { background:var(--bg-warm); border:1px solid var(--border); border-radius:12px; padding:20px 22px; }
+  .att-quicktip__label { font-size:13px; font-weight:700; color:var(--text-primary); margin:0 0 6px 0; font-family:'Playfair Display',serif; }
+  .att-quicktip p { font-size:13.5px; color:var(--text-secondary); line-height:1.55; margin:0; padding:0; }
+
+  /* ══════════════════════════════════
+     ARTICLE CARDS &mdash; 3-col grid
+     ══════════════════════════════════ */
+  .att-articles-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .att-article-card { background:var(--bg-white); border-radius:14px; border:1px solid var(--border); overflow:hidden; transition:box-shadow 0.3s,transform 0.3s; display:flex; flex-direction:column; }
+  .att-article-card:hover { box-shadow:0 6px 28px rgba(0,0,0,0.06); transform:translateY(-2px); }
+  .att-article-card__img { width:100%; aspect-ratio:16/10; object-fit:cover; display:block; background:var(--border); }
+  .att-article-card__body { padding:22px 24px; flex:1; display:flex; flex-direction:column; }
+  .att-article-card__tags { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 10px 0; }
+  .att-article-card__tag { display:inline-block; font-size:11px; font-weight:600; padding:4px 10px; border-radius:5px; background:var(--accent-light); color:var(--accent-dark); }
+  .att-plan-page .att-article-card h3 { font-size:19px; margin:0 0 10px 0; padding:0; color:var(--text-primary); line-height:1.3; }
+  .att-plan-page .att-article-card h3 a { color:var(--text-primary); }
+  .att-plan-page .att-article-card h3 a:hover { color:var(--accent); }
+  .att-article-card__desc { font-size:14px; color:var(--text-secondary); line-height:1.7; margin:0 0 11px 0; flex:1; }
+  .att-article-card__link { font-size:14px; font-weight:600; color:var(--accent); margin-top:auto; }
+
+  /* ══════════════════════════════════
+     PRACTICAL INFO &mdash; Prose cards
+     ══════════════════════════════════ */
+  .att-practical-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .att-practical-card { background:var(--bg-warm); border:1px solid var(--border); border-radius:14px; padding:32px 30px; }
+  .att-plan-page .att-practical-card h3 { font-size:20px; margin:0 0 12px 0; padding:0; color:var(--text-primary); }
+  .att-practical-card p { font-size:14px; color:var(--text-secondary); line-height:1.7; margin:0 0 16px 0; }
+  .att-practical-card ul { list-style:none; margin:0; padding:0; }
+  .att-practical-card ul li { font-size:14px; color:var(--text-secondary); line-height:1.6; padding:5px 0 5px 20px; position:relative; }
+  .att-practical-card ul li::before { content:'\2192'; position:absolute; left:0; color:var(--accent); font-weight:700; }
+  .att-practical-card a { color:var(--accent); font-weight:600; }
+
+  /* ══════════════════════════════════
+     TIP CARDS
+     ══════════════════════════════════ */
+  .att-tips-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px; }
+  .att-plan-page .att-tip { background:var(--bg-white); border:1px solid var(--border); border-radius:10px; padding:20px 22px; font-size:14px; color:var(--text-secondary); line-height:1.65; display:flex; gap:14px; align-items:flex-start; }
+  .att-plan-page .att-tip__icon { font-size:20px; flex-shrink:0; margin-top:2px; }
+  .att-plan-page .att-tip strong { color:var(--text-primary); font-weight:700; }
+
+  /* ══════════════════════════════════
+     CTA BANNER
+     ══════════════════════════════════ */
+  .att-plan-page .att-cta-banner { background:linear-gradient(135deg,var(--accent-dark),var(--accent)); text-align:center; padding:52px 24px; }
+  .att-plan-page .att-cta-banner h2 { font-size:clamp(22px,3vw,30px); color:#fff; margin:0 0 12px 0; text-align:center; }
+  .att-plan-page .att-cta-banner p { color:rgba(255,255,255,0.8); font-size:15px; line-height:1.65; margin:0 auto 24px auto; max-width:560px; text-align:center; }
+
+  /* ══════════════════════════════════
+     FAQ
+     ══════════════════════════════════ */
+  .att-plan-page .att-faq { max-width:920px; margin:0 auto; }
+  .att-plan-page .att-faq-item { border:1px solid var(--border); border-radius:10px; overflow:hidden; margin:0 0 8px 0; padding:0; transition:background 0.2s; }
+  .att-plan-page details.att-faq-item[open] { background:var(--bg-warm); }
+  .att-plan-page .att-faq-item__q { width:100%; display:flex; align-items:center; justify-content:space-between; padding:18px 22px; margin:0; border:none; background:transparent; cursor:pointer; font-family:'Source Sans 3',sans-serif; font-size:15px; font-weight:600; color:var(--text-primary); text-align:left; line-height:1.4; gap:12px; list-style:none; }
+  .att-plan-page .att-faq-item__q::-webkit-details-marker { display:none; }
+  .att-plan-page .att-faq-item__q::marker { display:none; content:''; }
+  .att-plan-page .att-faq-item__q::after { content:'+'; font-size:20px; color:var(--accent); flex-shrink:0; font-weight:300; transition:transform 0.25s; }
+  .att-plan-page details.att-faq-item[open] .att-faq-item__q::after { transform:rotate(45deg); }
+  .att-plan-page .att-faq-item__a { padding:4px 22px 20px; margin:0; font-size:14px; color:var(--text-secondary); line-height:1.72; }
+  .att-plan-page .att-faq-item__a span { display:block; margin:0; padding:0; }
+  .att-plan-page details.att-faq-item > div { padding:4px 22px 20px; margin:0; font-size:14px; color:var(--text-secondary); line-height:1.72; }
+  .att-plan-page details.att-faq-item > div span { display:block; margin:0; padding:0; }
+
+  /* ══════════════════════════════════
+     CROSS-LINKS
+     ══════════════════════════════════ */
+  .att-crosslinks { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .att-crosslink { display:grid; grid-template-columns:160px 1fr; gap:0; background:var(--bg-white); border:1px solid var(--border); border-radius:14px; overflow:hidden; transition:box-shadow 0.3s; }
+  .att-crosslink:hover { box-shadow:0 6px 28px rgba(0,0,0,0.06); }
+  .att-crosslink__img { width:100%; height:100%; object-fit:cover; display:block; background:var(--border); min-height:140px; }
+  .att-crosslink__body { padding:24px 28px; display:flex; flex-direction:column; justify-content:center; }
+  .att-plan-page .att-crosslink__body h3 { font-size:19px; margin:0 0 8px 0; padding:0; color:var(--text-primary); line-height:1.3; }
+  .att-plan-page .att-crosslink__body h3 a { color:var(--text-primary); }
+  .att-plan-page .att-crosslink__body h3 a:hover { color:var(--accent); }
+  .att-crosslink__desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; margin:0 0 12px 0; }
+  .att-crosslink__link { font-size:14px; font-weight:600; color:var(--accent); }
+
+  /* ══════════════════════════════════
+     RESPONSIVE
+     ══════════════════════════════════ */
+  @media (max-width:1024px) { .att-quicktips { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:960px) { .att-articles-grid { grid-template-columns:repeat(2,1fr); } .att-practical-grid { grid-template-columns:1fr; } }
+  @media (max-width:768px) {
+    .att-plan-page .att-container { padding-left:10px; padding-right:10px; }
+    .att-plan-page .att-hero__image-wrap { display:none; }
+    .att-plan-page .att-hero__inner { grid-template-columns:1fr; gap:0; }
+    .att-plan-page .att-hero__content { padding:28px 0; }
+    .att-plan-page .att-section { padding:44px 0; }
+    .att-articles-grid { grid-template-columns:1fr; }
+    .att-quicktips { grid-template-columns:1fr; }
+    .att-tips-grid { grid-template-columns:1fr; }
+    .att-plan-page .att-tip__icon { display:none; }
+    .att-crosslinks { grid-template-columns:1fr; }
+    .att-crosslink { grid-template-columns:1fr; }
+    .att-crosslink__img { min-height:auto; aspect-ratio:16/9; }
+  }
+
+  @keyframes attFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .att-animate { opacity:0; animation:attFadeUp 0.5s ease-out forwards; }
+  .att-delay-1 { animation-delay:0.1s; } .att-delay-2 { animation-delay:0.2s; } .att-delay-3 { animation-delay:0.3s; }
+</style>
+
+
+<div class="att-plan-page">
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 1: HERO + QUICK TIPS
+       ═══════════════════════════════════════════ -->
+  <section class="att-hero">
+    <div class="att-container">
+      <div class="att-hero__inner">
+        <div class="att-hero__content">
+          <div class="att-hero__badge att-animate">Plan Your Visit</div>
+          <h1 class="att-animate att-delay-1">Plan Your Visit to Sagrada Fam&iacute;lia</h1>
+          <p class="att-hero__desc att-animate att-delay-2">
+            Everything you need before you go &mdash; opening hours, the best time to visit, how to reach,
+            entrance details, dress code, accessibility, parking, visitor tips, and FAQs for a smooth
+            Sagrada Fam&iacute;lia experience.
+          </p>
+          <div class="att-hero__actions att-animate att-delay-3">
+            <a href="#pyv-essentials" class="att-btn att-btn--primary">Essential Guides &rarr;</a>
+            <a href="#pyv-faqs" class="att-btn att-btn--outline">Read FAQs</a>
+          </div>
+        </div>
+        <div class="att-hero__image-wrap att-animate att-delay-2">
+          <img class="att-hero__img" src="https://placehold.co/800x600/e8ddd4/8a837c?text=Plan+Your+Visit%0AHero+Image" alt="Planning your visit to Sagrada Fam&iacute;lia" loading="eager" />
+        </div>
+      </div>
+
+      <div class="att-quicktips att-animate att-delay-3">
+        <div class="att-quicktip">
+          <div class="att-quicktip__label">Tickets</div>
+          <p>Book online in advance. Popular time slots sell out days ahead, especially from April to October.</p>
+        </div>
+        <div class="att-quicktip">
+          <div class="att-quicktip__label">Before you go</div>
+          <p>Check opening hours, transport options, dress code, and entrance details before heading out.</p>
+        </div>
+        <div class="att-quicktip">
+          <div class="att-quicktip__label">Best timing</div>
+          <p>Early morning and late afternoon offer smaller crowds and the best stained glass light.</p>
+        </div>
+        <div class="att-quicktip">
+          <div class="att-quicktip__label">On arrival</div>
+          <p>Arrive 15 minutes before your time slot. Security screening and bag checks are required.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       ARTICLE SECTIONS — One <section> per entry in article_sections.
+       Each section uses att-articles-grid + att-article-card.
+       EVERY article in article_sections must appear in exactly one section.
+       Do not merge or omit any subgroup — render all of them.
+       ═══════════════════════════════════════════ -->
+  <section id="pyv-essentials" class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Planning Your Trip</h2>
+        <p>Key guides most visitors need before they go — timing, hours, and what to expect.</p>
+      </div>
+
+      <div class="att-articles-grid">
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Best time to visit" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Seasonal</span><span class="att-article-card__tag">Planning</span></div>
+            <h3><a href="/plan-your-visit/best-time-to-visit/">Best time to visit</a></h3>
+            <p class="att-article-card__desc">Month-by-month guide for lighter crowds, ideal weather, and the best sightseeing conditions throughout the year.</p>
+            <a href="/plan-your-visit/best-time-to-visit/" class="att-article-card__link">Read guide &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Opening hours" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Hours</span><span class="att-article-card__tag">Info</span></div>
+            <h3><a href="/plan-your-visit/opening-hours/">Opening hours &amp; days</a></h3>
+            <p class="att-article-card__desc">Seasonal opening and closing times, last-entry details, public holiday exceptions, and when the attraction is closed.</p>
+            <a href="/plan-your-visit/opening-hours/" class="att-article-card__link">Read guide &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="How long to visit" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Duration</span><span class="att-article-card__tag">Planning</span></div>
+            <h3><a href="/plan-your-visit/how-long/">How long do you need?</a></h3>
+            <p class="att-article-card__desc">How much time to budget for a self-guided visit, a guided tour, and a full experience with all areas included.</p>
+            <a href="/plan-your-visit/how-long/" class="att-article-card__link">Read guide &rarr;</a>
+          </div>
+        </div>
+
+      </details>
+    </div>
+  </section>
+
+
+  <!-- Second article section example — On the Day -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>On the Day</h2>
+        <p>Practical guides for your visit — what to wear, expect, and keep in mind on arrival.</p>
+      </div>
+
+      <div class="att-articles-grid">
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Dress code" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Dress Code</span><span class="att-article-card__tag">Rules</span></div>
+            <h3><a href="/plan-your-visit/dress-code/">Dress code</a></h3>
+            <p class="att-article-card__desc">What to wear, what to avoid, and how to dress appropriately for an active place of worship in any season.</p>
+            <a href="/plan-your-visit/dress-code/" class="att-article-card__link">Read guide &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="First-time visitor tips" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Tips</span><span class="att-article-card__tag">First Visit</span></div>
+            <h3><a href="/plan-your-visit/visitor-tips/">Tips for first-time visitors</a></h3>
+            <p class="att-article-card__desc">Practical advice on arrival, what to prioritise, crowd avoidance, and small details that make the visit smoother.</p>
+            <a href="/plan-your-visit/visitor-tips/" class="att-article-card__link">Read guide &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Photography guide" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Photography</span><span class="att-article-card__tag">Tips</span></div>
+            <h3><a href="/plan-your-visit/photography-guide/">Photography guide</a></h3>
+            <p class="att-article-card__desc">Best spots, lighting conditions, camera tips, and rules around photography inside the attraction.</p>
+            <a href="/plan-your-visit/photography-guide/" class="att-article-card__link">Read guide &rarr;</a>
+          </div>
+        </div>
+
+      </details>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 4: PRACTICAL INFORMATION
+       ═══════════════════════════════════════════ -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Practical Information</h2>
+        <p>Quick-read guidance for scheduling, pacing, and general comfort during your visit.</p>
+      </div>
+
+      <div class="att-practical-grid">
+
+        <div class="att-practical-card">
+          <h3>Suggested visiting rhythm</h3>
+          <p>Most visitors spend 1.5&ndash;2.5 hours at Sagrada Fam&iacute;lia. Structure your visit based on your ticket type and how much time you have.</p>
+          <ul>
+            <li><strong>Quick visit (1&ndash;1.5 hrs):</strong> self-guided entry with audio guide, basilica interior + museum</li>
+            <li><strong>Standard visit (2 hrs):</strong> guided tour covering interior + symbolism + optional tower</li>
+            <li><strong>Full experience (2.5+ hrs):</strong> guided tour + tower ascent + museum + exterior fa&ccedil;ade walk</li>
+            <li><strong>Photography visit:</strong> book early morning for east-facing stained glass, or late afternoon for west-side golden light</li>
+          </ul>
+        </div>
+
+        <div class="att-practical-card">
+          <h3>Helpful things to know in advance</h3>
+          <p>A few practical details that help the day go smoother, especially for first-time visitors to Barcelona.</p>
+          <ul>
+            <li>Wear comfortable shoes &mdash; you will be standing and walking for 1&ndash;2+ hours</li>
+            <li>Check the <a href="/dress-code-sagrada-familia/">dress code</a> &mdash; shoulders and knees must be covered</li>
+            <li>Arrive via <a href="/how-to-get-to-sagrada-familia/">Metro L2 or L5</a> for the simplest route</li>
+            <li>Review the <a href="/sagrada-familia-entrance/">entrance guide</a> to know which fa&ccedil;ade to approach</li>
+            <li>Save the <a href="/sagrada-familia-map/">basilica map</a> on your phone before arriving</li>
+            <li>Leave large bags and luggage at your hotel &mdash; there are no lockers on site</li>
+          </ul>
+        </div>
+
+        <div class="att-practical-card">
+          <h3>Visitor tips worth keeping in mind</h3>
+          <p>Small details that experienced visitors wish they had known before their first visit.</p>
+          <ul>
+            <li>Arrive 15 minutes before your booked time slot</li>
+            <li>Morning visits (9 AM) have the smallest crowds</li>
+            <li>The audio guide is included with most entry tickets &mdash; don&rsquo;t skip it</li>
+            <li>Tower access is via elevator up and narrow spiral stairs down &mdash; not suitable for vertigo or claustrophobia</li>
+            <li>Personal photography is allowed but tripods and flash are not</li>
+            <li>Budget extra time if you want to explore the exterior fa&ccedil;ades and nearby park</li>
+          </ul>
+        </div>
+
+        <div class="att-practical-card">
+          <h3>Cancellations &amp; refund policy</h3>
+          <p>Understand the refund terms before you book to avoid surprises.</p>
+          <ul>
+            <li>Most Sagrada Fam&iacute;lia tickets are <strong>non-refundable</strong></li>
+            <li>Some tickets offer free cancellation up to 24 hours before &mdash; check the specific listing</li>
+            <li>Latecomers are denied entry with no refund</li>
+            <li>Sagrada Fam&iacute;lia remains open rain or shine &mdash; weather is not grounds for a refund</li>
+            <li>Time slots cannot be changed once booked on most ticket types</li>
+          </ul>
+        </div>
+
+      </details>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 5: THINGS TO KNOW
+       ═══════════════════════════════════════════ -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Things to Know Before You Book</h2>
+        <p>Key reminders for a hassle-free visit.</p>
+      </div>
+
+      <div class="att-tips-grid">
+        <div class="att-tip">
+          <span class="att-tip__icon">&#x1F3AB;</span>
+          <span><strong>Book online in advance &mdash;</strong> Walk-up tickets are often unavailable. Secure your time slot online, especially during peak season (April&ndash;October).</span>
+        </div>
+        <div class="att-tip">
+          <span class="att-tip__icon">&#x1F457;</span>
+          <span><strong>Dress code enforced &mdash;</strong> Shoulders and knees must be covered. Non-compliant visitors will be denied entry with no refund.</span>
+        </div>
+        <div class="att-tip">
+          <span class="att-tip__icon">&#x23F0;</span>
+          <span><strong>Arrive 15 minutes early &mdash;</strong> Entry is at your booked time slot only. Security screening takes time, and latecomers are not admitted.</span>
+        </div>
+        <div class="att-tip">
+          <span class="att-tip__icon">&#x1F5FC;</span>
+          <span><strong>Tower access is separate &mdash;</strong> Towers require a specific ticket add-on. Not wheelchair accessible &mdash; elevator up, narrow spiral stairs down.</span>
+        </div>
+        <div class="att-tip">
+          <span class="att-tip__icon">&#x1F4F8;</span>
+          <span><strong>Photography allowed &mdash;</strong> Personal photos permitted. Tripods, flash, and commercial photography require advance permission.</span>
+        </div>
+        <div class="att-tip">
+          <span class="att-tip__icon">&#x1F504;</span>
+          <span><strong>Cancellation policy &mdash;</strong> Most tickets are non-refundable. Some offer 24-hour free cancellation &mdash; always check the terms before booking.</span>
+        </div>
+      </details>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION: CONTINUE EXPLORING
+       ═══════════════════════════════════════════ -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Continue Exploring Sagrada Fam&iacute;lia</h2>
+        <p>Discover what to see inside and find the right ticket for your visit.</p>
+      </div>
+
+      <div class="att-crosslinks">
+
+        <div class="att-crosslink">
+          <img class="att-crosslink__img" src="https://placehold.co/320x280/e8ddd4/8a837c?text=Tickets+%26+Tours" alt="Tickets &amp; Tours" />
+          <div class="att-crosslink__body">
+            <h3><a href="/tickets/">Tickets &amp; Tours</a></h3>
+            <p class="att-crosslink__desc">Compare skip-the-line entry, guided tours, tower access, private experiences, combo deals, and evening visits.</p>
+            <a href="/tickets/" class="att-crosslink__link">Explore ticket options &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-crosslink">
+          <img class="att-crosslink__img" src="https://placehold.co/320x280/e8ddd4/8a837c?text=What+to+See" alt="What to See" />
+          <div class="att-crosslink__body">
+            <h3><a href="/what-to-see/">What to See</a></h3>
+            <p class="att-crosslink__desc">The interior, stained glass, towers, three fa&ccedil;ades, crypt, museum, and how to prioritise based on your interests.</p>
+            <a href="/what-to-see/" class="att-crosslink__link">Explore highlights &rarr;</a>
+          </div>
+        </div>
+
+      </details>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 6: CTA BANNER
+       ═══════════════════════════════════════════ -->
+  <section class="att-cta-banner">
+    <h2>Ready to book your Sagrada Fam&iacute;lia tickets?</h2>
+    <p>Now that you know what to expect, secure your preferred time slot and skip the queues.</p>
+    <a href="/tickets/" class="att-btn att-btn--white">View All Tickets &amp; Tours</a>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 7: FAQs
+       ═══════════════════════════════════════════ -->
+  <section id="pyv-faqs" class="att-section">
+    <div class="att-container">
+      <div class="att-section-header att-section-header--center">
+        <h2>Frequently Asked Questions</h2>
+        <p>Common questions visitors ask when planning a trip to Sagrada Fam&iacute;lia.</p>
+      </div>
+
+      <div class="att-faq" itemscope itemtype="https://schema.org/FAQPage">
+
+        <details class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <summary class="att-faq-item__q">
+            <span itemprop="name">What are the Sagrada Fam&iacute;lia opening hours?</span>
+          </summary>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Sagrada Fam&iacute;lia is open daily. Hours vary by season: 9 AM&ndash;6 PM in winter, 9 AM&ndash;7 PM in spring/autumn, and 9 AM&ndash;8 PM in summer. Last entry is 30 minutes before closing. Special hours apply on 25&ndash;26 December and 1&ndash;6 January.</span>
+          </div>
+        </details>
+
+        <details class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <summary class="att-faq-item__q">
+            <span itemprop="name">How do I get to Sagrada Fam&iacute;lia?</span>
+          </summary>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">The easiest way is Metro L2 (Purple) or L5 (Blue) to Sagrada Fam&iacute;lia station &mdash; the exit leads directly to the basilica. Buses 19, 33, 34, 43, 44, and 50 also stop nearby. The Nativity Fa&ccedil;ade entrance is on Carrer de la Marina.</span>
+          </div>
+        </details>
+
+        <details class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <summary class="att-faq-item__q">
+            <span itemprop="name">What should I wear to Sagrada Fam&iacute;lia?</span>
+          </summary>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Shoulders and knees must be covered. Avoid transparent clothing, swimwear, and hats inside the basilica. Comfortable walking shoes are recommended. Visitors in non-compliant attire may be denied entry.</span>
+          </div>
+        </details>
+
+        <details class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <summary class="att-faq-item__q">
+            <span itemprop="name">When is the best time to visit to avoid crowds?</span>
+          </summary>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Early morning (9 AM at opening) and late afternoon (after 4 PM) are the quietest times. Weekdays are less crowded than weekends. November through February is the quietest season overall.</span>
+          </div>
+        </details>
+
+        <details class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <summary class="att-faq-item__q">
+            <span itemprop="name">Is Sagrada Fam&iacute;lia wheelchair accessible?</span>
+          </summary>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">The basilica interior is fully wheelchair accessible. However, the towers are NOT accessible to wheelchair users &mdash; access is via narrow elevators and spiral staircases only.</span>
+          </div>
+        </details>
+
+        <details class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <summary class="att-faq-item__q">
+            <span itemprop="name">How long does a visit take?</span>
+          </summary>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">A self-guided visit takes about 1&ndash;1.5 hours. Guided tours run 1.5&ndash;2 hours. Add 30 minutes for tower access. Budget 2&ndash;2.5 hours total for a complete experience including the museum and exterior.</span>
+          </div>
+        </details>
+
+        <details class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <summary class="att-faq-item__q">
+            <span itemprop="name">Can I bring bags into Sagrada Fam&iacute;lia?</span>
+          </summary>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Small bags and backpacks are allowed but will be screened at security. Large luggage and oversized bags are not permitted, and there are no lockers on site. Travel light when visiting.</span>
+          </div>
+        </details>
+
+        <details class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <summary class="att-faq-item__q">
+            <span itemprop="name">Is there parking near Sagrada Fam&iacute;lia?</span>
+          </summary>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Yes, several parking garages are located within a short walk of the basilica. Street parking is also available but limited. Public transport (Metro L2 or L5) is generally the easier and cheaper option.</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="att-section-link">
+        <a href="/frequently-asked-questions/">View All FAQs About Sagrada Fam&iacute;lia &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+
+<script>
+(function() {
+  'use strict';
+  document.querySelectorAll('.att-plan-page .att-faq-item__q').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var item = this.parentElement;
+      var wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.att-plan-page .att-faq-item').forEach(function(el) { el.classList.remove('open'); });
+      if (!wasOpen) item.classList.add('open');
+    });
+  });
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) { entry.target.style.opacity='1'; entry.target.style.transform='translateY(0)'; observer.unobserve(entry.target); }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.att-plan-page .att-article-card, .att-plan-page .att-faq-item, .att-plan-page .att-tip, .att-plan-page .att-practical-card, .att-plan-page .att-quicktip').forEach(function(el) {
+      el.style.opacity='0'; el.style.transform='translateY(16px)'; el.style.transition='opacity 0.45s ease-out, transform 0.45s ease-out';
+      observer.observe(el);
+    });
+  }
+})();
+</script>

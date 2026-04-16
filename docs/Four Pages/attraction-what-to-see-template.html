@@ -1,0 +1,551 @@
+<!--
+  ============================================================
+  WHAT TO SEE PAGE TEMPLATE &mdash; Body Content Only
+  Paste into WordPress Custom HTML block or page template.
+  ============================================================
+-->
+
+<style>
+  :root {
+    --accent: #ff0000;
+    --accent-light: #ffe5e5;
+    --accent-dark: #cc0000;
+    --text-primary: #2a2725;
+    --text-secondary: #5a5550;
+    --text-muted: #8a837c;
+    --bg-warm: #faf8f6;
+    --bg-white: #ffffff;
+    --border: #ece8e4;
+    --border-light: #f4f2f0;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+
+  .att-see-page, .att-see-page *, .att-see-page *::before, .att-see-page *::after { box-sizing:border-box; }
+  .att-see-page { font-family:'Source Sans 3','Segoe UI',sans-serif; color:var(--text-primary); line-height:1.6; -webkit-font-smoothing:antialiased; }
+  .att-see-page h1, .att-see-page h2, .att-see-page h3, .att-see-page h4 { font-family:'Playfair Display',Georgia,serif; line-height:1.2; font-style:normal; }
+  .att-see-page .att-hero a, .att-see-page .att-section a, .att-see-page .att-cta-banner a, .att-see-page .att-faq a { text-decoration:none; }
+
+  .att-see-page .att-container { max-width:100%; margin:0 auto; padding-left:48px; padding-right:48px; }
+  .att-see-page .att-section { padding:60px 0; }
+
+  /* Section Header */
+  .att-see-page .att-section-header { margin:0 0 36px 0; }
+  .att-see-page .att-section-header h2 { font-size:clamp(24px,3.5vw,34px); color:var(--text-primary); margin:0 0 8px 0; padding:0; }
+  .att-see-page .att-section-header p { font-size:15px; color:var(--text-muted); margin:0; padding:0; }
+  .att-see-page .att-section-header::after { content:''; display:block; width:48px; height:3px; background:var(--accent); border-radius:3px; margin-top:14px; }
+  .att-see-page .att-section-header--center { text-align:center; }
+  .att-see-page .att-section-header--center::after { margin-left:auto; margin-right:auto; }
+
+  /* Buttons */
+  .att-see-page .att-btn { display:inline-flex; align-items:center; gap:8px; padding:14px 28px; border-radius:8px; font-size:15px; font-weight:600; font-family:'Source Sans 3',sans-serif; cursor:pointer; transition:transform 0.2s,opacity 0.2s,background 0.2s,color 0.2s; border:none; }
+  .att-see-page .att-btn:hover { transform:translateY(-1px); }
+  .att-see-page .att-btn--primary { background:var(--accent); color:#fff; }
+  .att-see-page .att-btn--primary:hover { background:var(--accent-dark); color:#fff; }
+  .att-see-page .att-btn--outline { background:transparent; color:var(--accent); border:2px solid var(--accent); }
+  .att-see-page .att-btn--outline:hover { background:var(--accent); color:#fff; }
+  .att-see-page .att-btn--white { background:#fff; color:var(--accent); font-weight:700; }
+
+  /* Section Link */
+  .att-see-page .att-section-link { text-align:center; margin:36px 0 0 0; padding:0; }
+  .att-see-page .att-section-link a { display:inline-flex; align-items:center; gap:6px; font-size:15px; font-weight:600; color:var(--accent); padding:12px 28px; border:2px solid var(--accent); border-radius:8px; transition:background 0.2s,color 0.2s; }
+  .att-see-page .att-section-link a:hover { background:var(--accent); color:#fff; }
+
+  /* Hero */
+  .att-see-page .att-hero { background:var(--bg-white); overflow:hidden; }
+  .att-see-page .att-hero__inner { display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center; min-height:440px; }
+  .att-see-page .att-hero__content { padding:48px 0; }
+  .att-see-page .att-hero__badge { display:inline-block; background:var(--accent); color:#fff; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; padding:5px 14px; border-radius:4px; margin:0 0 18px 0; }
+  .att-see-page .att-hero h1 { font-size:clamp(28px,4.5vw,46px); color:var(--text-primary); margin:0 0 16px 0; padding:0; }
+  .att-see-page .att-hero__desc { font-size:15.5px; color:var(--text-secondary); line-height:1.78; margin:0 0 28px 0; padding:0; max-width:540px; }
+  .att-see-page .att-hero__actions { display:flex; gap:12px; flex-wrap:wrap; }
+  .att-see-page .att-hero__image-wrap { position:relative; border-radius:16px; overflow:hidden; aspect-ratio:4/3; background:var(--border); }
+  .att-see-page .att-hero__img { width:100%; height:100%; object-fit:cover; display:block; }
+
+  /* Featured Cards &mdash; Horizontal */
+  .att-featured-grid { display:flex; flex-direction:column; gap:24px; }
+  .att-featured { display:grid; grid-template-columns:380px 1fr; gap:0; background:var(--bg-white); border:1px solid var(--border); border-radius:14px; overflow:hidden; transition:box-shadow 0.3s; }
+  .att-featured:hover { box-shadow:0 8px 36px rgba(0,0,0,0.06); }
+  .att-featured__img { width:100%; height:100%; object-fit:cover; display:block; background:var(--border); min-height:260px; }
+  .att-featured__body { padding:32px 36px; display:flex; flex-direction:column; }
+  .att-featured__tags { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px 0; }
+  .att-featured__tag { display:inline-block; font-size:11px; font-weight:600; padding:4px 10px; border-radius:5px; background:var(--accent-light); color:var(--accent-dark); }
+  .att-see-page .att-featured h3 { font-size:22px; margin:0 0 12px 0; padding:0; color:var(--text-primary); line-height:1.3; }
+  .att-see-page .att-featured h3 a { color:var(--text-primary); }
+  .att-see-page .att-featured h3 a:hover { color:var(--accent); }
+  .att-featured__desc { font-size:14.5px; color:var(--text-secondary); line-height:1.7; margin:0 0 12px 0; flex:1; }
+  .att-featured__link { font-size:14px; font-weight:600; color:var(--accent); margin-top:auto; }
+
+  /* Standard Article Cards &mdash; 3-col */
+  .att-articles-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .att-article-card { background:var(--bg-white); border-radius:14px; border:1px solid var(--border); overflow:hidden; transition:box-shadow 0.3s,transform 0.3s; display:flex; flex-direction:column; }
+  .att-article-card:hover { box-shadow:0 6px 28px rgba(0,0,0,0.06); transform:translateY(-2px); }
+  .att-article-card__img { width:100%; aspect-ratio:16/10; object-fit:cover; display:block; background:var(--border); }
+  .att-article-card__body { padding:22px 24px; flex:1; display:flex; flex-direction:column; }
+  .att-article-card__tags { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 10px 0; }
+  .att-article-card__tag { display:inline-block; font-size:11px; font-weight:600; padding:4px 10px; border-radius:5px; background:var(--accent-light); color:var(--accent-dark); }
+  .att-see-page .att-article-card h3 { font-size:19px; margin:0 0 10px 0; padding:0; color:var(--text-primary); line-height:1.3; }
+  .att-see-page .att-article-card h3 a { color:var(--text-primary); }
+  .att-see-page .att-article-card h3 a:hover { color:var(--accent); }
+  .att-article-card__desc { font-size:14px; color:var(--text-secondary); line-height:1.7; margin:0 0 11px 0; flex:1; }
+  .att-article-card__link { font-size:14px; font-weight:600; color:var(--accent); margin-top:auto; }
+
+  /* Callout Box */
+  .att-callout { background:var(--bg-warm); border:1px solid var(--border); border-radius:12px; padding:24px 28px; margin:36px 0 0 0; font-size:14px; color:var(--text-secondary); line-height:1.7; }
+  .att-callout strong { color:var(--text-primary); }
+
+  /* Decision Guide */
+  .att-guide-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .att-guide-card { background:var(--bg-warm); border:1px solid var(--border); border-radius:14px; padding:32px 30px; }
+  .att-see-page .att-guide-card h3 { font-size:20px; margin:0 0 12px 0; padding:0; color:var(--text-primary); }
+  .att-guide-card ul { list-style:none; margin:0 0 16px 0; padding:0; }
+  .att-guide-card ul li { font-size:14px; color:var(--text-secondary); line-height:1.6; padding:5px 0 5px 20px; position:relative; }
+  .att-guide-card ul li::before { content:'\2192'; position:absolute; left:0; color:var(--accent); font-weight:700; }
+  .att-guide-card a { color:var(--accent); font-weight:600; }
+  .att-guide-card p { font-size:14px; color:var(--text-secondary); line-height:1.7; margin:0 0 16px 0; }
+  .att-guide-card__rec { font-size:13.5px; color:var(--text-muted); margin:16px 0 0 0; padding:14px 0 0 0; border-top:1px solid var(--border); line-height:1.6; }
+  .att-guide-card__rec strong { color:var(--text-primary); }
+  .att-guide-card__rec a { color:var(--accent); font-weight:600; }
+
+  /* CTA Banner */
+  .att-see-page .att-cta-banner { background:linear-gradient(135deg,var(--accent-dark),var(--accent)); text-align:center; padding:52px 24px; }
+  .att-see-page .att-cta-banner h2 { font-size:clamp(22px,3vw,30px); color:#fff; margin:0 0 12px 0; text-align:center; }
+  .att-see-page .att-cta-banner p { color:rgba(255,255,255,0.8); font-size:15px; line-height:1.65; margin:0 auto 24px auto; max-width:560px; text-align:center; }
+
+  /* FAQ */
+  .att-see-page .att-faq { max-width:920px; margin:0 auto; }
+  .att-see-page .att-faq-item { border:1px solid var(--border); border-radius:10px; overflow:hidden; margin:0 0 8px 0; padding:0; transition:background 0.2s; }
+  .att-see-page .att-faq-item.open { background:var(--bg-warm); }
+  .att-see-page .att-faq-item__q { width:100%; display:flex; align-items:center; justify-content:space-between; padding:18px 22px; margin:0; border:none; background:transparent; cursor:pointer; font-family:'Source Sans 3',sans-serif; font-size:15px; font-weight:600; color:var(--text-primary); text-align:left; line-height:1.4; gap:12px; }
+  .att-see-page .att-faq-item__icon { font-size:20px; color:var(--accent); transition:transform 0.25s; flex-shrink:0; font-weight:300; }
+  .att-see-page .att-faq-item.open .att-faq-item__icon { transform:rotate(45deg); }
+  .att-see-page .att-faq-item__a { display:none; padding:4px 22px 20px; margin:0; font-size:14px; color:var(--text-secondary); line-height:1.72; }
+  .att-see-page .att-faq-item__a span { display:block; margin:0; padding:0; }
+  .att-see-page .att-faq-item.open .att-faq-item__a { display:block; }
+
+  /* Cross-links */
+  .att-crosslinks { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .att-crosslink { display:grid; grid-template-columns:160px 1fr; gap:0; background:var(--bg-white); border:1px solid var(--border); border-radius:14px; overflow:hidden; transition:box-shadow 0.3s; }
+  .att-crosslink:hover { box-shadow:0 6px 28px rgba(0,0,0,0.06); }
+  .att-crosslink__img { width:100%; height:100%; object-fit:cover; display:block; background:var(--border); min-height:140px; }
+  .att-crosslink__body { padding:24px 28px; display:flex; flex-direction:column; justify-content:center; }
+  .att-see-page .att-crosslink__body h3 { font-size:19px; margin:0 0 8px 0; padding:0; color:var(--text-primary); line-height:1.3; }
+  .att-see-page .att-crosslink__body h3 a { color:var(--text-primary); }
+  .att-see-page .att-crosslink__body h3 a:hover { color:var(--accent); }
+  .att-crosslink__desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; margin:0 0 12px 0; }
+  .att-crosslink__link { font-size:14px; font-weight:600; color:var(--accent); }
+
+  /* Responsive */
+  @media (max-width:1024px) { .att-featured { grid-template-columns:300px 1fr; } }
+  @media (max-width:960px) { .att-articles-grid { grid-template-columns:repeat(2,1fr); } .att-guide-grid { grid-template-columns:1fr; } }
+  @media (max-width:768px) {
+    .att-see-page .att-container { padding-left:10px; padding-right:10px; }
+    .att-see-page .att-hero__image-wrap { display:none; }
+    .att-see-page .att-hero__inner { grid-template-columns:1fr; gap:0; }
+    .att-see-page .att-hero__content { padding:28px 0; }
+    .att-see-page .att-section { padding:44px 0; }
+    .att-featured { grid-template-columns:1fr; }
+    .att-featured__img { aspect-ratio:16/9; min-height:auto; }
+    .att-articles-grid { grid-template-columns:1fr; }
+    .att-crosslinks { grid-template-columns:1fr; }
+    .att-crosslink { grid-template-columns:1fr; }
+    .att-crosslink__img { min-height:auto; aspect-ratio:16/9; }
+  }
+
+  @keyframes attFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .att-animate { opacity:0; animation:attFadeUp 0.5s ease-out forwards; }
+  .att-delay-1 { animation-delay:0.1s; } .att-delay-2 { animation-delay:0.2s; } .att-delay-3 { animation-delay:0.3s; }
+</style>
+
+
+<div class="att-see-page">
+
+  <!-- SECTION 1: HERO -->
+  <section class="att-hero">
+    <div class="att-container">
+      <div class="att-hero__inner">
+        <div class="att-hero__content">
+          <div class="att-hero__badge att-animate">What to See</div>
+          <h1 class="att-animate att-delay-1">What to See at Sagrada Fam&iacute;lia</h1>
+          <p class="att-hero__desc att-animate att-delay-2">
+            From Gaud&iacute;&rsquo;s soaring fa&ccedil;ades and kaleidoscopic stained glass to the towers,
+            crypt, and museum &mdash; here are the essential experiences to include in your visit.
+            Some visitors come for the architecture, others for the tower views, the light through the
+            stained glass, or the story of Gaud&iacute;&rsquo;s unfinished masterpiece. Use this guide
+            to choose what to prioritise based on your interests and time.
+          </p>
+          <div class="att-hero__actions att-animate att-delay-3">
+            <a href="#wts-top" class="att-btn att-btn--primary">Top Highlights &rarr;</a>
+            <a href="#wts-faqs" class="att-btn att-btn--outline">Read FAQs</a>
+          </div>
+        </div>
+        <div class="att-hero__image-wrap att-animate att-delay-2">
+          <img class="att-hero__img" src="https://placehold.co/800x600/e8ddd4/8a837c?text=What+to+See%0AHero+Image" alt="Inside Sagrada Fam&iacute;lia" loading="eager" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- SECTION 2: TOP HIGHLIGHTS &mdash; Featured horizontal cards -->
+  <section id="wts-top" class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Top Highlights at Sagrada Fam&iacute;lia</h2>
+        <p>The headline sights and experiences most visitors want to see first.</p>
+      </div>
+
+      <div class="att-featured-grid">
+
+        <div class="att-featured">
+          <img class="att-featured__img" src="https://placehold.co/760x520/e8ddd4/8a837c?text=Interior+%26+Stained+Glass" alt="Interior and stained glass" />
+          <div class="att-featured__body">
+            <div class="att-featured__tags">
+              <span class="att-featured__tag">Must-See</span>
+              <span class="att-featured__tag">Interior</span>
+              <span class="att-featured__tag">Light &amp; Colour</span>
+            </div>
+            <h3><a href="/sagrada-familia-interior/">The Interior &amp; Stained Glass</a></h3>
+            <p class="att-featured__desc">
+              Gaud&iacute; designed the interior as a forest of branching columns bathed in rainbow light from
+              floor-to-ceiling stained glass windows. Morning light illuminates warm reds and oranges on the east
+              side; afternoon brings cool blues and greens on the west. This is the single most breathtaking
+              experience at Sagrada Fam&iacute;lia and the reason most visitors book early morning slots.
+            </p>
+            <a href="/sagrada-familia-interior/" class="att-featured__link">Explore the Interior &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-featured">
+          <img class="att-featured__img" src="https://placehold.co/760x520/e8ddd4/8a837c?text=Tower+Views" alt="Tower views" />
+          <div class="att-featured__body">
+            <div class="att-featured__tags">
+              <span class="att-featured__tag">Panoramic Views</span>
+              <span class="att-featured__tag">Iconic</span>
+              <span class="att-featured__tag">Add-On Ticket</span>
+            </div>
+            <h3><a href="/sagrada-familia-towers/">The Towers</a></h3>
+            <p class="att-featured__desc">
+              Ascend the Nativity or Passion tower by elevator for breathtaking panoramic views of Barcelona,
+              the Mediterranean, and Montju&iuml;c. The spiral staircases down are an architectural experience
+              in themselves. Tower access requires a separate ticket add-on and is not wheelchair accessible.
+            </p>
+            <a href="/sagrada-familia-towers/" class="att-featured__link">Explore the Towers &rarr;</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       ARTICLE SECTIONS — One <section> per entry in article_sections.
+       Each section uses att-articles-grid + att-article-card.
+       EVERY article in article_sections must appear in exactly one section.
+       Do not merge or omit any subgroup — render all of them.
+       ═══════════════════════════════════════════ -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Inside the Building</h2>
+        <p>The core interior experiences and highlights every visitor should see.</p>
+      </div>
+
+      <div class="att-articles-grid">
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="What to see inside" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Interior</span><span class="att-article-card__tag">Guide</span></div>
+            <h3><a href="/what-to-see/inside-complete-guide/">What to see inside: complete guide</a></h3>
+            <p class="att-article-card__desc">A room-by-room guide to the interior, covering the nave, columns, mosaics, and the features that make this structure extraordinary.</p>
+            <a href="/what-to-see/inside-complete-guide/" class="att-article-card__link">Read more &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Upper gallery" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Gallery</span><span class="att-article-card__tag">Mosaics</span></div>
+            <h3><a href="/what-to-see/upper-gallery/">The upper gallery</a></h3>
+            <p class="att-article-card__desc">The upper gallery offers elevated views of the nave and up-close access to mosaics, and is included with most standard entry tickets.</p>
+            <a href="/what-to-see/upper-gallery/" class="att-article-card__link">Read more &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Hidden details" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Secrets</span><span class="att-article-card__tag">Details</span></div>
+            <h3><a href="/what-to-see/hidden-details/">Hidden details most visitors miss</a></h3>
+            <p class="att-article-card__desc">Lesser-known details, symbols, and features scattered throughout the building that reveal the depth of its design and history.</p>
+            <a href="/what-to-see/hidden-details/" class="att-article-card__link">Read more &rarr;</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Second article section example — History & Architecture -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>History &amp; Architecture</h2>
+        <p>The story behind this extraordinary structure — its origins, design, and what makes it unique.</p>
+      </div>
+
+      <div class="att-articles-grid">
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="History" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">History</span><span class="att-article-card__tag">Timeline</span></div>
+            <h3><a href="/what-to-see/history/">History of the attraction</a></h3>
+            <p class="att-article-card__desc">A timeline of the key events, rulers, and transformations that shaped this building across centuries of history.</p>
+            <a href="/what-to-see/history/" class="att-article-card__link">Read more &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Architecture" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Architecture</span><span class="att-article-card__tag">Engineering</span></div>
+            <h3><a href="/what-to-see/architecture/">Architecture: what makes it extraordinary</a></h3>
+            <p class="att-article-card__desc">An in-depth look at the structural and design elements that make this building one of the world's great architectural achievements.</p>
+            <a href="/what-to-see/architecture/" class="att-article-card__link">Read more &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Mosaics" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Mosaics</span><span class="att-article-card__tag">Art</span></div>
+            <h3><a href="/what-to-see/mosaics/">The mosaics: history &amp; where to find them</a></h3>
+            <p class="att-article-card__desc">A guide to the famous mosaics — their subjects, locations, artistic significance, and the best way to view them during your visit.</p>
+            <a href="/what-to-see/mosaics/" class="att-article-card__link">Read more &rarr;</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- SECTION 6: HOW TO CHOOSE WHAT TO SEE -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>How to Choose What to See</h2>
+        <p>A quick guide based on your interests and visit style.</p>
+      </div>
+
+      <div class="att-guide-grid">
+
+        <div class="att-guide-card">
+          <h3>Best for First-Time Visitors</h3>
+          <ul>
+            <li>Start with the <a href="/sagrada-familia-interior/">interior and stained glass</a> &mdash; the single most impressive experience</li>
+            <li>Walk both the <a href="/nativity-facade-sagrada-familia/">Nativity</a> and <a href="/passion-facade-sagrada-familia/">Passion</a> fa&ccedil;ades to see the contrast</li>
+            <li>Add <a href="/sagrada-familia-towers/">tower access</a> for panoramic Barcelona views</li>
+            <li>Visit the <a href="/sagrada-familia-crypt/">crypt</a> and <a href="/sagrada-familia-museum/">museum</a> to understand Gaud&iacute;&rsquo;s vision</li>
+          </ul>
+          <div class="att-guide-card__rec">
+            <strong>Recommended:</strong> <a href="/guided-tour-with-tower/">Guided Tour + Tower Access</a> &mdash;
+            an expert guide explains the symbolism you&rsquo;d miss on your own, plus tower views are unforgettable.
+          </div>
+        </div>
+
+        <div class="att-guide-card">
+          <h3>Best for Architecture &amp; History Lovers</h3>
+          <ul>
+            <li>Deep-dive into the <a href="/sagrada-familia-interior/">interior columns and vaults</a> designed as a stone forest</li>
+            <li>Study the <a href="/nativity-facade-sagrada-familia/">Nativity Fa&ccedil;ade</a> carvings &mdash; Gaud&iacute;&rsquo;s most personal work</li>
+            <li>Explore the <a href="/sagrada-familia-museum/">museum</a> for original models and construction drawings</li>
+            <li>Read about the <a href="/tower-of-jesus/">Tower of Jesus</a> and the ongoing 140-year build</li>
+          </ul>
+          <div class="att-guide-card__rec">
+            <strong>Recommended:</strong> <a href="/private-small-group-tours/">Private Tour</a> &mdash;
+            a dedicated guide adapts to your interests and goes deeper into Gaud&iacute;&rsquo;s methods and symbolism.
+          </div>
+        </div>
+
+        <div class="att-guide-card">
+          <h3>Best for Photographers</h3>
+          <ul>
+            <li>Book an early morning slot for warm east-facing stained glass light</li>
+            <li>Or visit late afternoon for cool blue and green west-side tones</li>
+            <li>The <a href="/sagrada-familia-towers/">tower spiral staircases</a> create striking geometric compositions</li>
+            <li>Both fa&ccedil;ades offer dramatic exterior detail shots</li>
+          </ul>
+          <div class="att-guide-card__rec">
+            <strong>Tip:</strong> Personal photography is allowed. Tripods and flash are not permitted inside.
+          </div>
+        </div>
+
+        <div class="att-guide-card">
+          <h3>Best for Spiritual Visitors</h3>
+          <ul>
+            <li>Attend <a href="/holy-mass-at-sagrada-familia/">Holy Mass</a> &mdash; free and held regularly</li>
+            <li>Visit the <a href="/altar-and-apse/">altar and apse</a> to see Gaud&iacute;&rsquo;s sacred design intent</li>
+            <li>Pay respects at <a href="/sagrada-familia-crypt/">Gaud&iacute;&rsquo;s tomb</a> in the crypt</li>
+            <li>The <a href="/stained-glass-windows/">stained glass</a> creates a contemplative atmosphere throughout the day</li>
+          </ul>
+          <div class="att-guide-card__rec">
+            <strong>Note:</strong> Sagrada Fam&iacute;lia is an active place of worship. Respectful dress and behaviour are required.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- SECTION: CONTINUE EXPLORING -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Continue Exploring Sagrada Fam&iacute;lia</h2>
+        <p>Book your tickets and plan the practical details of your visit.</p>
+      </div>
+
+      <div class="att-crosslinks">
+
+        <div class="att-crosslink">
+          <img class="att-crosslink__img" src="https://placehold.co/320x280/e8ddd4/8a837c?text=Tickets+%26+Tours" alt="Tickets &amp; Tours" />
+          <div class="att-crosslink__body">
+            <h3><a href="/tickets/">Tickets &amp; Tours</a></h3>
+            <p class="att-crosslink__desc">Compare skip-the-line entry, guided tours, tower access, private experiences, combo deals, and evening visits.</p>
+            <a href="/tickets/" class="att-crosslink__link">Explore ticket options &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-crosslink">
+          <img class="att-crosslink__img" src="https://placehold.co/320x280/e8ddd4/8a837c?text=Plan+Your+Visit" alt="Plan Your Visit" />
+          <div class="att-crosslink__body">
+            <h3><a href="/plan-your-visit/">Plan Your Visit</a></h3>
+            <p class="att-crosslink__desc">Opening hours, how to reach, dress code, entrances, accessibility, parking, and practical tips for a smooth visit.</p>
+            <a href="/plan-your-visit/" class="att-crosslink__link">Read the visitor guide &rarr;</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- SECTION 7: CTA BANNER -->
+  <section class="att-cta-banner">
+    <h2>Ready to see Sagrada Fam&iacute;lia for yourself?</h2>
+    <p>Book your tickets in advance and choose the experience that matches your interests.</p>
+    <a href="/tickets/" class="att-btn att-btn--white">View All Tickets &amp; Tours</a>
+  </section>
+
+
+  <!-- SECTION 8: FAQs -->
+  <section id="wts-faqs" class="att-section">
+    <div class="att-container">
+      <div class="att-section-header att-section-header--center">
+        <h2>Frequently Asked Questions</h2>
+        <p>Common questions about what to see and prioritise at Sagrada Fam&iacute;lia.</p>
+      </div>
+
+      <div class="att-faq" itemscope itemtype="https://schema.org/FAQPage">
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">What should I see first at Sagrada Fam&iacute;lia?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Start with the interior and stained glass &mdash; it is the most breathtaking experience at the basilica and sets the context for everything else you will see, including the fa&ccedil;ades, towers, and museum.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">What is the difference between the Nativity and Passion fa&ccedil;ades?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">The Nativity Fa&ccedil;ade, completed in Gaud&iacute;&rsquo;s lifetime, is ornate and nature-inspired, depicting Christ&rsquo;s birth. The Passion Fa&ccedil;ade, by sculptor Subirachs, is angular and austere, depicting Christ&rsquo;s suffering. They offer dramatically different visual and emotional experiences.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">Is the tower visit worth adding?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Yes, if you enjoy panoramic views and are comfortable with heights. The elevator takes you up and you walk down via a narrow spiral staircase. Tower access requires a separate ticket and is not wheelchair accessible.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">Can I attend Mass at Sagrada Fam&iacute;lia?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Yes, Mass is held regularly and is free to attend. You do not need a standard entry ticket. Check the schedule and registration process in advance as availability can be limited.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">Is the museum included with the entry ticket?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Yes, the museum is included with most standard entry tickets and guided tours. It contains original models, drawings, and photographs documenting the basilica&rsquo;s 140+ year construction history.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">When is the best time for stained glass photography?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Early morning (around 9 AM) catches warm reds, oranges, and golds through the east-facing windows. Late afternoon (after 4 PM) brings cool blues and greens through the west side. Both times also have smaller crowds.</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="att-section-link">
+        <a href="/frequently-asked-questions/">View All FAQs About Sagrada Fam&iacute;lia &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+
+<script>
+(function() {
+  'use strict';
+  document.querySelectorAll('.att-see-page .att-faq-item__q').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var item = this.parentElement;
+      var wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.att-see-page .att-faq-item').forEach(function(el) { el.classList.remove('open'); });
+      if (!wasOpen) item.classList.add('open');
+    });
+  });
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) { entry.target.style.opacity='1'; entry.target.style.transform='translateY(0)'; observer.unobserve(entry.target); }
+      });
+    }, { threshold:0.1 });
+    document.querySelectorAll('.att-see-page .att-featured, .att-see-page .att-article-card, .att-see-page .att-faq-item, .att-see-page .att-guide-card').forEach(function(el) {
+      el.style.opacity='0'; el.style.transform='translateY(16px)'; el.style.transition='opacity 0.45s ease-out, transform 0.45s ease-out';
+      observer.observe(el);
+    });
+  }
+})();
+</script>

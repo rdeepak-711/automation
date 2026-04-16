@@ -1,0 +1,957 @@
+<!--
+  ============================================================
+  ATTRACTION HOMEPAGE TEMPLATE &mdash; Body Content Only
+  Paste into WordPress Custom HTML block or page template.
+  
+  TO CUSTOMIZE PER ATTRACTION:
+  1. Update CSS variables in <style> (colors)
+  2. Replace all text content, links, prices, images
+  3. Structure/layout stays the same across all sites
+  ============================================================
+-->
+
+<style>
+  /* ── THEME VARIABLES &mdash; Change per attraction ── */
+  :root {
+    --accent: #ff0000;
+    --accent-light: #ffe5e5;
+    --accent-dark: #cc0000;
+    --accent-glow: rgba(255, 0, 0, 0.2);
+    --text-primary: #2a2725;
+    --text-secondary: #5a5550;
+    --text-muted: #8a837c;
+    --bg-warm: #faf8f6;
+    --bg-white: #ffffff;
+    --border: #ece8e4;
+    --border-light: #f4f2f0;
+  }
+
+  /* ── FONTS ── */
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+
+  .att-homepage,
+  .att-homepage *,
+  .att-homepage *::before,
+  .att-homepage *::after { box-sizing: border-box; }
+
+  /* Reset only our own elements &mdash; not WP wrappers */
+  .att-homepage .att-hero h1,
+  .att-homepage .att-hero p,
+  .att-homepage .att-section-header h2,
+  .att-homepage .att-section-header p,
+  .att-homepage .att-ticket h3,
+  .att-homepage .att-ticket__bullets,
+  .att-homepage .att-highlight__body h3,
+  .att-homepage .att-cta-banner h2 { margin: 0; padding: 0; }
+  .att-homepage {
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    color: var(--text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .att-homepage h1, .att-homepage h2, .att-homepage h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    line-height: 1.2;
+  }
+  /* Only remove underline on links INSIDE the template sections, not globally */
+  .att-homepage .att-hero a,
+  .att-homepage .att-section a,
+  .att-homepage .att-cta-banner a,
+  .att-homepage .att-ticket a,
+  .att-homepage .att-highlight a,
+  .att-homepage .att-faq a,
+  .att-homepage .att-section-link a,
+  .att-homepage .att-tip a { text-decoration: none; }
+
+  /* ── UTILITIES ── */
+  .att-container { max-width: 100%; margin: 0 auto; padding-left: 48px; padding-right: 48px; }
+  .att-section { padding: 60px 0; }
+  .att-section--alt { background: var(--bg-white); }
+
+  .att-homepage .att-section-header { margin: 0 0 36px 0; }
+  .att-homepage .att-section-header h2 {
+    font-size: clamp(24px, 3.5vw, 34px);
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+    padding: 0;
+  }
+  .att-homepage .att-section-header p { font-size: 15px; color: var(--text-muted); margin: 0; padding: 0; }
+  .att-homepage .att-section-header::after {
+    content: '';
+    display: block;
+    width: 48px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 3px;
+    margin-top: 14px;
+  }
+  .att-section-header--center { text-align: center; }
+  .att-section-header--center::after { margin-left: auto; margin-right: auto; }
+
+  /* ── BUTTONS ── */
+  .att-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'Source Sans 3', sans-serif;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s, background 0.2s, color 0.2s;
+    border: none;
+  }
+  .att-btn:hover { transform: translateY(-1px); }
+  .att-btn--primary { background: var(--accent); color: #fff; }
+  .att-btn--primary:hover { background: var(--accent-dark); color: #fff; }
+  .att-btn--outline {
+    background: transparent;
+    color: var(--accent);
+    border: 2px solid var(--accent);
+  }
+  .att-btn--outline:hover { background: var(--accent); color: #fff; }
+  .att-btn--accent { background: var(--accent); color: #fff; }
+  .att-btn--accent:hover { opacity: 0.9; color: #fff; }
+  .att-btn--white { background: #fff; color: var(--accent); font-weight: 700; box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+  .att-btn--white:hover { color: var(--accent); }
+
+  /* ══════════════════════════════════
+     HERO &mdash; Split layout, light bg
+     ══════════════════════════════════ */
+  .att-hero {
+    background: var(--bg-white);
+    overflow: hidden;
+  }
+  .att-hero__inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: center;
+    min-height: 480px;
+  }
+  .att-hero__content { padding: 56px 0; }
+  .att-hero__badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 5px 14px;
+    border-radius: 4px;
+    margin-bottom: 18px;
+  }
+  .att-homepage .att-hero h1 {
+    font-size: clamp(30px, 4.5vw, 48px);
+    color: var(--text-primary);
+    margin: 0 0 16px 0;
+    padding: 0;
+  }
+  .att-homepage .att-hero__desc {
+    font-size: 15.5px;
+    color: var(--text-secondary);
+    line-height: 1.78;
+    margin: 0 0 28px 0;
+    padding: 0;
+    max-width: 540px;
+  }
+  .att-hero__actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+  .att-hero__image-wrap {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    background: var(--border);
+  }
+  .att-hero__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .att-hero__img-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 16px;
+    background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+  }
+
+  /* ══════════════════════════════════
+     TICKET CARDS &mdash; 3x2 grid, 6 cards
+     ══════════════════════════════════ */
+  .att-tickets-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .att-ticket {
+    background: var(--bg-white);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.3s, transform 0.3s;
+  }
+  .att-ticket:hover {
+    box-shadow: 0 8px 36px rgba(0,0,0,0.07);
+    transform: translateY(-3px);
+  }
+  .att-ticket__img {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    display: block;
+    background: var(--border);
+  }
+  .att-ticket__body { padding: 20px 22px 0; flex: 1; }
+  .att-ticket__tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 4px 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+  }
+  .att-ticket__tag--popular,
+  .att-ticket__tag--value,
+  .att-ticket__tag--premium,
+  .att-ticket__tag--combo,
+  .att-ticket__tag--special,
+  .att-ticket__tag--guided { background: var(--accent-light); color: var(--accent-dark); }
+  .att-homepage .att-ticket h3 { font-size: 18px; margin: 0 0 10px 0; padding: 0; line-height: 1.3; }
+  .att-homepage .att-ticket__price { display: flex; align-items: baseline; gap: 6px; margin: 0 0 14px 0; }
+  .att-homepage .att-ticket__price-label { font-size: 12px; color: var(--text-muted); }
+  .att-homepage .att-ticket__price-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .att-homepage .att-ticket__bullets { list-style: none; margin: 0 0 14px 0; padding: 0; }
+  .att-homepage .att-ticket__bullets li {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    padding: 4px 0 4px 18px;
+    position: relative;
+  }
+  .att-ticket__bullets li::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 10px;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.45;
+  }
+  .att-ticket__footer { padding: 0 22px 20px; margin-top: auto; }
+  .att-ticket__meta { display: flex; gap: 14px; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+  .att-ticket__cta {
+    display: block;
+    text-align: center;
+    background: var(--accent);
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Source Sans 3', sans-serif;
+    transition: opacity 0.2s;
+    margin-bottom: 6px;
+  }
+  .att-ticket__cta:hover { opacity: 0.88; color: #fff; }
+  .att-ticket__more { display: block; text-align: center; font-size: 13px; color: var(--accent); font-weight: 600; padding: 4px 0; }
+
+  /* ══════════════════════════════════
+     SECTION "VIEW ALL" LINK
+     ══════════════════════════════════ */
+  .att-homepage .att-section-link {
+    text-align: center;
+    margin: 36px 0 0 0;
+    padding: 0;
+  }
+  .att-homepage .att-section-link a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent);
+    padding: 12px 28px;
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .att-homepage .att-section-link a:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* ══════════════════════════════════
+     PLAN YOUR VISIT &mdash; 6 image cards
+     (reuses .att-highlights-grid and .att-highlight styles)
+     ══════════════════════════════════ */
+
+  /* ══════════════════════════════════
+     THINGS TO KNOW &mdash; Tip cards
+     ══════════════════════════════════ */
+  .att-tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+  .att-homepage .att-tip {
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.65;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .att-homepage .att-tip__icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .att-homepage .att-tip strong { color: var(--text-primary); font-weight: 700; }
+
+  /* ══════════════════════════════════
+     WHAT TO SEE &mdash; Cards with images
+     ══════════════════════════════════ */
+  .att-highlights-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .att-highlight {
+    background: var(--bg-white);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: box-shadow 0.3s, transform 0.3s;
+  }
+  .att-highlight:hover {
+    box-shadow: 0 6px 28px rgba(0,0,0,0.06);
+    transform: translateY(-2px);
+  }
+  .att-highlight__img {
+    width: 100%;
+    aspect-ratio: 16/10;
+    object-fit: cover;
+    display: block;
+    background: var(--border);
+  }
+  .att-homepage .att-highlight__body { padding: 22px 24px; }
+  .att-homepage .att-highlight__body h3 { font-size: 20px; margin: 0 0 10px 0; }
+  .att-homepage .att-highlight__body p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin: 0 0 14px 0; }
+  .att-homepage .att-highlight__body a { font-size: 14px; font-weight: 600; color: var(--accent); }
+
+  /* ══════════════════════════════════
+     CTA BANNER
+     ══════════════════════════════════ */
+  .att-homepage .att-cta-banner {
+    background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+    text-align: center;
+    padding: 52px 24px;
+  }
+  .att-homepage .att-cta-banner h2 { font-size: clamp(22px, 3vw, 30px); color: #fff; margin: 0 0 12px 0; text-align: center; }
+  .att-homepage .att-cta-banner p {
+    color: rgba(255,255,255,0.8);
+    font-size: 15px;
+    line-height: 1.65;
+    margin: 0 auto 24px auto;
+    max-width: 560px;
+    text-align: center;
+  }
+
+  /* ══════════════════════════════════
+     FAQ &mdash; wider, centered header
+     ══════════════════════════════════ */
+  .att-homepage .att-faq { max-width: 920px; margin: 0 auto; }
+  .att-homepage .att-faq-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 0 0 8px 0;
+    padding: 0;
+    transition: background 0.2s;
+  }
+  .att-homepage .att-faq-item.open { background: var(--bg-warm); }
+  .att-homepage .att-faq-item__q {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    margin: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: left;
+    line-height: 1.4;
+    gap: 12px;
+  }
+  .att-homepage .att-faq-item__icon {
+    font-size: 20px;
+    color: var(--accent);
+    transition: transform 0.25s;
+    flex-shrink: 0;
+    font-weight: 300;
+  }
+  .att-homepage .att-faq-item.open .att-faq-item__icon { transform: rotate(45deg); }
+  .att-homepage .att-faq-item__a {
+    display: none;
+    padding: 4px 22px 20px;
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.72;
+  }
+  .att-homepage .att-faq-item__a span {
+    display: block;
+    margin: 0;
+    padding: 0;
+  }
+  .att-homepage .att-faq-item.open .att-faq-item__a { display: block; }
+
+  /* ══════════════════════════════════
+     RESPONSIVE
+     ══════════════════════════════════ */
+  @media (max-width: 960px) {
+    .att-tickets-grid { grid-template-columns: repeat(2, 1fr); }
+    .att-highlights-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 768px) {
+    .att-container { padding-left: 10px; padding-right: 10px; }
+    .att-hero__image-wrap { display: none; }
+    .att-hero__inner { grid-template-columns: 1fr; gap: 0; }
+    .att-hero__content { padding: 28px 0; }
+    .att-section { padding: 44px 0; }
+    .att-tickets-grid { grid-template-columns: 1fr; }
+    .att-highlights-grid { grid-template-columns: 1fr; }
+    .att-tips-grid { grid-template-columns: 1fr; }
+
+    /* Hide tip icons on mobile */
+    .att-tip__icon { display: none; }
+  }
+
+  /* ── ANIMATION ── */
+  @keyframes attFadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .att-animate { opacity: 0; animation: attFadeUp 0.5s ease-out forwards; }
+  .att-delay-1 { animation-delay: 0.1s; }
+  .att-delay-2 { animation-delay: 0.2s; }
+  .att-delay-3 { animation-delay: 0.3s; }
+</style>
+
+
+<div class="att-homepage">
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 1: HERO &mdash; Split layout, light bg
+       ═══════════════════════════════════════════ -->
+  <section class="att-hero">
+    <div class="att-container">
+      <div class="att-hero__inner">
+        <div class="att-hero__content">
+          <div class="att-hero__badge att-animate">Barcelona, Spain</div>
+          <h1 class="att-animate att-delay-1">Sagrada Fam&iacute;lia &mdash; Tickets, Tours &amp; Visitor Guide</h1>
+          <p class="att-hero__desc att-animate att-delay-2">
+            Antoni Gaud&iacute;'s visionary basilica is Barcelona's most iconic landmark. Marvel at the breathtaking
+            fa&ccedil;ades, soaring towers, and kaleidoscopic stained glass interiors of this UNESCO World Heritage
+            site &mdash; over 140 years in the making and still under construction.
+          </p>
+          <div class="att-hero__actions att-animate att-delay-3">
+            <a href="#att-tickets" class="att-btn att-btn--primary">View Tickets &mdash; from &euro;26 &rarr;</a>
+            <a href="#att-plan" class="att-btn att-btn--outline">Plan Your Visit</a>
+          </div>
+        </div>
+        <div class="att-hero__image-wrap att-animate att-delay-2">
+          <img class="att-hero__img" src="https://placehold.co/800x600/e8ddd4/8a837c?text=Hero+Image%0A800+x+600" alt="Sagrada Fam&iacute;lia exterior" loading="eager" />
+          <div class="att-hero__img-caption">📍 Sagrada Fam&iacute;lia, Barcelona</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 2: TOP TICKETS &mdash; 6 cards with images
+       ═══════════════════════════════════════════ -->
+  <section id="att-tickets" class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Top Sagrada Fam&iacute;lia Tickets</h2>
+        <p>Compare options, pick the best ticket for your visit, and book instantly.</p>
+      </div>
+
+      <div class="att-tickets-grid">
+
+        <div class="att-ticket">
+          <img class="att-ticket__img" src="https://placehold.co/600x340/e8ddd4/8a837c?text=Ticket+Image+1" alt="Skip-the-line entry" />
+          <div class="att-ticket__body">
+            <span class="att-ticket__tag att-ticket__tag--popular">Most Popular</span>
+            <h3>Skip-the-Line Entry Ticket</h3>
+            <div class="att-ticket__price">
+              <span class="att-ticket__price-label">From</span>
+              <span class="att-ticket__price-value">&euro;26</span>
+            </div>
+            <ul class="att-ticket__bullets">
+              <li>Fast-track entry to Sagrada Fam&iacute;lia basilica</li>
+              <li>Includes audio guide in 17 languages</li>
+              <li>Choose your preferred time slot</li>
+              <li>Access to the Sagrada Fam&iacute;lia museum</li>
+            </ul>
+          </div>
+          <div class="att-ticket__footer">
+            <div class="att-ticket__meta"><span>⏱ Flexible</span><span>⚡ Instant Confirmation</span></div>
+            <a href="#" class="att-ticket__cta">Buy This Ticket</a>
+            <a href="/skip-the-line-entry-tickets/" class="att-ticket__more">More Info &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-ticket">
+          <img class="att-ticket__img" src="https://placehold.co/600x340/e8ddd4/8a837c?text=Ticket+Image+2" alt="Guided tour with towers" />
+          <div class="att-ticket__body">
+            <span class="att-ticket__tag att-ticket__tag--value">Best Value</span>
+            <h3>Guided Tour with Tower Access</h3>
+            <div class="att-ticket__price">
+              <span class="att-ticket__price-label">From</span>
+              <span class="att-ticket__price-value">&euro;50</span>
+            </div>
+            <ul class="att-ticket__bullets">
+              <li>Expert-led guided tour of the basilica</li>
+              <li>Tower access with panoramic city views</li>
+              <li>Small groups of max 20 people</li>
+              <li>Personal headset so you hear every detail</li>
+            </ul>
+          </div>
+          <div class="att-ticket__footer">
+            <div class="att-ticket__meta"><span>⏱ 1h 30m</span><span>⚡ Instant Confirmation</span></div>
+            <a href="#" class="att-ticket__cta">Buy This Ticket</a>
+            <a href="/guided-tour-tower-access/" class="att-ticket__more">More Info &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-ticket">
+          <img class="att-ticket__img" src="https://placehold.co/600x340/e8ddd4/8a837c?text=Ticket+Image+3" alt="Private tour" />
+          <div class="att-ticket__body">
+            <span class="att-ticket__tag att-ticket__tag--premium">Premium</span>
+            <h3>Private Tour Experience</h3>
+            <div class="att-ticket__price">
+              <span class="att-ticket__price-label">From</span>
+              <span class="att-ticket__price-value">&euro;95</span>
+            </div>
+            <ul class="att-ticket__bullets">
+              <li>Exclusive private guide just for your group</li>
+              <li>Skip-the-line access + both tower options</li>
+              <li>Flexible scheduling and personalized pace</li>
+              <li>Deep-dive into Gaud&iacute;'s symbolism and vision</li>
+            </ul>
+          </div>
+          <div class="att-ticket__footer">
+            <div class="att-ticket__meta"><span>⏱ 2 hours</span><span>⚡ Instant Confirmation</span></div>
+            <a href="#" class="att-ticket__cta">Buy This Ticket</a>
+            <a href="/private-tour/" class="att-ticket__more">More Info &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-ticket">
+          <img class="att-ticket__img" src="https://placehold.co/600x340/e8ddd4/8a837c?text=Ticket+Image+4" alt="Sagrada + Park G&uuml;ell combo" />
+          <div class="att-ticket__body">
+            <span class="att-ticket__tag att-ticket__tag--combo">Combo Deal</span>
+            <h3>Sagrada Fam&iacute;lia + Park G&uuml;ell Combo</h3>
+            <div class="att-ticket__price">
+              <span class="att-ticket__price-label">From</span>
+              <span class="att-ticket__price-value">&euro;72</span>
+            </div>
+            <ul class="att-ticket__bullets">
+              <li>Two of Gaud&iacute;'s masterpieces in one ticket</li>
+              <li>Skip-the-line at both attractions</li>
+              <li>Audio guide included for both sites</li>
+              <li>Save &euro;12 vs buying tickets separately</li>
+            </ul>
+          </div>
+          <div class="att-ticket__footer">
+            <div class="att-ticket__meta"><span>⏱ Full day</span><span>⚡ Instant Confirmation</span></div>
+            <a href="#" class="att-ticket__cta">Buy This Ticket</a>
+            <a href="/sagrada-familia-park-guell-combo/" class="att-ticket__more">More Info &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-ticket">
+          <img class="att-ticket__img" src="https://placehold.co/600x340/e8ddd4/8a837c?text=Ticket+Image+5" alt="Evening tour" />
+          <div class="att-ticket__body">
+            <span class="att-ticket__tag att-ticket__tag--special">Evening Tour</span>
+            <h3>Sagrada Fam&iacute;lia Evening Experience</h3>
+            <div class="att-ticket__price">
+              <span class="att-ticket__price-label">From</span>
+              <span class="att-ticket__price-value">&euro;49</span>
+            </div>
+            <ul class="att-ticket__bullets">
+              <li>Exclusive evening access after regular hours</li>
+              <li>Smaller crowds for a more intimate visit</li>
+              <li>Stunning sunset light through stained glass</li>
+              <li>Expert guide shares after-hours stories</li>
+            </ul>
+          </div>
+          <div class="att-ticket__footer">
+            <div class="att-ticket__meta"><span>⏱ 1h 30m</span><span>⚡ Instant Confirmation</span></div>
+            <a href="#" class="att-ticket__cta">Buy This Ticket</a>
+            <a href="/evening-tour/" class="att-ticket__more">More Info &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-ticket">
+          <img class="att-ticket__img" src="https://placehold.co/600x340/e8ddd4/8a837c?text=Ticket+Image+6" alt="Barcelona day tour" />
+          <div class="att-ticket__body">
+            <span class="att-ticket__tag att-ticket__tag--guided">Full Day</span>
+            <h3>Sagrada Fam&iacute;lia + Barcelona Highlights</h3>
+            <div class="att-ticket__price">
+              <span class="att-ticket__price-label">From</span>
+              <span class="att-ticket__price-value">&euro;110</span>
+            </div>
+            <ul class="att-ticket__bullets">
+              <li>Full-day guided tour of top Barcelona sites</li>
+              <li>Skip-the-line Sagrada + La Pedrera + Park G&uuml;ell</li>
+              <li>Air-conditioned transport between stops</li>
+              <li>Small group of maximum 15 people</li>
+            </ul>
+          </div>
+          <div class="att-ticket__footer">
+            <div class="att-ticket__meta"><span>⏱ 7 hours</span><span>⚡ Instant Confirmation</span></div>
+            <a href="#" class="att-ticket__cta">Buy This Ticket</a>
+            <a href="/barcelona-highlights-tour/" class="att-ticket__more">More Info &rarr;</a>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="att-section-link">
+        <a href="/tickets/">View All Tickets &amp; Tours &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 3: PLAN YOUR VISIT &mdash; 6 image cards
+       ═══════════════════════════════════════════ -->
+  <section id="att-plan" class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Planning Your Visit to Sagrada Fam&iacute;lia</h2>
+        <p>Everything you need to know before you go.</p>
+      </div>
+
+      <div class="att-highlights-grid">
+        <div class="att-highlight">
+          <img class="att-highlight__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Opening+Hours" alt="Opening hours" />
+          <div class="att-highlight__body">
+            <h3>Opening Hours</h3>
+            <p>Sagrada Fam&iacute;lia is open daily with seasonal hours ranging from 9 AM&ndash;6 PM in winter to 9 AM&ndash;8 PM in summer. Last entry is 30 minutes before closing.</p>
+            <a href="/opening-hours/">Know more &rarr;</a>
+          </div>
+        </div>
+        <div class="att-highlight">
+          <img class="att-highlight__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Best+Time" alt="Best time to visit" />
+          <div class="att-highlight__body">
+            <h3>Best Time to Visit</h3>
+            <p>Early mornings offer the smallest crowds and magical light through the east stained glass. Late afternoon brings warm golden tones. Weekdays and winter months are quietest.</p>
+            <a href="/best-time-to-visit/">Know more &rarr;</a>
+          </div>
+        </div>
+        <div class="att-highlight">
+          <img class="att-highlight__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Getting+There" alt="How to get there" />
+          <div class="att-highlight__body">
+            <h3>Getting There</h3>
+            <p>Take Metro L2 or L5 to Sagrada Fam&iacute;lia station &mdash; the exit leads right to the basilica. Buses 19, 33, 34, 43, 44, and 50 also stop nearby.</p>
+            <a href="/how-to-reach/">Know more &rarr;</a>
+          </div>
+        </div>
+        <div class="att-highlight">
+          <img class="att-highlight__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Entrances" alt="Entrance information" />
+          <div class="att-highlight__body">
+            <h3>Entrances</h3>
+            <p>Two entrances serve visitors &mdash; Nativity Fa&ccedil;ade and Passion Fa&ccedil;ade. Ticket holders use Nativity Fa&ccedil;ade. Arrive 15 minutes early. Security screening and bag checks required.</p>
+            <a href="/entrances/">Know more &rarr;</a>
+          </div>
+        </div>
+        <div class="att-highlight">
+          <img class="att-highlight__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Dress+Code" alt="Dress code" />
+          <div class="att-highlight__body">
+            <h3>Dress Code</h3>
+            <p>As an active place of worship, shoulders and knees must be covered. No swimwear, transparent clothes, or hats. Non-compliant visitors may be denied entry.</p>
+            <a href="/dress-code/">Know more &rarr;</a>
+          </div>
+        </div>
+        <div class="att-highlight">
+          <img class="att-highlight__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Amenities" alt="Amenities" />
+          <div class="att-highlight__body">
+            <h3>Amenities</h3>
+            <p>Restrooms, baby changing facilities, a gift shop, and refreshment areas are available. The basilica interior is wheelchair accessible, though towers are not.</p>
+            <a href="/amenities/">Know more &rarr;</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="att-section-link">
+        <a href="/plan-your-visit/">View Complete Visitor Guide &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 5: THINGS TO KNOW &mdash; Bold keywords
+       ═══════════════════════════════════════════ -->
+  <section class="att-section att-section--alt">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Things to Know Before You Book</h2>
+        <p>Practical tips to make the most of your visit.</p>
+      </div>
+      <div class="att-tips-grid">
+        <div class="att-tip">
+          <span class="att-tip__icon">🎫</span>
+          <span><strong>Book online in advance &mdash;</strong> Popular time slots sell out days ahead, especially April&ndash;October. Always book online to guarantee your preferred time.</span>
+        </div>
+        <div class="att-tip">
+          <span class="att-tip__icon">👗</span>
+          <span><strong>Dress code enforced &mdash;</strong> Shoulders and knees must be covered. No swimwear, transparent clothes, or hats inside the basilica.</span>
+        </div>
+        <div class="att-tip">
+          <span class="att-tip__icon">⏰</span>
+          <span><strong>Arrive 15 minutes early &mdash;</strong> Entry is at your booked time slot only. Latecomers are not admitted and no refunds are provided.</span>
+        </div>
+        <div class="att-tip">
+          <span class="att-tip__icon">🗼</span>
+          <span><strong>Tower access is separate &mdash;</strong> Tower visits require an add-on. They are not wheelchair accessible &mdash; access is via elevator up and spiral stairs down.</span>
+        </div>
+        <div class="att-tip">
+          <span class="att-tip__icon">📸</span>
+          <span><strong>Photography allowed &mdash;</strong> Personal photography is permitted inside. Tripods, flash, and commercial photography require advance permission.</span>
+        </div>
+        <div class="att-tip">
+          <span class="att-tip__icon">🔄</span>
+          <span><strong>Cancellation policy &mdash;</strong> Most tickets are non-refundable. Some offer free cancellation up to 24 hours before &mdash; check the policy before booking.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 6: WHAT TO SEE &mdash; Image cards
+       ═══════════════════════════════════════════ -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>What to See at Sagrada Fam&iacute;lia</h2>
+        <p>Don't miss these highlights during your visit.</p>
+      </div>
+      <div class="att-highlights-grid">
+        <div class="att-highlight">
+          <img class="att-highlight__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Nativity+Facade" alt="Nativity Fa&ccedil;ade" />
+          <div class="att-highlight__body">
+            <h3>The Nativity Fa&ccedil;ade</h3>
+            <p>The only fa&ccedil;ade completed in Gaud&iacute;'s lifetime, depicting the birth of Jesus with incredibly detailed stone carvings of plants, animals, and celestial bodies. A UNESCO World Heritage highlight.</p>
+            <a href="/nativity-facade/">Know more &rarr;</a>
+          </div>
+        </div>
+        <div class="att-highlight">
+          <img class="att-highlight__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Tower+Views" alt="Tower Views" />
+          <div class="att-highlight__body">
+            <h3>Tower Views</h3>
+            <p>Ascend the Nativity or Passion towers by elevator for breathtaking panoramic views of Barcelona, the Mediterranean, and Montju&iuml;c. The spiral staircases down are an experience in themselves.</p>
+            <a href="/tower-access/">Know more &rarr;</a>
+          </div>
+        </div>
+        <div class="att-highlight">
+          <img class="att-highlight__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Interior+%26+Glass" alt="Interior and stained glass" />
+          <div class="att-highlight__body">
+            <h3>The Interior & Stained Glass</h3>
+            <p>Gaud&iacute; designed the interior as a forest of branching columns bathed in rainbow light from floor-to-ceiling stained glass. Morning brings warm tones; afternoon brings cool blues and greens.</p>
+            <a href="/interior-stained-glass/">Know more &rarr;</a>
+          </div>
+        </div>
+        <div class="att-highlight">
+          <img class="att-highlight__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Passion+Facade" alt="Passion Fa&ccedil;ade" />
+          <div class="att-highlight__body">
+            <h3>The Passion Fa&ccedil;ade</h3>
+            <p>Sculptor Josep Maria Subirachs' angular, austere depiction of Christ's suffering. A dramatic contrast to the ornate Nativity Fa&ccedil;ade, full of hidden symbols and numerological puzzles.</p>
+            <a href="/passion-facade/">Know more &rarr;</a>
+          </div>
+        </div>
+        <div class="att-highlight">
+          <img class="att-highlight__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Gaudi+Museum" alt="Gaud&iacute;'s tomb and museum" />
+          <div class="att-highlight__body">
+            <h3>Gaud&iacute;'s Tomb & Museum</h3>
+            <p>The basement crypt houses Gaud&iacute;'s tomb and a museum with original models, drawings, and photographs showing the basilica's evolution over 140+ years of construction.</p>
+            <a href="/gaudi-tomb-museum/">Know more &rarr;</a>
+          </div>
+        </div>
+        <div class="att-highlight">
+          <img class="att-highlight__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Glory+Facade" alt="The Glory Fa&ccedil;ade" />
+          <div class="att-highlight__body">
+            <h3>The Glory Fa&ccedil;ade</h3>
+            <p>Still under construction, this will become the basilica's main entrance and largest fa&ccedil;ade. It will depict humanity's path to God, including death, final judgment, and celestial glory.</p>
+            <a href="/glory-facade/">Know more &rarr;</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="att-section-link">
+        <a href="/what-to-see/">Explore Everything to See &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 7: CTA BANNER
+       ═══════════════════════════════════════════ -->
+  <section class="att-cta-banner">
+    <h2>Ready to visit Sagrada Fam&iacute;lia?</h2>
+    <p>Book your tickets in advance to skip the queues and secure your preferred time slot.</p>
+    <a href="#att-tickets" class="att-btn att-btn--white">Check Prices &amp; Availability</a>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 8: FAQ &mdash; with Schema.org markup
+       ═══════════════════════════════════════════ -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header att-section-header--center">
+        <h2>Frequently Asked Questions</h2>
+        <p>Common questions about visiting Sagrada Fam&iacute;lia.</p>
+      </div>
+
+      <div class="att-faq" itemscope itemtype="https://schema.org/FAQPage">
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">Are skip-the-line tickets worth it?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Absolutely. Sagrada Fam&iacute;lia is Barcelona's most visited attraction with up to 15,000 daily visitors. Without skip-the-line access, you could wait 1&ndash;2 hours, especially in summer and on weekends.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">Can I buy tickets at the door?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Technically yes, but time slots frequently sell out days in advance, particularly in peak season (April&ndash;October). We strongly recommend booking online ahead of time.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">Is there a dress code?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Yes. As an active place of worship, shoulders and knees must be covered. Avoid transparent clothing, swimwear, and hats. Modest, comfortable clothing is recommended.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">How long does a visit take?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">A self-guided visit takes about 1&ndash;1.5 hours. Guided tours run 1.5&ndash;2 hours. Add 30 minutes if you're visiting the towers. Budget 2&ndash;2.5 hours total for a complete experience.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">Is it wheelchair accessible?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">The basilica interior is fully accessible. However, the towers are NOT wheelchair accessible &mdash; access is via narrow elevators and spiral stairs only.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">Can I take photos inside?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Yes, personal photography is allowed throughout the basilica. Tripods, flash photography, and professional/commercial photography require advance permission.</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="att-section-link">
+        <a href="/faq/">View All Frequently Asked Questions &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /.att-homepage -->
+
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT &mdash; Tabs & FAQ Accordion
+     ═══════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+
+  // ── FAQ Accordion ──
+  var faqItems = document.querySelectorAll('.att-faq-item__q');
+  faqItems.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var item = this.parentElement;
+      var wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.att-faq-item').forEach(function(el) { el.classList.remove('open'); });
+      if (!wasOpen) item.classList.add('open');
+    });
+  });
+
+  // ── Scroll-triggered fade-in ──
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.att-ticket, .att-faq-item, .att-highlight, .att-tip').forEach(function(el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(16px)';
+      el.style.transition = 'opacity 0.45s ease-out, transform 0.45s ease-out';
+      observer.observe(el);
+    });
+  }
+})();
+</script>

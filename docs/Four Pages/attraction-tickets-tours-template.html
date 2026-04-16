@@ -1,0 +1,893 @@
+<!--
+  ============================================================
+  TICKETS & TOURS PAGE TEMPLATE &mdash; Body Content Only
+  Paste into WordPress Custom HTML block or page template.
+  
+  Uses the same CSS variable system as the homepage template.
+  TO CUSTOMIZE PER ATTRACTION:
+  1. Update CSS variables (colors) to match your site
+  2. Replace all text, links, prices, images
+  3. Structure stays the same across all attraction sites
+  ============================================================
+-->
+
+<style>
+  /* ── THEME VARIABLES &mdash; Must match homepage ── */
+  :root {
+    --accent: #ff0000;
+    --accent-light: #ffe5e5;
+    --accent-dark: #cc0000;
+    --accent-glow: rgba(255, 0, 0, 0.2);
+    --text-primary: #2a2725;
+    --text-secondary: #5a5550;
+    --text-muted: #8a837c;
+    --bg-warm: #faf8f6;
+    --bg-white: #ffffff;
+    --border: #ece8e4;
+    --border-light: #f4f2f0;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+
+  /* ── SCOPED RESETS ── */
+  .att-tickets-page,
+  .att-tickets-page *,
+  .att-tickets-page *::before,
+  .att-tickets-page *::after { box-sizing: border-box; }
+
+  .att-tickets-page {
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    color: var(--text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .att-tickets-page h1, .att-tickets-page h2, .att-tickets-page h3, .att-tickets-page h4 {
+    font-family: 'Playfair Display', Georgia, serif;
+    line-height: 1.2;
+    font-style: normal;
+  }
+  .att-tickets-page .att-hero a,
+  .att-tickets-page .att-section a,
+  .att-tickets-page .att-cta-banner a,
+  .att-tickets-page .att-faq a { text-decoration: none; }
+
+  /* ── LAYOUT ── */
+  .att-tickets-page .att-container { max-width: 100%; margin: 0 auto; padding-left: 48px; padding-right: 48px; }
+  .att-tickets-page .att-section { padding: 60px 0; }
+  .att-tickets-page .att-section--warm { background: var(--bg-warm); }
+
+  /* ── SECTION HEADER ── */
+  .att-tickets-page .att-section-header { margin: 0 0 36px 0; }
+  .att-tickets-page .att-section-header h2 { font-size: clamp(24px, 3.5vw, 34px); color: var(--text-primary); margin: 0 0 8px 0; padding: 0; }
+  .att-tickets-page .att-section-header p { font-size: 15px; color: var(--text-muted); margin: 0; padding: 0; }
+  .att-tickets-page .att-section-header::after { content:''; display:block; width:48px; height:3px; background:var(--accent); border-radius:3px; margin-top:14px; }
+  .att-tickets-page .att-section-header--center { text-align: center; }
+  .att-tickets-page .att-section-header--center::after { margin-left: auto; margin-right: auto; }
+
+  /* ── BUTTONS ── */
+  .att-tickets-page .att-btn { display:inline-flex; align-items:center; gap:8px; padding:14px 28px; border-radius:8px; font-size:15px; font-weight:600; font-family:'Source Sans 3',sans-serif; cursor:pointer; transition:transform 0.2s,opacity 0.2s,background 0.2s,color 0.2s; border:none; }
+  .att-tickets-page .att-btn:hover { transform: translateY(-1px); }
+  .att-tickets-page .att-btn--primary { background: var(--accent); color: #fff; }
+  .att-tickets-page .att-btn--primary:hover { background: var(--accent-dark); color: #fff; }
+  .att-tickets-page .att-btn--outline { background:transparent; color:var(--accent); border:2px solid var(--accent); }
+  .att-tickets-page .att-btn--outline:hover { background:var(--accent); color:#fff; }
+  .att-tickets-page .att-btn--white { background:#fff; color:var(--accent); font-weight:700; }
+  .att-tickets-page .att-btn--white:hover { color:var(--accent); }
+  .att-tickets-page .att-btn--sm { padding: 10px 20px; font-size: 13px; }
+
+  /* ── SECTION LINK ── */
+  .att-tickets-page .att-section-link { text-align: center; margin: 36px 0 0 0; padding: 0; }
+  .att-tickets-page .att-section-link a { display:inline-flex; align-items:center; gap:6px; font-size:15px; font-weight:600; color:var(--accent); padding:12px 28px; border:2px solid var(--accent); border-radius:8px; transition:background 0.2s,color 0.2s; }
+  .att-tickets-page .att-section-link a:hover { background:var(--accent); color:#fff; }
+
+  /* ══════════════════════════════════
+     HERO &mdash; Split layout
+     ══════════════════════════════════ */
+  .att-tickets-page .att-hero { background: var(--bg-white); overflow: hidden; }
+  .att-tickets-page .att-hero__inner { display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center; min-height:460px; }
+  .att-tickets-page .att-hero__content { padding: 48px 0; }
+  .att-tickets-page .att-hero__badge { display:inline-block; background:var(--accent); color:#fff; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; padding:5px 14px; border-radius:4px; margin:0 0 18px 0; }
+  .att-tickets-page .att-hero h1 { font-size:clamp(28px,4.5vw,46px); color:var(--text-primary); margin:0 0 16px 0; padding:0; }
+  .att-tickets-page .att-hero__desc { font-size:15.5px; color:var(--text-secondary); line-height:1.78; margin:0 0 28px 0; padding:0; max-width:540px; }
+  .att-tickets-page .att-hero__actions { display:flex; gap:12px; flex-wrap:wrap; }
+  .att-tickets-page .att-hero__image-wrap { position:relative; border-radius:16px; overflow:hidden; aspect-ratio:4/3; background:var(--border); }
+  .att-tickets-page .att-hero__img { width:100%; height:100%; object-fit:cover; display:block; }
+
+  /* ── RECOMMENDATION CALLOUTS ── */
+  .att-recs-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:40px; }
+  .att-rec-callout {
+    background: var(--bg-warm);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+  }
+  .att-rec-callout__label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin: 0 0 6px 0;
+  }
+  .att-rec-callout p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+  }
+  .att-rec-callout a { color: var(--accent); font-weight: 600; }
+
+  /* ══════════════════════════════════
+     FEATURED TICKETS &mdash; Horizontal cards
+     ══════════════════════════════════ */
+  .att-featured-grid { display: flex; flex-direction: column; gap: 24px; }
+  .att-featured {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 0;
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: box-shadow 0.3s;
+  }
+  .att-featured:hover { box-shadow: 0 8px 36px rgba(0,0,0,0.06); }
+  .att-featured__img { width:100%; height:100%; object-fit:cover; display:block; background:var(--border); min-height:260px; }
+  .att-featured__body { padding: 32px 36px; display:flex; flex-direction:column; }
+  .att-featured__tags { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px 0; }
+  .att-featured__tag { display:inline-block; font-size:11px; font-weight:600; padding:4px 10px; border-radius:5px; background:var(--accent-light); color:var(--accent-dark); }
+  .att-tickets-page .att-featured h3 { font-size:22px; margin:0 0 12px 0; padding:0; color:var(--text-primary); }
+  .att-featured__desc { font-size:14.5px; color:var(--text-secondary); line-height:1.7; margin:0 0 12px 0; flex:1; }
+  .att-featured__actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .att-featured__more { font-size:14px; font-weight:600; color:var(--accent); }
+
+  /* ══════════════════════════════════
+     STANDARD TICKET CARDS &mdash; 3-col grid
+     ══════════════════════════════════ */
+  .att-tickets-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .att-ticket { background:var(--bg-white); border-radius:14px; border:1px solid var(--border); overflow:hidden; display:flex; flex-direction:column; transition:box-shadow 0.3s,transform 0.3s; }
+  .att-ticket:hover { box-shadow:0 8px 36px rgba(0,0,0,0.07); transform:translateY(-3px); }
+  .att-ticket__img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:var(--border); }
+  .att-ticket__body { padding:20px 22px 0; flex:1; }
+  .att-ticket__tags { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 10px 0; }
+  .att-ticket__tag { display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:4px 10px; border-radius:5px; background:var(--accent-light); color:var(--accent-dark); }
+  .att-tickets-page .att-ticket h3 { font-size:18px; margin:0 0 8px 0; padding:0; line-height:1.3; }
+  .att-ticket__desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; margin:0 0 14px 0; }
+  .att-ticket__best { font-size:12px; color:var(--accent); font-weight:600; margin:0 0 12px 0; }
+  .att-ticket__footer { padding:0 22px 20px; margin-top:auto; display:flex; flex-direction:column; gap:6px; }
+  .att-ticket__cta { display:block; text-align:center; background:var(--accent); color:#fff; padding:12px 18px; border-radius:8px; font-size:14px; font-weight:600; font-family:'Source Sans 3',sans-serif; transition:opacity 0.2s; }
+  .att-ticket__cta:hover { opacity:0.88; color:#fff; }
+  .att-ticket__more { display:block; text-align:center; font-size:13px; color:var(--accent); font-weight:600; padding:4px 0; }
+
+  /* ══════════════════════════════════
+     ARTICLE CARDS — 3-col grid (categorised sections)
+     ══════════════════════════════════ */
+  .att-articles-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .att-article-card { background:var(--bg-white); border-radius:14px; border:1px solid var(--border); overflow:hidden; transition:box-shadow 0.3s,transform 0.3s; display:flex; flex-direction:column; }
+  .att-article-card:hover { box-shadow:0 6px 28px rgba(0,0,0,0.06); transform:translateY(-2px); }
+  .att-article-card__img { width:100%; aspect-ratio:16/10; object-fit:cover; display:block; background:var(--border); }
+  .att-article-card__body { padding:22px 24px; flex:1; display:flex; flex-direction:column; }
+  .att-article-card__tags { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 10px 0; }
+  .att-article-card__tag { display:inline-block; font-size:11px; font-weight:600; padding:4px 10px; border-radius:5px; background:var(--accent-light); color:var(--accent-dark); }
+  .att-tickets-page .att-article-card h3 { font-size:19px; margin:0 0 10px 0; padding:0; color:var(--text-primary); line-height:1.3; }
+  .att-tickets-page .att-article-card h3 a { color:var(--text-primary); }
+  .att-tickets-page .att-article-card h3 a:hover { color:var(--accent); }
+  .att-article-card__desc { font-size:14px; color:var(--text-secondary); line-height:1.7; margin:0 0 11px 0; flex:1; }
+  .att-article-card__link { font-size:14px; font-weight:600; color:var(--accent); margin-top:auto; }
+
+  /* ══════════════════════════════════
+     COMPARISON TABLE
+     ══════════════════════════════════ */
+  .att-compare-table { width:100%; border-collapse:collapse; font-size:14px; }
+  .att-compare-table th {
+    text-align:left;
+    padding:14px 18px;
+    background: var(--accent);
+    color:#fff;
+    font-family:'Source Sans 3',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .att-compare-table th:first-child { border-radius: 10px 0 0 0; }
+  .att-compare-table th:last-child { border-radius: 0 10px 0 0; }
+  .att-compare-table td {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .att-compare-table tr:last-child td { border-bottom: none; }
+  .att-compare-table tr:hover td { background: var(--bg-warm); }
+  .att-compare-table td:first-child { font-weight:600; color:var(--text-primary); }
+  .att-compare-table td:first-child span { display:block; font-weight:400; font-size:12.5px; color:var(--text-muted); margin-top:2px; }
+  .att-compare-table td:last-child { text-align:center; }
+  .att-compare-table .att-table-btn {
+    display:inline-block;
+    background:var(--accent);
+    color:#fff;
+    padding:8px 18px;
+    border-radius:6px;
+    font-size:13px;
+    font-weight:600;
+    font-family:'Source Sans 3',sans-serif;
+    transition:opacity 0.2s;
+    white-space:nowrap;
+  }
+  .att-compare-table .att-table-btn:hover { opacity:0.88; color:#fff; }
+  .att-compare-wrap {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  /* ══════════════════════════════════
+     DECISION GUIDE &mdash; Prose sections
+     ══════════════════════════════════ */
+  .att-guide-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .att-guide-card {
+    background: var(--bg-warm);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 30px;
+  }
+  .att-tickets-page .att-guide-card h3 {
+    font-size: 20px;
+    margin: 0 0 12px 0;
+    padding: 0;
+    color: var(--text-primary);
+  }
+  .att-guide-card p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin: 0 0 16px 0;
+  }
+  .att-guide-card ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .att-guide-card ul li {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    padding: 5px 0 5px 20px;
+    position: relative;
+  }
+  .att-guide-card ul li::before {
+    content: '\2192';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .att-guide-card a { color: var(--accent); font-weight: 600; }
+
+  /* ══════════════════════════════════
+     TIP CARDS
+     ══════════════════════════════════ */
+  .att-tips-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px; }
+  .att-tickets-page .att-tip { background:var(--bg-white); border:1px solid var(--border); border-radius:10px; padding:20px 22px; font-size:14px; color:var(--text-secondary); line-height:1.65; display:flex; gap:14px; align-items:flex-start; }
+  .att-tickets-page .att-tip__icon { font-size:20px; flex-shrink:0; margin-top:2px; }
+  .att-tickets-page .att-tip strong { color:var(--text-primary); font-weight:700; }
+
+  /* ══════════════════════════════════
+     CTA BANNER
+     ══════════════════════════════════ */
+  .att-tickets-page .att-cta-banner { background:linear-gradient(135deg,var(--accent-dark),var(--accent)); text-align:center; padding:52px 24px; }
+  .att-tickets-page .att-cta-banner h2 { font-size:clamp(22px,3vw,30px); color:#fff; margin:0 0 12px 0; text-align:center; }
+  .att-tickets-page .att-cta-banner p { color:rgba(255,255,255,0.8); font-size:15px; line-height:1.65; margin:0 auto 24px auto; max-width:560px; text-align:center; }
+
+  /* ══════════════════════════════════
+     FAQ
+     ══════════════════════════════════ */
+  .att-tickets-page .att-faq { max-width:920px; margin:0 auto; }
+  .att-tickets-page .att-faq-item { border:1px solid var(--border); border-radius:10px; overflow:hidden; margin:0 0 8px 0; padding:0; transition:background 0.2s; }
+  .att-tickets-page .att-faq-item.open { background:var(--bg-warm); }
+  .att-tickets-page .att-faq-item__q { width:100%; display:flex; align-items:center; justify-content:space-between; padding:18px 22px; margin:0; border:none; background:transparent; cursor:pointer; font-family:'Source Sans 3',sans-serif; font-size:15px; font-weight:600; color:var(--text-primary); text-align:left; line-height:1.4; gap:12px; }
+  .att-tickets-page .att-faq-item__icon { font-size:20px; color:var(--accent); transition:transform 0.25s; flex-shrink:0; font-weight:300; }
+  .att-tickets-page .att-faq-item.open .att-faq-item__icon { transform:rotate(45deg); }
+  .att-tickets-page .att-faq-item__a { display:none; padding:4px 22px 20px; margin:0; font-size:14px; color:var(--text-secondary); line-height:1.72; }
+  .att-tickets-page .att-faq-item__a span { display:block; margin:0; padding:0; }
+  .att-tickets-page .att-faq-item.open .att-faq-item__a { display:block; }
+
+  /* ══════════════════════════════════
+     CROSS-LINKS &mdash; Interlink pillar pages
+     ══════════════════════════════════ */
+  .att-crosslinks { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .att-crosslink {
+    display:grid;
+    grid-template-columns:160px 1fr;
+    gap:0;
+    background:var(--bg-white);
+    border:1px solid var(--border);
+    border-radius:14px;
+    overflow:hidden;
+    transition:box-shadow 0.3s;
+  }
+  .att-crosslink:hover { box-shadow:0 6px 28px rgba(0,0,0,0.06); }
+  .att-crosslink__img { width:100%; height:100%; object-fit:cover; display:block; background:var(--border); min-height:140px; }
+  .att-crosslink__body { padding:24px 28px; display:flex; flex-direction:column; justify-content:center; }
+  .att-tickets-page .att-crosslink__body h3 { font-size:19px; margin:0 0 8px 0; padding:0; color:var(--text-primary); line-height:1.3; }
+  .att-tickets-page .att-crosslink__body h3 a { color:var(--text-primary); }
+  .att-tickets-page .att-crosslink__body h3 a:hover { color:var(--accent); }
+  .att-crosslink__desc { font-size:13.5px; color:var(--text-secondary); line-height:1.6; margin:0 0 12px 0; }
+  .att-crosslink__link { font-size:14px; font-weight:600; color:var(--accent); }
+
+  /* ══════════════════════════════════
+     RESPONSIVE
+     ══════════════════════════════════ */
+  @media (max-width: 1024px) {
+    .att-featured { grid-template-columns: 300px 1fr; }
+    .att-recs-strip { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 960px) {
+    .att-tickets-grid { grid-template-columns: repeat(2, 1fr); }
+    .att-guide-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 768px) {
+    .att-tickets-page .att-container { padding-left: 10px; padding-right: 10px; }
+    .att-tickets-page .att-hero__image-wrap { display: none; }
+    .att-tickets-page .att-hero__inner { grid-template-columns: 1fr; gap: 0; }
+    .att-tickets-page .att-hero__content { padding: 28px 0; }
+    .att-tickets-page .att-section { padding: 44px 0; }
+    .att-featured { grid-template-columns: 1fr; }
+    .att-featured__img { aspect-ratio: 16/9; min-height: auto; }
+    .att-tickets-grid { grid-template-columns: 1fr; }
+    .att-recs-strip { grid-template-columns: 1fr; }
+    .att-tips-grid { grid-template-columns: 1fr; }
+    .att-tickets-page .att-tip__icon { display: none; }
+    .att-compare-wrap { overflow-x: auto; }
+    .att-compare-table { min-width: 600px; }
+    .att-crosslinks { grid-template-columns: 1fr; }
+    .att-crosslink { grid-template-columns: 1fr; }
+    .att-crosslink__img { min-height: auto; aspect-ratio: 16/9; }
+  }
+
+  /* ── ANIMATION ── */
+  @keyframes attFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .att-animate { opacity:0; animation:attFadeUp 0.5s ease-out forwards; }
+  .att-delay-1 { animation-delay:0.1s; }
+  .att-delay-2 { animation-delay:0.2s; }
+  .att-delay-3 { animation-delay:0.3s; }
+</style>
+
+
+<div class="att-tickets-page">
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 1: HERO + RECOMMENDATION CALLOUTS
+       ═══════════════════════════════════════════ -->
+  <section class="att-hero">
+    <div class="att-container">
+      <div class="att-hero__inner">
+        <div class="att-hero__content">
+          <div class="att-hero__badge att-animate">Tickets & Tours</div>
+          <h1 class="att-animate att-delay-1">Sagrada Fam&iacute;lia Tickets & Tours</h1>
+          <p class="att-hero__desc att-animate att-delay-2">
+            From skip-the-line entry to expert-led guided tours, tower access, and full-day Barcelona combos &mdash;
+            find the right Sagrada Fam&iacute;lia experience for your schedule, travel style, and budget.
+          </p>
+          <div class="att-hero__actions att-animate att-delay-3">
+            <a href="#tt-top-picks" class="att-btn att-btn--primary">Explore Ticket Options &rarr;</a>
+            <a href="#tt-faqs" class="att-btn att-btn--outline">Read FAQs</a>
+          </div>
+        </div>
+        <div class="att-hero__image-wrap att-animate att-delay-2">
+          <img class="att-hero__img" src="https://placehold.co/800x600/e8ddd4/8a837c?text=Hero+Image%0ATickets+Page" alt="Sagrada Fam&iacute;lia tickets" loading="eager" />
+        </div>
+      </div>
+
+      <!-- Quick recommendation callouts -->
+      <div class="att-recs-strip att-animate att-delay-3">
+        <div class="att-rec-callout">
+          <div class="att-rec-callout__label">Best for first-time visitors</div>
+          <p><a href="#tt-top-picks">Guided tours</a> give helpful context on Gaud&iacute;'s symbolism, the basilica's history, and the ongoing construction.</p>
+        </div>
+        <div class="att-rec-callout">
+          <div class="att-rec-callout__label">Best premium option</div>
+          <p><a href="#tt-other">Private tours</a> offer an exclusive, personalized pace with skip-the-line access and tower options.</p>
+        </div>
+        <div class="att-rec-callout">
+          <div class="att-rec-callout__label">Best budget choice</div>
+          <p><a href="#tt-top-picks">Skip-the-line entry</a> at just &euro;26 with audio guide is the most affordable way to experience the basilica.</p>
+        </div>
+        <div class="att-rec-callout">
+          <div class="att-rec-callout__label">Best combo value</div>
+          <p><a href="#tt-other">Sagrada + Park G&uuml;ell</a> saves &euro;12 and covers two Gaud&iacute; masterpieces in a single booking.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 2: TOP PICKS &mdash; Featured horizontal cards
+       ═══════════════════════════════════════════ -->
+  <section id="tt-top-picks" class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Top Sagrada Fam&iacute;lia Experiences</h2>
+        <p>Start with these standout options &mdash; the most popular and most complete experiences.</p>
+      </div>
+
+      <div class="att-featured-grid">
+
+        <!-- FEATURED 1 -->
+        <div class="att-featured">
+          <img class="att-featured__img" src="https://placehold.co/760x520/e8ddd4/8a837c?text=Skip-the-Line+Entry" alt="Skip-the-line entry" />
+          <div class="att-featured__body">
+            <div class="att-featured__tags">
+              <span class="att-featured__tag">Most Popular</span>
+              <span class="att-featured__tag">Audio Guide</span>
+              <span class="att-featured__tag">Flexible Time</span>
+            </div>
+            <h3>Skip-the-Line Entry Ticket</h3>
+            <p class="att-featured__desc">
+              The most popular and affordable way to visit Sagrada Fam&iacute;lia. Fast-track entry with an audio guide
+              in 17 languages lets you explore the basilica's interior, stained glass, and museum at your own pace.
+              Book early for the best morning time slots when light floods the east-facing windows.
+            </p>
+            <div class="att-featured__actions">
+              <a href="#" class="att-btn att-btn--primary att-btn--sm">Check Availability &rarr;</a>
+              <a href="/entry-ticket-sagrada-familia/" class="att-featured__more">Find Out More</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- FEATURED 2 -->
+        <div class="att-featured">
+          <img class="att-featured__img" src="https://placehold.co/760x520/e8ddd4/8a837c?text=Guided+Tour+%2B+Towers" alt="Guided tour with tower access" />
+          <div class="att-featured__body">
+            <div class="att-featured__tags">
+              <span class="att-featured__tag">Best Value</span>
+              <span class="att-featured__tag">Expert Guide</span>
+              <span class="att-featured__tag">Tower Views</span>
+            </div>
+            <h3>Guided Tour with Tower Access</h3>
+            <p class="att-featured__desc">
+              The best overall experience for most visitors. An expert guide walks you through Gaud&iacute;'s symbolism,
+              the construction story, and the architectural details you'd miss on your own &mdash; then you ascend a tower
+              for panoramic Barcelona views. Small groups of max 20 with personal headsets.
+            </p>
+            <div class="att-featured__actions">
+              <a href="#" class="att-btn att-btn--primary att-btn--sm">Check Availability &rarr;</a>
+              <a href="/guided-tour-tower-access/" class="att-featured__more">Find Out More</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       TICKET ARTICLE SECTIONS
+       One <section> per entry in ticket_sections (e.g. "Single-Attraction Tickets",
+       "Multi-Attraction Tours"). Each uses att-tickets-grid + att-ticket cards.
+       Each card has TWO buttons: att-ticket__cta "Check Availability" (booking URL)
+       + att-ticket__more "Read More" (article_url).
+       EVERY article in ticket_sections must appear in exactly one section.
+       ═══════════════════════════════════════════ -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Single-Attraction Tickets</h2>
+        <p>Entry and tour options focused on visiting the attraction directly.</p>
+      </div>
+      <div class="att-tickets-grid">
+
+        <div class="att-ticket">
+          <img class="att-ticket__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Self-guided entry" />
+          <div class="att-ticket__body">
+            <div class="att-ticket__tags"><span class="att-ticket__tag">Skip-the-Line</span><span class="att-ticket__tag">Entry</span></div>
+            <h3>Self-guided skip-the-line entry ticket</h3>
+            <p class="att-ticket__desc">Fast-track entry for independent visitors who want to explore at their own pace without a guide.</p>
+          </div>
+          <div class="att-ticket__footer">
+            <a href="BOOKING_URL" class="att-ticket__cta" rel="nofollow sponsored" target="_blank">Check Availability &rarr;</a>
+            <a href="/tickets/self-guided-entry/" class="att-ticket__more">Read More &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-ticket">
+          <img class="att-ticket__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Guided tour" />
+          <div class="att-ticket__body">
+            <div class="att-ticket__tags"><span class="att-ticket__tag">Guided</span><span class="att-ticket__tag">Expert</span></div>
+            <h3>Guided tour</h3>
+            <p class="att-ticket__desc">An expert guide leads a small group through the highlights with full commentary on history, art, and architecture.</p>
+          </div>
+          <div class="att-ticket__footer">
+            <a href="BOOKING_URL" class="att-ticket__cta" rel="nofollow sponsored" target="_blank">Check Availability &rarr;</a>
+            <a href="/tickets/guided-tour/" class="att-ticket__more">Read More &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-ticket">
+          <img class="att-ticket__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Private guided tour" />
+          <div class="att-ticket__body">
+            <div class="att-ticket__tags"><span class="att-ticket__tag">Private</span><span class="att-ticket__tag">Exclusive</span></div>
+            <h3>Private guided tour</h3>
+            <p class="att-ticket__desc">A fully personalised experience with a dedicated guide, skip-the-line access, and flexible pacing for your group.</p>
+          </div>
+          <div class="att-ticket__footer">
+            <a href="BOOKING_URL" class="att-ticket__cta" rel="nofollow sponsored" target="_blank">Check Availability &rarr;</a>
+            <a href="/tickets/private-tour/" class="att-ticket__more">Read More &rarr;</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- GUIDE ARTICLE SECTIONS
+       One <section> per entry in guide_sections (e.g. "Tickets & Prices").
+       Each uses att-tickets-grid + att-ticket cards.
+       Each card has ONE button only: att-ticket__cta "Read More" (article_url).
+       No booking/affiliate link on guide cards.
+       EVERY article in guide_sections must appear in exactly one section.
+       ═══════════════════════════════════════════ -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Tickets &amp; Prices</h2>
+        <p>Guides to help you understand costs, skip-the-line options, and what to expect before booking.</p>
+      </div>
+      <div class="att-tickets-grid">
+
+        <div class="att-ticket">
+          <img class="att-ticket__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Ticket prices" />
+          <div class="att-ticket__body">
+            <div class="att-ticket__tags"><span class="att-ticket__tag">Prices</span><span class="att-ticket__tag">Guide</span></div>
+            <h3>Ticket prices (2026)</h3>
+            <p class="att-ticket__desc">A breakdown of all current admission costs, what each includes, and how to get the best value for your visit.</p>
+          </div>
+          <div class="att-ticket__footer">
+            <a href="/tickets/ticket-prices/" class="att-ticket__cta">Read More &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-ticket">
+          <img class="att-ticket__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Skip the line guide" />
+          <div class="att-ticket__body">
+            <div class="att-ticket__tags"><span class="att-ticket__tag">Skip-the-Line</span><span class="att-ticket__tag">Guide</span></div>
+            <h3>Skip-the-line: is it worth it?</h3>
+            <p class="att-ticket__desc">An honest assessment of skip-the-line options — when they genuinely save time and when standard entry is fine.</p>
+          </div>
+          <div class="att-ticket__footer">
+            <a href="/tickets/skip-the-line/" class="att-ticket__cta">Read More &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-ticket">
+          <img class="att-ticket__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Audio guide review" />
+          <div class="att-ticket__body">
+            <div class="att-ticket__tags"><span class="att-ticket__tag">Audio Guide</span><span class="att-ticket__tag">Review</span></div>
+            <h3>Audio guide: is it worth it?</h3>
+            <p class="att-ticket__desc">What the audio guide covers, which language options are available, and whether it's worth adding to your entry ticket.</p>
+          </div>
+          <div class="att-ticket__footer">
+            <a href="/tickets/audio-guide/" class="att-ticket__cta">Read More &rarr;</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 4: COMPARISON TABLE
+       ═══════════════════════════════════════════ -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Which Sagrada Fam&iacute;lia Ticket Should You Choose?</h2>
+        <p>Use this quick comparison to match the ticket type to your travel style.</p>
+      </div>
+
+      <div class="att-compare-wrap">
+        <table class="att-compare-table">
+          <thead>
+            <tr>
+              <th>Ticket</th>
+              <th>Best For</th>
+              <th>Book</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Skip-the-Line Entry<span>Self-guided with audio guide</span></td>
+              <td>Budget travelers, independent visitors</td>
+              <td><a href="#" class="att-table-btn">Book Now</a></td>
+            </tr>
+            <tr>
+              <td>Guided Tour + Towers<span>Expert guide with panoramic views</span></td>
+              <td>First-time visitors wanting the full story</td>
+              <td><a href="#" class="att-table-btn">Book Now</a></td>
+            </tr>
+            <tr>
+              <td>Private Tour<span>Exclusive guide, flexible pace</span></td>
+              <td>Couples, families, architecture fans</td>
+              <td><a href="#" class="att-table-btn">Book Now</a></td>
+            </tr>
+            <tr>
+              <td>Evening Experience<span>After-hours access, sunset light</span></td>
+              <td>Photographers, quieter visits</td>
+              <td><a href="#" class="att-table-btn">Book Now</a></td>
+            </tr>
+            <tr>
+              <td>Sagrada + Park G&uuml;ell<span>Combo ticket, save &euro;12</span></td>
+              <td>Gaud&iacute; enthusiasts, full-day visitors</td>
+              <td><a href="#" class="att-table-btn">Book Now</a></td>
+            </tr>
+            <tr>
+              <td>Barcelona Highlights<span>Full-day multi-site guided tour</span></td>
+              <td>Travelers with limited time</td>
+              <td><a href="#" class="att-table-btn">Book Now</a></td>
+            </tr>
+            <tr>
+              <td>Tower Access<span>Elevator up, spiral stairs down</span></td>
+              <td>View seekers, add-on to entry ticket</td>
+              <td><a href="#" class="att-table-btn">Book Now</a></td>
+            </tr>
+            <tr>
+              <td>Barcelona City Pass<span>Flexible multi-attraction pass</span></td>
+              <td>Multi-day Barcelona itineraries</td>
+              <td><a href="#" class="att-table-btn">Book Now</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 5: HOW TO PICK &mdash; Decision guide
+       ═══════════════════════════════════════════ -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>How to Pick the Right Sagrada Fam&iacute;lia Experience</h2>
+        <p>A few simple ways to decide based on your timing, travel style, and what kind of visit you want.</p>
+      </div>
+
+      <div class="att-guide-grid">
+
+        <div class="att-guide-card">
+          <h3>If you want to understand Gaud&iacute;'s vision</h3>
+          <p>Choose a guided experience. A guide unlocks symbolism, construction details, and stories you'd never discover on your own.</p>
+          <ul>
+            <li>Pick the <a href="/guided-tour-tower-access/">guided tour + towers</a> for the best overall experience</li>
+            <li>Pick the <a href="/private-tour/">private tour</a> for a fully personalized pace</li>
+            <li>Pick the <a href="/evening-tour/">evening tour</a> if atmosphere matters as much as access</li>
+          </ul>
+        </div>
+
+        <div class="att-guide-card">
+          <h3>If you're on a budget</h3>
+          <p>The self-guided entry ticket is the most affordable option and still gives you full basilica access with an audio guide.</p>
+          <ul>
+            <li>Pick the <a href="/entry-ticket-sagrada-familia/">skip-the-line entry</a> at just &euro;26</li>
+            <li>Book early morning for the best light and smallest crowds</li>
+            <li>Add <a href="/sagrada-familia-tower-tickets/">tower access</a> separately if your budget allows</li>
+          </ul>
+        </div>
+
+        <div class="att-guide-card">
+          <h3>If you want to see more of Gaud&iacute;'s Barcelona</h3>
+          <p>Combo tickets and day tours cover multiple landmarks in a single booking &mdash; ideal for architecture lovers and first-time Barcelona visitors.</p>
+          <ul>
+            <li>Pick <a href="/sagrada-familia-park-guell-combo/">Sagrada + Park G&uuml;ell</a> for the two essential Gaud&iacute; sites</li>
+            <li>Pick the <a href="/barcelona-highlights-tour/">Barcelona Highlights tour</a> for a full-day guided experience</li>
+            <li>Pick the <a href="/barcelona-city-pass/">Barcelona City Pass</a> for maximum flexibility</li>
+          </ul>
+        </div>
+
+        <div class="att-guide-card">
+          <h3>If you want a special occasion visit</h3>
+          <p>Evening and private experiences offer a more intimate, atmospheric setting that goes beyond standard sightseeing.</p>
+          <ul>
+            <li>Pick the <a href="/evening-tour/">evening experience</a> for sunset light through stained glass</li>
+            <li>Pick the <a href="/private-tour/">private tour</a> for a completely tailored visit</li>
+            <li>Both options work well for couples, anniversaries, and celebrations</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION: CONTINUE EXPLORING
+       ═══════════════════════════════════════════ -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Continue Exploring Sagrada Fam&iacute;lia</h2>
+        <p>Plan the rest of your visit with these guides.</p>
+      </div>
+
+      <div class="att-crosslinks">
+
+        <div class="att-crosslink">
+          <img class="att-crosslink__img" src="https://placehold.co/320x280/e8ddd4/8a837c?text=Plan+Your+Visit" alt="Plan Your Visit" />
+          <div class="att-crosslink__body">
+            <h3><a href="/plan-your-visit/">Plan Your Visit</a></h3>
+            <p class="att-crosslink__desc">Opening hours, how to reach, dress code, entrances, accessibility, parking, and practical tips for a smooth visit.</p>
+            <a href="/plan-your-visit/" class="att-crosslink__link">Read the visitor guide &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-crosslink">
+          <img class="att-crosslink__img" src="https://placehold.co/320x280/e8ddd4/8a837c?text=What+to+See" alt="What to See" />
+          <div class="att-crosslink__body">
+            <h3><a href="/what-to-see/">What to See</a></h3>
+            <p class="att-crosslink__desc">The interior, stained glass, towers, three fa&ccedil;ades, crypt, museum, and how to prioritise based on your interests.</p>
+            <a href="/what-to-see/" class="att-crosslink__link">Explore highlights &rarr;</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 7: CTA BANNER
+       ═══════════════════════════════════════════ -->
+  <section class="att-cta-banner">
+    <h2>Ready to book your Sagrada Fam&iacute;lia tickets?</h2>
+    <p>Secure your preferred time slot and skip the queues. Most visitors book 1&ndash;2 weeks in advance during peak season.</p>
+    <a href="#tt-top-picks" class="att-btn att-btn--white">Explore All Ticket Options</a>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 8: FAQS &mdash; with Schema.org markup
+       ═══════════════════════════════════════════ -->
+  <section id="tt-faqs" class="att-section">
+    <div class="att-container">
+      <div class="att-section-header att-section-header--center">
+        <h2>Frequently Asked Questions About Sagrada Fam&iacute;lia Tickets</h2>
+        <p>Common questions about tours, combos, and choosing the right ticket.</p>
+      </div>
+
+      <div class="att-faq" itemscope itemtype="https://schema.org/FAQPage">
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">Which Sagrada Fam&iacute;lia ticket is best for first-time visitors?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">The Guided Tour with Tower Access is the best choice for most first-time visitors. It offers a balanced experience with expert commentary on Gaud&iacute;'s symbolism, the construction history, and panoramic city views from the tower. If you're on a budget, the skip-the-line entry with audio guide is a strong alternative.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">What's the difference between the guided tour and the private tour?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Both include expert guides and skip-the-line access. The guided tour has groups of up to 20 people with a set itinerary. The private tour is exclusively for your group, with flexible pacing and a deeper dive into your specific interests &mdash; ideal for couples, families, or architecture enthusiasts.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">Is the Sagrada + Park G&uuml;ell combo worth it?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Yes, if you plan to visit both Gaud&iacute; landmarks. The combo saves about &euro;12 compared to buying separate tickets and includes skip-the-line access and audio guides at both sites. It's the best value option for Gaud&iacute; enthusiasts visiting Barcelona.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">Can I buy tickets at the Sagrada Fam&iacute;lia entrance?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Technically yes, but we strongly advise against it. Time slots frequently sell out days in advance, particularly from April to October. Walk-up visitors often face disappointment. Always book online to guarantee your preferred date and time.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">Should I book tower access separately or as part of a tour?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Tower access is included in the Guided Tour with Tower Access and the Private Tour. If you buy a standard entry ticket, you'll need to add tower access as a separate add-on. Note that towers are not wheelchair accessible &mdash; you take an elevator up and walk down a narrow spiral staircase.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">What happens if I'm late for my time slot?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Latecomers are not admitted and no refunds are provided. We recommend arriving at least 15 minutes before your booked time slot to clear the security screening and bag check at the entrance.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">Are tickets refundable?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Most Sagrada Fam&iacute;lia tickets are non-refundable. However, some tickets offer free cancellation up to 24 hours before the visit date. Always check the specific cancellation policy on the booking page before purchasing.</span>
+          </div>
+        </div>
+
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
+            <span itemprop="name">When is the best time to book?</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">Book at least 1&ndash;2 weeks in advance during peak season (April&ndash;October). For the best morning time slots with magical stained glass light, book even earlier. Winter months (November&ndash;February) are less busy and last-minute bookings are sometimes possible.</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="att-section-link">
+        <a href="/frequently-asked-questions/">View All FAQs About Sagrada Fam&iacute;lia &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /.att-tickets-page -->
+
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT &mdash; FAQ Accordion + Scroll Animations
+     ═══════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+
+  // FAQ Accordion
+  document.querySelectorAll('.att-tickets-page .att-faq-item__q').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var item = this.parentElement;
+      var wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.att-tickets-page .att-faq-item').forEach(function(el) { el.classList.remove('open'); });
+      if (!wasOpen) item.classList.add('open');
+    });
+  });
+
+  // Scroll-triggered fade-in
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.att-tickets-page .att-featured, .att-tickets-page .att-ticket, .att-tickets-page .att-faq-item, .att-tickets-page .att-tip, .att-tickets-page .att-guide-card, .att-tickets-page .att-rec-callout').forEach(function(el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(16px)';
+      el.style.transition = 'opacity 0.45s ease-out, transform 0.45s ease-out';
+      observer.observe(el);
+    });
+  }
+})();
+</script>
