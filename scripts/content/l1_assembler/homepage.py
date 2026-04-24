@@ -279,3 +279,60 @@ def _select_wts_articles(metas: dict, cfg: dict) -> list[dict]:
             _add(slug)
 
     return result
+
+
+# ─── Ticket card enrichment ───────────────────────────────────────────────────
+
+def _enrich_ticket_cards(
+    ticket_articles: list[dict],
+    cfg: dict,
+    site_slug: str,
+    attraction: str,
+    currency: str,
+    force: bool = False,
+) -> dict[str, dict]:
+    """Return {slug: {price, duration, lang, tag}} for each ticket article.
+
+    Cached in l1-config under '_homepage_ticket_enrichment'.
+    price like 'from €16', duration like '1 hour', lang like 'English'.
+    tag is one of: Best Seller, Best Value, Skip the Line, Top Rated,
+                   Most Popular, Guided Tour, Private Tour, Combo Deal,
+                   Evening Tour, Family Friendly.
+    """
+    CACHE_KEY = "_homepage_ticket_enrichment"
+    cached: dict = cfg.get(CACHE_KEY, {})
+
+    slugs_needed = [a["slug"] for a in ticket_articles if force or a["slug"] not in cached]
+    if not slugs_needed:
+        return cached
+
+    articles_block = "\n".join(
+        f'  {a["slug"]}: editorial="{a.get("card_title", a["slug"])}", '
+        f'affiliate="{a.get("affiliate_title", "")}"'
+        for a in ticket_articles
+        if a["slug"] in slugs_needed
+    )
+
+    prompt = f"""For each tour/ticket product below, generate realistic card metadata for {attraction}.
+
+{articles_block}
+
+For EACH item return a JSON object with:
+  "price": string like "from {currency}25" — realistic market price for this type of experience
+  "duration": string like "1 hour", "1.5–2 hrs", "Half day", "Full day"
+  "lang": string like "English", "Multi-language", "Audio guide"
+  "tag": one of exactly: Best Seller, Best Value, Skip the Line, Top Rated, Most Popular, Guided Tour, Private Tour, Combo Deal, Evening Tour, Family Friendly
+
+Return ONLY a JSON object: {{"slug": {{"price": "...", "duration": "...", "lang": "...", "tag": "..."}}, ...}}
+Use exact slugs as shown. No markdown."""
+
+    raw = _call_claude(prompt, timeout=60)
+    result = _parse_json(raw)
+    if isinstance(result, dict):
+        for slug, data in result.items():
+            if isinstance(data, dict):
+                cached[slug] = data
+        cfg[CACHE_KEY] = cached
+        _save_cfg(site_slug, cfg)
+
+    return cached
