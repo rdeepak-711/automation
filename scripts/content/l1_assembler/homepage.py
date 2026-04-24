@@ -125,9 +125,15 @@ def _parse_json(raw: str | None):
 def _load_css_js() -> tuple[str, str]:
     """Return (css_block, js_block) from homepage template."""
     content = TEMPLATE_PATH.read_text(encoding="utf-8")
-    css_m = re.search(r"<style>.*?</style>", content, re.DOTALL)
+    # Use specific pattern to skip the <style> reference inside the HTML comment
+    css_m = re.search(r"<style>\s*(?:/\*|:root)", content, re.DOTALL)
+    if css_m:
+        css_start = css_m.start()
+        css_end = content.find("</style>", css_start) + len("</style>")
+        css = content[css_start:css_end]
+    else:
+        css = "<style></style>"
     js_m = re.search(r"<script>.*?</script>", content, re.DOTALL)
-    css = css_m.group(0) if css_m else "<style></style>"
     js = js_m.group(0) if js_m else ""
     return css, js
 
