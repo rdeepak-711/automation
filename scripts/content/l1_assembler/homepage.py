@@ -336,3 +336,123 @@ Use exact slugs as shown. No markdown."""
         _save_cfg(site_slug, cfg)
 
     return cached
+
+
+# ─── Claude content generators ────────────────────────────────────────────────
+
+def _gen_hero(attraction: str, cfg: dict, site_slug: str, force: bool = False) -> dict:
+    """Generate hero section content. Cached under '_homepage_hero'."""
+    CACHE_KEY = "_homepage_hero"
+    if not force and CACHE_KEY in cfg:
+        return cfg[CACHE_KEY]
+    prompt = (
+        f"Write homepage hero content for a travel website about '{attraction}'.\n"
+        f"Return ONLY JSON:\n"
+        f'{{"badge": "City, Country (3-4 words)", '
+        f'"h1": "8-12 word title like \'{attraction} — Tickets, Tours & Visitor Guide\'", '
+        f'"desc": "2-3 sentence paragraph, 40-55 words, compelling intro covering what makes it special", '
+        f'"cta_tickets": "View Tickets — from €XX →", '
+        f'"cta_plan": "Plan Your Visit"}}'
+    )
+    raw = _call_claude(prompt, timeout=30)
+    result = _parse_json(raw)
+    if isinstance(result, dict) and "h1" in result:
+        cfg[CACHE_KEY] = result
+        _save_cfg(site_slug, cfg)
+        return result
+    return {
+        "badge": attraction,
+        "h1": f"{attraction} — Tickets, Tours & Visitor Guide",
+        "desc": f"Everything you need to plan a perfect visit to {attraction}.",
+        "cta_tickets": "View Tickets →",
+        "cta_plan": "Plan Your Visit",
+    }
+
+
+def _gen_section_headings(attraction: str, cfg: dict, site_slug: str, force: bool = False) -> dict:
+    """Generate all section H2s and short descs. Cached under '_homepage_headings'."""
+    CACHE_KEY = "_homepage_headings"
+    if not force and CACHE_KEY in cfg:
+        return cfg[CACHE_KEY]
+    prompt = (
+        f"Write section headings and one-line descriptions for a '{attraction}' homepage.\n"
+        f"Return ONLY JSON with these exact keys:\n"
+        f"tickets_h2, tickets_desc, pyv_h2, pyv_desc, tips_h2, tips_desc, "
+        f"wts_h2, wts_desc, faq_h2, faq_desc\n"
+        f"Each h2: 5-8 words. Each desc: 1 sentence, ≤15 words."
+    )
+    raw = _call_claude(prompt, timeout=30)
+    result = _parse_json(raw)
+    if isinstance(result, dict) and "tickets_h2" in result:
+        cfg[CACHE_KEY] = result
+        _save_cfg(site_slug, cfg)
+        return result
+    return {
+        "tickets_h2": f"Top {attraction} Tickets & Tours",
+        "tickets_desc": "Compare options and book the right ticket for your visit.",
+        "pyv_h2": f"Planning Your Visit to {attraction}",
+        "pyv_desc": "Everything you need to know before you go.",
+        "tips_h2": "Things to Know Before You Book",
+        "tips_desc": "Practical tips to make the most of your visit.",
+        "wts_h2": f"What to See at {attraction}",
+        "wts_desc": "Don't miss these highlights during your visit.",
+        "faq_h2": "Frequently Asked Questions",
+        "faq_desc": f"Common questions about visiting {attraction}.",
+    }
+
+
+def _gen_tips(attraction: str, cfg: dict, site_slug: str, force: bool = False) -> list[dict]:
+    """Generate 6 tip cards. Cached under '_homepage_tips'."""
+    CACHE_KEY = "_homepage_tips"
+    if not force and CACHE_KEY in cfg:
+        return cfg[CACHE_KEY]
+    sys.path.insert(0, str(REPO_ROOT / "scripts" / "content" / "l1_assembler"))
+    from content_generator import generate_know_tips
+    tips = generate_know_tips(attraction)
+    if tips:
+        cfg[CACHE_KEY] = tips
+        _save_cfg(site_slug, cfg)
+    return tips or []
+
+
+def _gen_faqs(attraction: str, cfg: dict, site_slug: str, force: bool = False) -> list[dict]:
+    """Generate 10 FAQ items. Cached under '_homepage_faqs'."""
+    CACHE_KEY = "_homepage_faqs"
+    if not force and CACHE_KEY in cfg:
+        return cfg[CACHE_KEY]
+    prompt = (
+        f"Generate 10 FAQ items for the homepage of a travel site about '{attraction}'.\n"
+        f"Cover: tickets, hours, getting there, tips, accessibility, photography, language, cancellation.\n"
+        f"Each answer: 1-3 sentences, factual.\n"
+        f'Return ONLY a JSON array: [{{"question": "...", "answer": "..."}}]'
+    )
+    raw = _call_claude(prompt, timeout=90)
+    result = _parse_json(raw)
+    if isinstance(result, list) and result:
+        faqs = result[:10]
+        cfg[CACHE_KEY] = faqs
+        _save_cfg(site_slug, cfg)
+        return faqs
+    return []
+
+
+def _gen_banner(attraction: str, cfg: dict, site_slug: str, force: bool = False) -> dict:
+    """Generate CTA banner. Cached under '_homepage_banner'."""
+    CACHE_KEY = "_homepage_banner"
+    if not force and CACHE_KEY in cfg:
+        return cfg[CACHE_KEY]
+    prompt = (
+        f"Write a CTA banner for '{attraction}' homepage.\n"
+        f'Return ONLY JSON: {{"h2": "6-10 word call to action", "desc": "1 sentence ≤20 words", "btn": "3-5 word button label"}}'
+    )
+    raw = _call_claude(prompt, timeout=30)
+    result = _parse_json(raw)
+    if isinstance(result, dict) and "h2" in result:
+        cfg[CACHE_KEY] = result
+        _save_cfg(site_slug, cfg)
+        return result
+    return {
+        "h2": f"Ready to visit {attraction}?",
+        "desc": "Book your tickets in advance and skip the queues.",
+        "btn": "Check Availability",
+    }
