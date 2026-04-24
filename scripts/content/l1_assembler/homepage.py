@@ -456,3 +456,233 @@ def _gen_banner(attraction: str, cfg: dict, site_slug: str, force: bool = False)
         "desc": "Book your tickets in advance and skip the queues.",
         "btn": "Check Availability",
     }
+
+
+# ─── Section renderers ────────────────────────────────────────────────────────
+
+def _render_ticket_card(article: dict, enrich: dict, campaign_id: str) -> str:
+    slug = article["slug"]
+    e_data = enrich.get(slug, {})
+    tag = _e(e_data.get("tag", "Popular"))
+    title = _e(article.get("card_title") or slug.replace("-", " ").title())
+    price_raw = e_data.get("price", "")
+    price = _e(price_raw) if price_raw else ""
+    duration = _e(e_data.get("duration", ""))
+    lang = _e(e_data.get("lang", ""))
+    article_url = _e(article.get("article_url", f"/{slug}/"))
+
+    aff_url = article.get("affiliate_url", "")
+    if aff_url:
+        cta_href = _e(_stamp_campaign(aff_url, campaign_id))
+        cta_rel = ' rel="nofollow sponsored" target="_blank"'
+    else:
+        cta_href = article_url
+        cta_rel = ""
+
+    bullets = article.get("bullets", [])
+    bullets_html = "".join(f"<li>{_e(b)}</li>" for b in bullets[:4])
+
+    price_block = (
+        f'<div class="att-ticket__price">'
+        f'<span class="att-ticket__price-label">from</span>'
+        f'<span class="att-ticket__price-value">{price}</span>'
+        f'</div>'
+    ) if price else ""
+
+    meta_parts = []
+    if duration:
+        meta_parts.append(f"<span>{duration}</span>")
+    if lang:
+        meta_parts.append(f"<span>{lang}</span>")
+    meta_block = f'<div class="att-ticket__meta">{"".join(meta_parts)}</div>' if meta_parts else ""
+
+    return f'''
+      <div class="att-ticket">
+        <img class="att-ticket__img" src="{PLACEHOLDER_IMG}" alt="{title}" loading="lazy" />
+        <div class="att-ticket__body">
+          <span class="att-ticket__tag att-ticket__tag--popular">{tag}</span>
+          <h3>{title}</h3>
+          {price_block}
+          <ul class="att-ticket__bullets">{bullets_html}</ul>
+        </div>
+        <div class="att-ticket__footer">
+          {meta_block}
+          <a href="{cta_href}" class="att-ticket__cta"{cta_rel}>Check Availability &rarr;</a>
+          <a href="{article_url}" class="att-ticket__more">Learn more &rarr;</a>
+        </div>
+      </div>'''
+
+
+def _render_highlight_card(article: dict, cta_text: str = "Read guide &rarr;") -> str:
+    slug = article["slug"]
+    title = _e(article.get("card_title") or slug.replace("-", " ").title())
+    desc = _e(article.get("description", ""))
+    url = _e(article.get("article_url", f"/{slug}/"))
+    return f'''
+      <div class="att-highlight">
+        <img class="att-highlight__img" src="{PLACEHOLDER_IMG}" alt="{title}" loading="lazy" />
+        <div class="att-highlight__body">
+          <h3><a href="{url}">{title}</a></h3>
+          <p>{desc}</p>
+          <a href="{url}">{cta_text}</a>
+        </div>
+      </div>'''
+
+
+def _render_tip(tip: dict) -> str:
+    emoji = _e(tip.get("emoji", "💡"))
+    label = _raw(tip.get("label", ""))
+    desc = _raw(tip.get("desc", ""))
+    return f'''
+      <div class="att-tip">
+        <span class="att-tip__icon">{emoji}</span>
+        <span><strong>{label}</strong> {desc}</span>
+      </div>'''
+
+
+def _render_faq(item: dict) -> str:
+    q = _e(item.get("question", ""))
+    a = _e(item.get("answer", ""))
+    return f'''
+        <details class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <summary class="att-faq-item__q">
+            <span itemprop="name">{q}</span>
+          </summary>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span class="att-faq-item__a" itemprop="text">{a}</span>
+          </div>
+        </details>'''
+
+
+def _assemble(
+    site_slug: str,
+    attraction: str,
+    domain: str,
+    campaign_id: str,
+    cta_url: str,
+    hero: dict,
+    headings: dict,
+    ticket_articles: list[dict],
+    ticket_enrich: dict,
+    pyv_articles: list[dict],
+    wts_articles: list[dict],
+    tips: list[dict],
+    faqs: list[dict],
+    banner: dict,
+    css: str,
+    js: str,
+) -> str:
+    tickets_html = "".join(_render_ticket_card(a, ticket_enrich, campaign_id) for a in ticket_articles)
+    pyv_html = "".join(_render_highlight_card(a, "Know more &rarr;") for a in pyv_articles)
+    wts_html = "".join(_render_highlight_card(a, "Know more &rarr;") for a in wts_articles)
+    tips_html = "".join(_render_tip(t) for t in tips)
+    faqs_html = "".join(_render_faq(f) for f in faqs)
+
+    cta_aff = _e(_stamp_campaign(cta_url, campaign_id)) if cta_url.startswith("http") else _e(cta_url)
+    domain_esc = re.escape(domain)
+
+    seo_title = hero.get("h1", f"{attraction} — Tickets, Tours & Visitor Guide")
+    seo_desc = f"Everything you need to plan your {attraction} visit — compare tickets, discover highlights, and get practical tips."
+
+    page = f"""<!-- SEO
+title: {seo_title}
+description: {seo_desc}
+canonical: https://{domain}
+-->
+
+{css}
+
+<div class="att-homepage">
+
+  <section class="att-hero">
+    <div class="att-container">
+      <div class="att-hero__inner">
+        <div class="att-hero__content">
+          <div class="att-hero__badge att-animate">{_e(hero.get("badge", attraction))}</div>
+          <h1 class="att-animate att-delay-1">{_e(hero.get("h1", attraction))}</h1>
+          <p class="att-hero__desc att-animate att-delay-2">{_e(hero.get("desc", ""))}</p>
+          <div class="att-hero__actions att-animate att-delay-3">
+            <a href="#att-tickets" class="att-btn att-btn--primary">{_raw(hero.get("cta_tickets", "View Tickets &rarr;"))}</a>
+            <a href="#att-plan" class="att-btn att-btn--outline">{_e(hero.get("cta_plan", "Plan Your Visit"))}</a>
+          </div>
+        </div>
+        <div class="att-hero__image-wrap att-animate att-delay-2">
+          <img class="att-hero__img" src="{PLACEHOLDER_IMG}" alt="{_e(hero.get('h1', attraction))}" loading="eager" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="att-tickets" class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>{_e(headings.get("tickets_h2", "Top Tickets & Tours"))}</h2>
+        <p>{_e(headings.get("tickets_desc", ""))}</p>
+      </div>
+      <div class="att-tickets-grid">{tickets_html}
+      </div>
+      <div class="att-section-link"><a href="/tickets/">View All Tickets &amp; Tours &rarr;</a></div>
+    </div>
+  </section>
+
+  <section id="att-plan" class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>{_e(headings.get("pyv_h2", "Plan Your Visit"))}</h2>
+        <p>{_e(headings.get("pyv_desc", ""))}</p>
+      </div>
+      <div class="att-highlights-grid">{pyv_html}
+      </div>
+      <div class="att-section-link"><a href="/plan-your-visit/">View Complete Visitor Guide &rarr;</a></div>
+    </div>
+  </section>
+
+  <section class="att-section att-section--alt">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>{_e(headings.get("tips_h2", "Things to Know Before You Book"))}</h2>
+        <p>{_e(headings.get("tips_desc", ""))}</p>
+      </div>
+      <div class="att-tips-grid">{tips_html}
+      </div>
+    </div>
+  </section>
+
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>{_e(headings.get("wts_h2", "What to See"))}</h2>
+        <p>{_e(headings.get("wts_desc", ""))}</p>
+      </div>
+      <div class="att-highlights-grid">{wts_html}
+      </div>
+      <div class="att-section-link"><a href="/what-to-see/">Explore Everything to See &rarr;</a></div>
+    </div>
+  </section>
+
+  <section class="att-cta-banner">
+    <h2>{_e(banner.get("h2", f"Ready to visit {attraction}?"))}</h2>
+    <p>{_e(banner.get("desc", ""))}</p>
+    <a href="{cta_aff}" class="att-btn att-btn--white" rel="nofollow sponsored" target="_blank">{_e(banner.get("btn", "Check Availability"))} &rarr;</a>
+  </section>
+
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header att-section-header--center">
+        <h2>{_e(headings.get("faq_h2", "Frequently Asked Questions"))}</h2>
+        <p>{_e(headings.get("faq_desc", ""))}</p>
+      </div>
+      <div class="att-faq" itemscope itemtype="https://schema.org/FAQPage">{faqs_html}
+      </div>
+    </div>
+  </section>
+
+</div>
+
+{js}
+"""
+
+    if domain:
+        page = re.sub(r'https?://(?:www\.)?' + domain_esc + r'(/[^"\'>\s]*)', r'\1', page)
+
+    return page
