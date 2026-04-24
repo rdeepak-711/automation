@@ -154,8 +154,7 @@ Each object:
     - tickets-tours with prominence=top_ticket: 3–4 sentences, 65–100 words. Cover what's included, why it stands out, who it suits.
     - tickets-tours (booking/experience articles — tours, cruises, skip-the-line, guided): 2–3 sentences, 45–70 words. Focus on the experience and booking benefit.
     - tickets-tours (planning/info articles — guides, tips, prices, what's included, how-to): 3–4 sentences, 65–100 words. Cover the key practical points a visitor needs.
-    - what-to-see with prominence=top_highlight: 3–4 sentences, 65–100 words. Describe what the visitor actually sees, why it's worth prioritising, what makes it distinctive.
-    - what-to-see (regular): 2–3 sentences, 45–70 words. Describe the experience and why it's worth seeing.
+    - what-to-see (any): 1–2 sentences, ≤35 words. Describe what the visitor sees and why it's worth visiting.
   "tags": array of 1–2 short labels (≤3 words each) — specific, useful for filtering
   "bullets": array of 3–4 strings, each ≤10 words — "what's included" style for ticket cards. Examples: "Audio guide in 19 languages", "Skip the queue entry", "Departs from city centre dock". ONLY include this field for tickets-tours articles. For plan-your-visit and what-to-see articles, omit "bullets" entirely.
 
@@ -313,7 +312,7 @@ def verify_metas(site_slug: str, quiet: bool = False) -> list[str]:
         if title.lower() == _slug_to_title(slug).lower():
             issues.append("title=slug (h1 extraction failed)")
         cat = m.get("category", "")
-        min_desc = 80 if cat in ("tickets-tours", "what-to-see") else 30
+        min_desc = 80 if cat == "tickets-tours" else 30
         if len(desc.strip()) < min_desc:
             issues.append(f"desc too short ({len(desc.strip())} chars, min {min_desc})")
         if not tags:
