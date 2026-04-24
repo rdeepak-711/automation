@@ -416,7 +416,9 @@ def fix_metas(site_slug: str) -> None:
             metas[s]["description"] = meta_item.get("description", "")
             metas[s]["tags"] = meta_item.get("tags", [])
             if article["category"] == "tickets-tours":
-                metas[s]["bullets"] = meta_item.get("bullets", [])
+                new_bullets = meta_item.get("bullets", [])
+                if new_bullets:
+                    metas[s]["bullets"] = new_bullets
 
     _write(metas_path, metas)
     print(f"[{site_slug}] Fix done. Re-verifying...")
