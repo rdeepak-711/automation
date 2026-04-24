@@ -566,6 +566,7 @@ def _assemble(
     domain: str,
     campaign_id: str,
     cta_url: str,
+    faq_url: str,
     hero: dict,
     headings: dict,
     ticket_articles: list[dict],
@@ -689,7 +690,7 @@ canonical: https://{domain}
       <div class="att-faq" itemscope itemtype="https://schema.org/FAQPage">{faqs_html}
       </div>
       <div class="att-section-link">
-        <a href="/faq/">View All Frequently Asked Questions &rarr;</a>
+        <a href="{_e(faq_url)}">View All Frequently Asked Questions &rarr;</a>
       </div>
     </div>
   </section>
@@ -760,6 +761,12 @@ def main() -> None:
     faqs = _gen_faqs(attraction, cfg, site_slug, force)
     banner = _gen_banner(attraction, cfg, site_slug, force)
 
+    faq_slug = next(
+        (s for s, v in metas.items() if v.get("category") == "plan-your-visit" and "faq" in s),
+        None,
+    )
+    faq_url = f"/{faq_slug}/" if faq_slug else "/faq/"
+
     print(f"[{site_slug}] Assembling HTML...")
     page = _assemble(
         site_slug=site_slug,
@@ -767,6 +774,7 @@ def main() -> None:
         domain=domain,
         campaign_id=campaign_id,
         cta_url=cta_url,
+        faq_url=faq_url,
         hero=hero,
         headings=headings,
         ticket_articles=ticket_articles,
