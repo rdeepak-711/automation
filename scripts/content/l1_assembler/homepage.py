@@ -528,7 +528,7 @@ def _render_highlight_card(article: dict, cta_text: str = "Read guide &rarr;") -
       <div class="att-highlight">
         <img class="att-highlight__img" src="{PLACEHOLDER_IMG}" alt="{title}" loading="lazy" />
         <div class="att-highlight__body">
-          <h3><a href="{url}">{title}</a></h3>
+          <h3>{title}</h3>
           <p>{desc}</p>
           <a href="{url}">{cta_text}</a>
         </div>
@@ -597,6 +597,14 @@ canonical: https://{domain}
 -->
 
 {css}
+<style>
+.att-homepage .att-highlights-grid .att-highlight__body p {{
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}}
+</style>
 
 <div class="att-homepage">
 
