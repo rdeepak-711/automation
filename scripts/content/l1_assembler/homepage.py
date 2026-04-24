@@ -686,3 +686,89 @@ canonical: https://{domain}
         page = re.sub(r'https?://(?:www\.)?' + domain_esc + r'(/[^"\'>\s]*)', r'\1', page)
 
     return page
+
+
+# ─── Attraction name extraction ───────────────────────────────────────────────
+
+def _extract_attraction_name(h1: str, site_slug: str) -> str:
+    """Extract attraction name from L1 page H1."""
+    for prefix in ("Tickets & Tours — ", "Tickets & Tours for ", "Tickets and Tours — ", "Tickets for "):
+        if h1.startswith(prefix):
+            return h1[len(prefix):]
+    for suffix in (" Tickets &amp; Tours", " Tickets & Tours", " Tickets and Tours"):
+        if h1.endswith(suffix):
+            return h1[: -len(suffix)]
+    return site_slug.replace("-", " ").title()
+
+
+# ─── Entry point ──────────────────────────────────────────────────────────────
+
+def main() -> None:
+    p = argparse.ArgumentParser(description="Generate homepage.html for a site")
+    p.add_argument("site_slug", help="e.g. amsterdam-canal-cruise")
+    p.add_argument("--force", action="store_true", help="Regenerate cached Claude content")
+    args = p.parse_args()
+
+    site_slug = args.site_slug
+    force = args.force
+
+    print(f"[{site_slug}] Generating homepage...")
+
+    env = _load_env(site_slug)
+    cfg = _load_cfg(site_slug)
+
+    tt_h1 = cfg.get("pages", {}).get("Tickets & Tours", {}).get("h1", "")
+    attraction = _extract_attraction_name(tt_h1, site_slug)
+    print(f"[{site_slug}] Attraction: {attraction}")
+
+    domain = cfg.get("domain", "")
+    cta_url = cfg.get("gyg_url", "/tickets/")
+    campaign_id = f"{site_slug}-homepage"
+    currency = env.get("CURRENCY", "€")
+
+    metas = _load_metas(site_slug)
+    tickets_by_tid = {t["tid"]: t for t in _parse_tickets_md(site_slug)}
+    css, js = _load_css_js()
+
+    ticket_articles = _select_ticket_articles(metas, cfg, tickets_by_tid)
+    pyv_articles = _select_pyv_articles(metas)
+    wts_articles = _select_wts_articles(metas, cfg)
+    print(f"[{site_slug}] Selected: {len(ticket_articles)} tickets, {len(pyv_articles)} PYV, {len(wts_articles)} WTS")
+
+    ticket_enrich = _enrich_ticket_cards(ticket_articles, cfg, site_slug, attraction, currency, force)
+
+    hero = _gen_hero(attraction, cfg, site_slug, force)
+    headings = _gen_section_headings(attraction, cfg, site_slug, force)
+    tips = _gen_tips(attraction, cfg, site_slug, force)
+    faqs = _gen_faqs(attraction, cfg, site_slug, force)
+    banner = _gen_banner(attraction, cfg, site_slug, force)
+
+    print(f"[{site_slug}] Assembling HTML...")
+    page = _assemble(
+        site_slug=site_slug,
+        attraction=attraction,
+        domain=domain,
+        campaign_id=campaign_id,
+        cta_url=cta_url,
+        hero=hero,
+        headings=headings,
+        ticket_articles=ticket_articles,
+        ticket_enrich=ticket_enrich,
+        pyv_articles=pyv_articles,
+        wts_articles=wts_articles,
+        tips=tips,
+        faqs=faqs,
+        banner=banner,
+        css=css,
+        js=js,
+    )
+
+    out_dir = REPO_ROOT / "output" / site_slug
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_file = out_dir / "homepage.html"
+    out_file.write_text(page, encoding="utf-8")
+    print(f"[{site_slug}] Wrote {out_file} ({len(page):,} bytes)")
+
+
+if __name__ == "__main__":
+    main()
