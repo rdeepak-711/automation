@@ -183,3 +183,99 @@ def _parse_tickets_md(site_slug: str) -> list[dict]:
             "article_slug": article_slug,
         })
     return tickets
+
+
+# ─── Article selection ────────────────────────────────────────────────────────
+
+def _select_ticket_articles(metas: dict, cfg: dict, tickets_by_tid: dict) -> list[dict]:
+    """Return up to 6 editorial ticket articles with affiliate data attached.
+
+    Order: top tickets first (from _featured_match, TID insertion order),
+    then fill from _editorial_affiliate_map, then remaining TT metas.
+
+    Each returned dict has all metas fields plus:
+      slug, article_url, tid, affiliate_url, affiliate_title
+    """
+    featured_match = cfg.get("_featured_match", {})
+    editorial_affiliate = cfg.get("_editorial_affiliate_map", {})
+
+    # Build slug -> tid map: featured_match takes priority
+    slug_to_tid: dict[str, str] = {v: k for k, v in featured_match.items()}
+    for slug, tid in editorial_affiliate.items():
+        if slug not in slug_to_tid:
+            slug_to_tid[slug] = tid
+
+    top_slugs = list(featured_match.values())
+    result = []
+    seen: set[str] = set()
+
+    def _add(slug: str) -> bool:
+        if slug in seen or len(result) >= 6:
+            return False
+        m = metas.get(slug)
+        if not m or m.get("category") != "tickets-tours":
+            return False
+        tid = slug_to_tid.get(slug, "")
+        aff_row = tickets_by_tid.get(tid, {})
+        result.append({
+            **m,
+            "slug": slug,
+            "article_url": f"/{slug}/",
+            "tid": tid,
+            "affiliate_url": aff_row.get("affiliate_url", ""),
+            "affiliate_title": aff_row.get("title", ""),
+        })
+        seen.add(slug)
+        return True
+
+    for slug in top_slugs:
+        _add(slug)
+    for slug in editorial_affiliate:
+        if len(result) >= 6:
+            break
+        _add(slug)
+    for slug in metas:
+        if len(result) >= 6:
+            break
+        if metas[slug].get("category") == "tickets-tours":
+            _add(slug)
+
+    return result
+
+
+def _select_pyv_articles(metas: dict) -> list[dict]:
+    """Return first 6 plan-your-visit articles in metas insertion order."""
+    result = []
+    for slug, m in metas.items():
+        if m.get("category") == "plan-your-visit":
+            result.append({**m, "slug": slug, "article_url": f"/{slug}/"})
+            if len(result) >= 6:
+                break
+    return result
+
+
+def _select_wts_articles(metas: dict, cfg: dict) -> list[dict]:
+    """Return up to 6 WTS articles — top highlights first, then fill."""
+    top_slugs = cfg.get("_top_highlights_wts", [])
+    result = []
+    seen: set[str] = set()
+
+    def _add(slug: str) -> bool:
+        if slug in seen or len(result) >= 6:
+            return False
+        m = metas.get(slug)
+        if not m or m.get("category") != "what-to-see":
+            return False
+        result.append({**m, "slug": slug, "article_url": f"/{slug}/"})
+        seen.add(slug)
+        return True
+
+    for slug in top_slugs:
+        _add(slug)
+    for slug in metas:
+        if len(result) >= 6:
+            break
+        if metas[slug].get("category") == "what-to-see":
+            _add(slug)
+
+    return result
