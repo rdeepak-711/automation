@@ -688,6 +688,9 @@ canonical: https://{domain}
       </div>
       <div class="att-faq" itemscope itemtype="https://schema.org/FAQPage">{faqs_html}
       </div>
+      <div class="att-section-link">
+        <a href="/faq/">View All Frequently Asked Questions &rarr;</a>
+      </div>
     </div>
   </section>
 
