@@ -514,6 +514,7 @@ publish_utility_page() {
   local _RENDERED
   _RENDERED=$(sed \
     -e "s|{{SITE_URL}}|${_SITE_URL}|g" \
+    -e "s|{{HOSTNAME}}|${_HOSTNAME}|g" \
     -e "s|{{SITE_NAME}}|${_SITE_NAME}|g" \
     -e "s|{{ATTRACTION_NAME}}|${_ATTRACTION_NAME}|g" \
     -e "s|{{ATTRACTION_SLUG}}|${_ATTRACTION_SLUG}|g" \
