@@ -91,7 +91,7 @@ H4_FONT_SIZE=$(( ${H4_FONT_SIZE:-24} + 0 ))
 echo ""
 echo "── Configuring GP Font Library: ${FONT_NAME} ───────────────────────────────"
 
-PHP_TEMPLATE1="$SCRIPT_DIR/scripts/base/typography-font-library.php"
+PHP_TEMPLATE1="$SCRIPT_DIR/scripts/wordpress/typography-font-library.php"
 PHP_LOCAL="/tmp/gp_typography_$$.php"
 PHP_REMOTE="/tmp/gp_typography_$$.php"
 
@@ -140,7 +140,7 @@ fi
 echo ""
 echo "── Configuring GP Typography Manager: Desktop ──────────────────────────────"
 
-PHP_TEMPLATE2="$SCRIPT_DIR/scripts/base/typography-manager.php"
+PHP_TEMPLATE2="$SCRIPT_DIR/scripts/wordpress/typography-manager.php"
 PHP_LOCAL2="/tmp/gp_typo_manager_$$.php"
 PHP_REMOTE2="/tmp/gp_typo_manager_$$.php"
 
