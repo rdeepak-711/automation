@@ -301,12 +301,20 @@ import json, re, sys
 html_file, title, slug, status = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 content = open(html_file).read()
 content = re.sub(r'<!--\s*SEO[\s\S]*?-->\s*', '', content, count=1).lstrip()
-# Decode presentation entities so WP doesn't double-encode them
 for ent, ch in [('&rarr;','→'),('&larr;','←'),('&mdash;','—'),('&ndash;','–'),('&middot;','·'),('&bull;','•'),('&hellip;','…'),('&times;','×')]:
     content = content.replace(ent, ch)
-# Split at <section> boundaries — each section becomes its own editable wp:html block
+WP_SHORTCODE_RE = re.compile(r'\[fluentform\b[^\]]*\]')
 parts = re.split(r'(?=<section\b)', content)
-blocks = '\n\n'.join('<!-- wp:html -->\n' + p.strip() + '\n<!-- /wp:html -->' for p in parts if p.strip())
+out = []
+for p in parts:
+    p = p.strip()
+    if not p:
+        continue
+    if WP_SHORTCODE_RE.search(p):
+        out.append('<!-- wp:shortcode -->\n' + p + '\n<!-- /wp:shortcode -->')
+    else:
+        out.append('<!-- wp:html -->\n' + p + '\n<!-- /wp:html -->')
+blocks = '\n\n'.join(out)
 print(json.dumps({'title': title, 'slug': slug, 'content': blocks, 'status': status}))
 PYEOF
 
@@ -420,12 +428,20 @@ import json, re, sys
 html_file, title, slug, cat_id, status = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5]
 content = open(html_file).read()
 content = re.sub(r'<!--\s*SEO[\s\S]*?-->\s*', '', content, count=1).lstrip()
-# Decode presentation entities so WP doesn't double-encode them
 for ent, ch in [('&rarr;','→'),('&larr;','←'),('&mdash;','—'),('&ndash;','–'),('&middot;','·'),('&bull;','•'),('&hellip;','…'),('&times;','×')]:
     content = content.replace(ent, ch)
-# Split at <section> boundaries — each section becomes its own editable wp:html block
+WP_SHORTCODE_RE = re.compile(r'\[fluentform\b[^\]]*\]')
 parts = re.split(r'(?=<section\b)', content)
-blocks = '\n\n'.join('<!-- wp:html -->\n' + p.strip() + '\n<!-- /wp:html -->' for p in parts if p.strip())
+out = []
+for p in parts:
+    p = p.strip()
+    if not p:
+        continue
+    if WP_SHORTCODE_RE.search(p):
+        out.append('<!-- wp:shortcode -->\n' + p + '\n<!-- /wp:shortcode -->')
+    else:
+        out.append('<!-- wp:html -->\n' + p + '\n<!-- /wp:html -->')
+blocks = '\n\n'.join(out)
 payload = {'title': title, 'slug': slug, 'content': blocks, 'status': status}
 if cat_id > 0:
     payload['categories'] = [cat_id]
@@ -527,13 +543,11 @@ publish_utility_page() {
         _rm_desc_b64=$(printf '%s' "Get in touch with the ${_SITE_NAME} Guide team. Questions about tickets, tours, or visiting? We are here to help." | base64)
       fi
       ssh "${SSH_KEY_OPT[@]}" "${WP_SSH_USER}@${WP_SSH_HOST}" "
-        wp post meta update ${_PAGE_ID} _generate_disable_title true --path='${WP_PATH}' 2>/dev/null
-        wp post meta update ${_PAGE_ID} _generate_disable_featured_image true --path='${WP_PATH}' 2>/dev/null
         wp post meta update ${_PAGE_ID} rank_math_title \"\$(printf '%s' '${_rm_title_b64}' | base64 -d)\" --path='${WP_PATH}' 2>/dev/null
         wp post meta update ${_PAGE_ID} rank_math_description \"\$(printf '%s' '${_rm_desc_b64}' | base64 -d)\" --path='${WP_PATH}' 2>/dev/null
         wp eval \"update_post_meta(${_PAGE_ID}, 'rank_math_robots', array('noindex'));\" --path='${WP_PATH}' 2>/dev/null
       " </dev/null 2>/dev/null && \
-        echo "  ⚙ Utility meta set (id=${_PAGE_ID}): GP title/image disabled + noindex" || \
+        echo "  ⚙ Utility meta set (id=${_PAGE_ID}): Rank Math title/desc + noindex" || \
         echo "  ⚠ Could not set utility meta for id=${_PAGE_ID}"
     fi
   fi
