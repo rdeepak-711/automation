@@ -301,8 +301,13 @@ import json, re, sys
 html_file, title, slug, status = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 content = open(html_file).read()
 content = re.sub(r'<!--\s*SEO[\s\S]*?-->\s*', '', content, count=1).lstrip()
-wrapped = '<!-- wp:html -->\n' + content + '\n<!-- /wp:html -->'
-print(json.dumps({'title': title, 'slug': slug, 'content': wrapped, 'status': status}))
+# Decode presentation entities so WP doesn't double-encode them
+for ent, ch in [('&rarr;','→'),('&larr;','←'),('&mdash;','—'),('&ndash;','–'),('&middot;','·'),('&bull;','•'),('&hellip;','…'),('&times;','×')]:
+    content = content.replace(ent, ch)
+# Split at <section> boundaries — each section becomes its own editable wp:html block
+parts = re.split(r'(?=<section\b)', content)
+blocks = '\n\n'.join('<!-- wp:html -->\n' + p.strip() + '\n<!-- /wp:html -->' for p in parts if p.strip())
+print(json.dumps({'title': title, 'slug': slug, 'content': blocks, 'status': status}))
 PYEOF
 
   if [[ ! -s "$TMP_PAYLOAD" ]]; then
@@ -415,8 +420,13 @@ import json, re, sys
 html_file, title, slug, cat_id, status = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5]
 content = open(html_file).read()
 content = re.sub(r'<!--\s*SEO[\s\S]*?-->\s*', '', content, count=1).lstrip()
-wrapped = '<!-- wp:html -->\n' + content + '\n<!-- /wp:html -->'
-payload = {'title': title, 'slug': slug, 'content': wrapped, 'status': status}
+# Decode presentation entities so WP doesn't double-encode them
+for ent, ch in [('&rarr;','→'),('&larr;','←'),('&mdash;','—'),('&ndash;','–'),('&middot;','·'),('&bull;','•'),('&hellip;','…'),('&times;','×')]:
+    content = content.replace(ent, ch)
+# Split at <section> boundaries — each section becomes its own editable wp:html block
+parts = re.split(r'(?=<section\b)', content)
+blocks = '\n\n'.join('<!-- wp:html -->\n' + p.strip() + '\n<!-- /wp:html -->' for p in parts if p.strip())
+payload = {'title': title, 'slug': slug, 'content': blocks, 'status': status}
 if cat_id > 0:
     payload['categories'] = [cat_id]
 print(json.dumps(payload))
@@ -469,6 +479,74 @@ PYEOF
   done
 }
 
+# ── Helper: publish About Us & Contact Us from templates ─────────────────────
+# Renders templates/about-us-template.html and templates/contact-us-template.html
+# with site-specific variables, publishes via REST API, and sets noindex meta.
+publish_utility_page() {
+  local TEMPLATE_FILE="$1" PAGE_SLUG="$2" PAGE_TITLE="$3"
+
+  [[ -f "$TEMPLATE_FILE" ]] || { echo "  ✗ Template not found: $TEMPLATE_FILE"; COUNT_FAILED=$(( COUNT_FAILED + 1 )); return; }
+
+  # Derive site variables from WP_SITE_URL
+  local _SITE_URL="${WP_SITE_URL%/}"
+  local _HOSTNAME="${_SITE_URL#https://}"; _HOSTNAME="${_HOSTNAME#http://}"; _HOSTNAME="${_HOSTNAME%%/*}"
+  local _SITE_NAME=$(echo "$_HOSTNAME" | sed 's/-guide\.com$//' | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))} 1')
+  local _ATTRACTION_NAME="$_SITE_NAME"
+  local _ATTRACTION_SLUG=$(echo "$_ATTRACTION_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g')
+
+  # Render template with variable substitution
+  local _RENDERED
+  _RENDERED=$(sed \
+    -e "s|{{SITE_URL}}|${_SITE_URL}|g" \
+    -e "s|{{SITE_NAME}}|${_SITE_NAME}|g" \
+    -e "s|{{ATTRACTION_NAME}}|${_ATTRACTION_NAME}|g" \
+    -e "s|{{ATTRACTION_SLUG}}|${_ATTRACTION_SLUG}|g" \
+    "$TEMPLATE_FILE")
+
+  # Write rendered HTML to a temp file so publish_page can read it
+  local _TMP_HTML
+  _TMP_HTML=$(mktemp /tmp/wp-utility-XXXXXX.html)
+  printf '%s' "$_RENDERED" > "$_TMP_HTML"
+
+  publish_page "$_TMP_HTML" "$PAGE_SLUG" "$PAGE_TITLE"
+  rm -f "$_TMP_HTML"
+
+  # Apply extra meta: noindex + GP disable title/featured image
+  if [[ $SSH_OK == true ]]; then
+    local _PAGE_ID
+    _PAGE_ID=$(curl -s --connect-timeout 10 --max-time 30 \
+      -u "${WP_USER}:${WP_PASS}" \
+      "${WP_PAGES_API}?slug=${PAGE_SLUG}&status=any&per_page=1" 2>/dev/null) || _PAGE_ID="[]"
+    _PAGE_ID=$(python3 -c "import json,sys; p=json.loads(sys.argv[1]); print(p[0]['id'] if p else '')" "$_PAGE_ID" 2>/dev/null) || _PAGE_ID=""
+
+    if [[ -n "$_PAGE_ID" ]]; then
+      local _rm_title_b64=$(printf '%s' "About Us — ${_SITE_NAME} Guide | ${_HOSTNAME}" | base64)
+      local _rm_desc_b64=$(printf '%s' "Learn about ${_SITE_NAME} Guide — your complete resource for tickets, tours, and visitor tips." | base64)
+      if [[ "$PAGE_SLUG" == "contact-us" ]]; then
+        _rm_title_b64=$(printf '%s' "Contact Us — ${_SITE_NAME} Guide | ${_HOSTNAME}" | base64)
+        _rm_desc_b64=$(printf '%s' "Get in touch with the ${_SITE_NAME} Guide team. Questions about tickets, tours, or visiting? We are here to help." | base64)
+      fi
+      ssh "${SSH_KEY_OPT[@]}" "${WP_SSH_USER}@${WP_SSH_HOST}" "
+        wp post meta update ${_PAGE_ID} _generate_disable_title true --path='${WP_PATH}' 2>/dev/null
+        wp post meta update ${_PAGE_ID} _generate_disable_featured_image true --path='${WP_PATH}' 2>/dev/null
+        wp post meta update ${_PAGE_ID} rank_math_title \"\$(printf '%s' '${_rm_title_b64}' | base64 -d)\" --path='${WP_PATH}' 2>/dev/null
+        wp post meta update ${_PAGE_ID} rank_math_description \"\$(printf '%s' '${_rm_desc_b64}' | base64 -d)\" --path='${WP_PATH}' 2>/dev/null
+        wp eval \"update_post_meta(${_PAGE_ID}, 'rank_math_robots', array('noindex'));\" --path='${WP_PATH}' 2>/dev/null
+      " </dev/null 2>/dev/null && \
+        echo "  ⚙ Utility meta set (id=${_PAGE_ID}): GP title/image disabled + noindex" || \
+        echo "  ⚠ Could not set utility meta for id=${_PAGE_ID}"
+    fi
+  fi
+}
+
+publish_utility_pages() {
+  local _TEMPLATES_DIR="$REPO_ROOT/templates"
+  echo ""
+  echo "  ── Utility pages (About Us + Contact Us) ──"
+  publish_utility_page "$_TEMPLATES_DIR/about-us-template.html" "about-us" "About Us"
+  publish_utility_page "$_TEMPLATES_DIR/contact-us-template.html" "contact-us" "Contact Us"
+}
+
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 if [[ -z "$ONLY" ]]; then
   # Publish everything
@@ -493,6 +571,11 @@ if [[ -z "$ONLY" ]]; then
       publish_silo "$(basename "$SILO_DIR")"
     done
   fi
+  publish_utility_pages
+elif [[ "$ONLY" == "about-us" ]]; then
+  publish_utility_page "$REPO_ROOT/templates/about-us-template.html" "about-us" "About Us"
+elif [[ "$ONLY" == "contact-us" ]]; then
+  publish_utility_page "$REPO_ROOT/templates/contact-us-template.html" "contact-us" "Contact Us"
 elif [[ "$ONLY" == "homepage" ]]; then
   publish_page "$HOMEPAGE_FILE" "homepage" "homepage"
 elif [[ "$ONLY" == "l1-pages" ]]; then

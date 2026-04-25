@@ -550,14 +550,15 @@ def _render_faq(item: dict) -> str:
     q = _e(item.get("question", ""))
     a = _e(item.get("answer", ""))
     return f'''
-        <details class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-          <summary class="att-faq-item__q">
+        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q">
             <span itemprop="name">{q}</span>
-          </summary>
-          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-            <span class="att-faq-item__a" itemprop="text">{a}</span>
+            <span class="att-faq-item__icon">+</span>
+          </button>
+          <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <span itemprop="text">{a}</span>
           </div>
-        </details>'''
+        </div>'''
 
 
 def _assemble(
