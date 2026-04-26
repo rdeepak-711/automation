@@ -9,18 +9,17 @@ auto-create-site is a WordPress site bootstrapping automation tool for travel af
 ## How to Run It
 
 ```bash
-# Start or resume site setup
-./main.sh <hostname>
+# Start or resume site setup (interactive menu)
+./main.sh
 
-# Example
-./main.sh mysite.com
-
-# Force re-run a specific step (edit state file first)
-nano state/.setup-state-mysite.com
-# Remove the relevant completed step line, then re-run main.sh
+# Jump to a specific phase
+./main.sh wordpress        # Steps 0–15: WP install + config
+./main.sh content          # Steps 16–23: tickets, MD→HTML, L1, homepage
+./main.sh publish          # Steps 24–26: REST publish + cache + menu
+./main.sh audit            # Audit any live site
 ```
 
-The script is interactive — it will pause and prompt you at key steps. Keep a terminal open and follow the prompts.
+The script is interactive — it will pause and prompt you at key steps.
 
 ---
 
@@ -28,15 +27,18 @@ The script is interactive — it will pause and prompt you at key steps. Keep a 
 
 | File/Dir | Purpose |
 |---|---|
-| `main.sh` | 251-line orchestrator; runs steps 1–11 with state machine |
-| `scripts/base/` | WordPress base setup scripts (path discovery, cleanup, WP install, plugins, theme, layout, colors, typography, GP elements, indexing) |
-| `scripts/content/` | Content generation via Claude AI (blueprint extraction, site architecture, page briefs, article writing) |
-| `prompts/playbook/` | 5 reusable Claude prompts: `00-blueprint` through `05-page-builder` |
-| `config/` | Per-site TSV page manifests defining content structure |
+| `main.sh` | Thin ~50-line phase-dispatch menu |
+| `scripts/phases/` | Phase entry points: wordpress.sh, content.sh, publish.sh, audit.sh + common.sh |
+| `scripts/wordpress/` | WordPress base setup scripts (find-wp-path, cleanup, setup, plugins, theme, layout, colors, typography, GP elements, indexing) |
+| `scripts/content/` | Content generation via Claude AI (MD→HTML pipeline, publish, build-article-metas) |
+| `scripts/content/l1/` | L1 page generators (generate-*.sh) and assembler Python modules |
+| `scripts/content/l2/` | L2 article converters (batch MD→HTML pipeline) |
+| `scripts/post-launch/` | Post-launch image and card fix scripts |
+| `scripts/audit/` | Live site audit scripts |
+| `input/` | Per-site input: tickets.md, .env, images, article markdown |
 | `output/` | Generated content — gitignored, safe to delete |
 | `state/` | Per-site completion tracking files (`.setup-state-<hostname>`) |
-| `templates/typography-font-library.php` | PHP template for font injection into WordPress |
-| `templates/typography-manager.php` | PHP template for typography management |
+| `templates/` | HTML page templates and PHP templates for WordPress |
 
 ---
 
@@ -80,9 +82,9 @@ Each run creates/appends to `state/.setup-state-<hostname>`. Completed steps are
 
 ## Architecture Notes for Claude
 
-- SSH multiplexing (`ControlMaster`) is used across all scripts for efficiency. The master socket is established in `main.sh` and reused by child scripts. Do not break this pattern.
+- SSH multiplexing (`ControlMaster`) is used across all scripts for efficiency. `common.sh`'s `ssh_connect` establishes the master socket; child scripts inherit it via `SSH_KEY_OPT`. Do not break this pattern.
 - All scripts use `set -euo pipefail`. Any unhandled error exits immediately. Add explicit error handling for expected failure modes.
-- The `scripts/base/` scripts are designed to be idempotent — safe to re-run if state tracking is cleared. Maintain this property when modifying them.
+- The `scripts/wordpress/` scripts are designed to be idempotent — safe to re-run if state tracking is cleared. Maintain this property when modifying them.
 - PHP templates are injected via WP-CLI and SSH — they are not loaded as standard WordPress plugins. Be careful editing template structure.
 - The `AI_ENGINE` flag allows swapping between Claude (`claude --print`) and Gemini CLIs. Keep AI invocations behind this abstraction.
-- `config/*.tsv` manifests drive content architecture. Column order matters — changing it breaks downstream content scripts.
+- State tracking uses `scripts/phases/common.sh`'s `step_done`/`mark_done` helpers against `state/.setup-state-<hostname>`.
