@@ -219,6 +219,11 @@ if prompt_step 1 "Split Articles into Silo Folders" \
     "split_articles_done"; then
   _MD_COUNT=$(ls "$_INPUT_DIR/articles/"*.md 2>/dev/null | wc -l | tr -d ' ')
   if [[ "$_MD_COUNT" -gt 0 ]]; then
+    # Normalize xlsx to standard 7-col format before parsing
+    _XLSX=$(echo "$_INPUT_DIR"/*.xlsx | tr ' ' '\n' | grep -v '\.bak$' | head -1)
+    if [[ -f "$_XLSX" ]]; then
+      python3 "$SCRIPT_DIR/scripts/content/standardize-xlsx.py" "$_XLSX"
+    fi
     python3 - "$_INPUT_DIR" << 'PYEOF'
 import sys, os, re, glob, shutil, openpyxl
 
@@ -261,7 +266,7 @@ else:
         if col0 and '\n' in col0:
             silo_name = col0.split('\n')[0].strip()
             _current_silo = SILO_MAP.get(silo_name)
-            continue
+            # First article shares this row — fall through to process col3
         if not _current_silo:
             continue
         art_slug = str(row[3]).strip() if len(row) > 3 and row[3] else ''
@@ -384,8 +389,19 @@ else
   echo "  Skipped."
 fi
 
-# ── Step 5: Activate GP Premium ──────────────────────────────────────────────
-if prompt_step 5 "Activate GP Premium" \
+# ── Step 5: Configure Permalinks ────────────────────────────────────────────
+# Must run early — REST API /wp-json/ routes won't work without permalink structure
+if prompt_step 5 "Configure Permalinks" \
+    "Sets permalink structure to /%category%/%postname%/ and flushes rewrite rules. Enables /wp-json/ REST API routes." \
+    "configure_permalinks_done"; then
+  CONTENT_SITE_SLUG="$CONTENT_SITE_SLUG" WP_SSH_HOST="$WP_SSH_HOST" WP_SSH_USER="$WP_SSH_USER" WP_SSH_KEY="$WP_SSH_KEY" "$SCRIPT_DIR/scripts/base/configure-permalinks.sh"
+  mark_done "configure_permalinks_done"
+else
+  echo "  Skipped."
+fi
+
+# ── Step 6: Activate GP Premium ──────────────────────────────────────────────
+if prompt_step 6 "Activate GP Premium" \
     "Stores the license key and activates GP Premium modules via WP-CLI." \
     "gp_premium_done"; then
   CONTENT_SITE_SLUG="$CONTENT_SITE_SLUG" WP_SSH_HOST="$WP_SSH_HOST" WP_SSH_USER="$WP_SSH_USER" WP_SSH_KEY="$WP_SSH_KEY" "$SCRIPT_DIR/scripts/base/activate-gp-premium.sh" "$@"
@@ -394,8 +410,8 @@ else
   echo "  Skipped."
 fi
 
-# ── Step 6: Customize Appearance ─────────────────────────────────────────────
-if prompt_step 6 "Customize Appearance" \
+# ── Step 7: Customize Appearance ─────────────────────────────────────────────
+if prompt_step 7 "Customize Appearance" \
     "Hides site title and tagline, uploads logo and favicon via WP-CLI." \
     "customize_appearance_done"; then
   CONTENT_SITE_SLUG="$CONTENT_SITE_SLUG" WP_SSH_HOST="$WP_SSH_HOST" WP_SSH_USER="$WP_SSH_USER" WP_SSH_KEY="$WP_SSH_KEY" "$SCRIPT_DIR/scripts/base/customize-appearance.sh" --site-slug "$CONTENT_SITE_SLUG" "$@"
@@ -404,8 +420,8 @@ else
   echo "  Skipped."
 fi
 
-# ── Step 7: Configure Layout ─────────────────────────────────────────────────
-if prompt_step 7 "Configure Layout" \
+# ── Step 8: Configure Layout ─────────────────────────────────────────────────
+if prompt_step 8 "Configure Layout" \
     "Sets container width, header layout, mobile header, sidebar via WP-CLI." \
     "configure_layout_done"; then
   CONTENT_SITE_SLUG="$CONTENT_SITE_SLUG" WP_SSH_HOST="$WP_SSH_HOST" WP_SSH_USER="$WP_SSH_USER" WP_SSH_KEY="$WP_SSH_KEY" "$SCRIPT_DIR/scripts/base/configure-layout.sh" "$@"
@@ -414,8 +430,8 @@ else
   echo "  Skipped."
 fi
 
-# ── Step 8: Configure Colors ─────────────────────────────────────────────────
-if prompt_step 8 "Configure Colors" \
+# ── Step 9: Configure Colors ─────────────────────────────────────────────────
+if prompt_step 9 "Configure Colors" \
     "Sets GeneratePress theme colors via WP-CLI." \
     "configure_colors_done"; then
   CONTENT_SITE_SLUG="$CONTENT_SITE_SLUG" WP_SSH_HOST="$WP_SSH_HOST" WP_SSH_USER="$WP_SSH_USER" WP_SSH_KEY="$WP_SSH_KEY" "$SCRIPT_DIR/scripts/base/configure-colors.sh" "$@"
@@ -424,8 +440,8 @@ else
   echo "  Skipped."
 fi
 
-# ── Step 9: Configure Typography ─────────────────────────────────────────────
-if prompt_step 9 "Configure Typography" \
+# ── Step 10: Configure Typography ────────────────────────────────────────────
+if prompt_step 10 "Configure Typography" \
     "Adds Karla font to GP Font Library via WP-CLI." \
     "configure_typography_done"; then
   CONTENT_SITE_SLUG="$CONTENT_SITE_SLUG" WP_SSH_HOST="$WP_SSH_HOST" WP_SSH_USER="$WP_SSH_USER" WP_SSH_KEY="$WP_SSH_KEY" "$SCRIPT_DIR/scripts/base/configure-typography.sh" "$@"
@@ -434,8 +450,8 @@ else
   echo "  Skipped."
 fi
 
-# ── Step 10: Import GP Elements ──────────────────────────────────────────────
-if prompt_step 10 "Import GP Elements" \
+# ── Step 11: Import GP Elements ──────────────────────────────────────────────
+if prompt_step 11 "Import GP Elements" \
     "Imports GeneratePress Elements (Google Analytics, Author Profile, etc.) via WP-CLI." \
     "import_gp_elements_done"; then
   CONTENT_SITE_SLUG="$CONTENT_SITE_SLUG" WP_SSH_HOST="$WP_SSH_HOST" WP_SSH_USER="$WP_SSH_USER" WP_SSH_KEY="$WP_SSH_KEY" "$SCRIPT_DIR/scripts/base/import-gp-elements.sh" --site-slug "$CONTENT_SITE_SLUG" "$@"
@@ -444,9 +460,9 @@ else
   echo "  Skipped."
 fi
 
-# ── Step 11: Deploy Templates ────────────────────────────────────────────────
-if prompt_step 11 "Deploy Templates" \
-    "Deploys footer, About Us, Contact Us pages and Author Box CSS with site-specific branding." \
+# ── Step 12: Deploy Templates ────────────────────────────────────────────────
+if prompt_step 12 "Deploy Templates" \
+    "Deploys footer and Author Box CSS with site-specific branding." \
     "deploy_templates_done"; then
 
   # Extract site info for template deployment
@@ -472,16 +488,6 @@ if prompt_step 11 "Deploy Templates" \
   BLUEHOST_USER="$WP_SSH_USER" BLUEHOST_HOST="$WP_SSH_HOST" WP_SSH_KEY="$WP_SSH_KEY" \
     "$SCRIPT_DIR/scripts/base/10-deploy-templates.sh" "$SITE_HOST" "$CONTENT_SITE_SLUG" "$ATTRACTION_NAME" "$ACCENT_COLOR"
   mark_done "deploy_templates_done"
-else
-  echo "  Skipped."
-fi
-
-# ── Step 12: Configure Permalinks ────────────────────────────────────────────
-if prompt_step 12 "Configure Permalinks" \
-    "Sets permalink structure to /%category%/%postname%/ and flushes rewrite rules. Must run before Categories and Rank Math." \
-    "configure_permalinks_done"; then
-  CONTENT_SITE_SLUG="$CONTENT_SITE_SLUG" WP_SSH_HOST="$WP_SSH_HOST" WP_SSH_USER="$WP_SSH_USER" WP_SSH_KEY="$WP_SSH_KEY" "$SCRIPT_DIR/scripts/base/configure-permalinks.sh"
-  mark_done "configure_permalinks_done"
 else
   echo "  Skipped."
 fi
@@ -642,7 +648,7 @@ if [[ "$SITE_NOT_READY" == "true" ]]; then
   echo "  [--site-not-ready] Skipping Step 24 (publish to WordPress)."
 else
   if prompt_step 24 "Publish to WordPress" \
-      "Publishes all generated HTML (L2 articles + L1 pages + homepage) to WordPress." \
+      "Publishes all generated HTML (L2 articles + L1 pages + homepage + About Us + Contact Us) to WordPress." \
       "publish_wp_done"; then
     "$SCRIPT_DIR/scripts/content/publish-to-wordpress.sh" "$CONTENT_SITE_SLUG" --status publish
     mark_done "publish_wp_done"

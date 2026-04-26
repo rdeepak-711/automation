@@ -177,13 +177,13 @@ _TMP_HDR=$(mktemp /tmp/wp-hdr-XXXXXX)
 curl -s --connect-timeout 10 --max-time 30 -u "$WP_USER:$WP_PASS" \
   "${WP_SITE_URL%/}/index.php?rest_route=/wp/v2/pages/&status=publish,draft,pending,private,future&per_page=1&_fields=id" \
   -D "$_TMP_HDR" -o /dev/null 2>/dev/null
-PAGE_COUNT=$(grep -i 'x-wp-total:' "$_TMP_HDR" | tr -d '\r' | sed 's/.*: *//')
+PAGE_COUNT=$(grep -i 'x-wp-total:' "$_TMP_HDR" | tr -d '\r' | sed 's/.*: *//' || true)
 PAGE_COUNT="${PAGE_COUNT:-0}"
 
 curl -s --connect-timeout 10 --max-time 30 -u "$WP_USER:$WP_PASS" \
   "${WP_SITE_URL%/}/index.php?rest_route=/wp/v2/posts/&status=publish,draft,pending,private,future&per_page=1&_fields=id" \
   -D "$_TMP_HDR" -o /dev/null 2>/dev/null
-POST_COUNT=$(grep -i 'x-wp-total:' "$_TMP_HDR" | tr -d '\r' | sed 's/.*: *//')
+POST_COUNT=$(grep -i 'x-wp-total:' "$_TMP_HDR" | tr -d '\r' | sed 's/.*: *//' || true)
 POST_COUNT="${POST_COUNT:-0}"
 rm -f "$_TMP_HDR"
 

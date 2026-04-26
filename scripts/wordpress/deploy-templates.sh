@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 set -euo pipefail
 
-# Deploy Templates (Footer, About Us, Contact Us, Menu, Author Box CSS)
+# Deploy Templates (Footer, Author Box CSS)
 # Usage: ./scripts/base/10-deploy-templates.sh <hostname> <site_slug> <attraction_name> <accent_color>
 
 if [[ $# -lt 4 ]]; then
@@ -134,113 +134,42 @@ rm -f "$_FOOTER_PHP"
 ssh "${SSH_KEY_OPTS[@]}" "${BLUEHOST_USER}@${BLUEHOST_HOST}" \
     "wp eval-file '${_FOOTER_PHP_REMOTE}' --path='${WP_PATH}' 2>&1; rm -f '${_FOOTER_PHP_REMOTE}'"
 
-# 2. Deploy About Us Page
-echo "📄 Deploying About Us page..."
-ABOUT_TEMPLATE=$(cat "templates/about-us-template.html")
-ABOUT_CONTENT=$(substitute_template "$ABOUT_TEMPLATE")
-
-_ABOUT_TMP=$(mktemp /tmp/about_us_XXXXXX)
-printf '%s' "$ABOUT_CONTENT" > "$_ABOUT_TMP"
-_ABOUT_REMOTE="/tmp/about_us_$$.html"
-scp "${SSH_KEY_OPTS[@]}" "$_ABOUT_TMP" "${BLUEHOST_USER}@${BLUEHOST_HOST}:${_ABOUT_REMOTE}" 2>/dev/null
-rm -f "$_ABOUT_TMP"
-
-_ABOUT_PHP=$(mktemp /tmp/about_php_XXXXXX)
-cat > "$_ABOUT_PHP" << PHPEOF
-<?php
-\$content = file_get_contents('${_ABOUT_REMOTE}');
-\$existing = get_posts(['post_type'=>'page','name'=>'about-us','post_status'=>'any','numberposts'=>1]);
-if (\$existing) {
-    \$id = \$existing[0]->ID;
-    wp_update_post(['ID'=>\$id,'post_content'=>\$content,'post_status'=>'publish']);
-    echo "Updated About Us (ID: \$id)\n";
-} else {
-    \$id = wp_insert_post(['post_type'=>'page','post_title'=>'About Us','post_name'=>'about-us','post_status'=>'publish','post_content'=>\$content]);
-    echo "Created About Us (ID: \$id)\n";
-}
-// Disable GP featured image and content title
-update_post_meta(\$id, '_generate_disable_title',          true);
-update_post_meta(\$id, '_generate_disable_featured_image', true);
-// Rank Math SEO
-update_post_meta(\$id, 'rank_math_title',       'About Us — ${SITE_NAME} Guide | ${HOSTNAME}');
-update_post_meta(\$id, 'rank_math_description', 'Learn about ${SITE_NAME} Guide — your complete resource for tickets, tours, and visitor tips.');
-update_post_meta(\$id, 'rank_math_robots',      array('noindex'));
-unlink('${_ABOUT_REMOTE}');
-PHPEOF
-_ABOUT_PHP_REMOTE="/tmp/about_php_$$.php"
-scp "${SSH_KEY_OPTS[@]}" "$_ABOUT_PHP" "${BLUEHOST_USER}@${BLUEHOST_HOST}:${_ABOUT_PHP_REMOTE}" 2>/dev/null
-rm -f "$_ABOUT_PHP"
-ssh "${SSH_KEY_OPTS[@]}" "${BLUEHOST_USER}@${BLUEHOST_HOST}" \
-  "wp eval-file '${_ABOUT_PHP_REMOTE}' --path='${WP_PATH}' 2>&1; rm -f '${_ABOUT_PHP_REMOTE}'"
-
-# 3. Deploy Contact Us Page
-echo "📄 Deploying Contact Us page..."
-CONTACT_TEMPLATE=$(cat "templates/contact-us-template.html")
-CONTACT_CONTENT=$(substitute_template "$CONTACT_TEMPLATE")
-
-_CONTACT_TMP=$(mktemp /tmp/contact_us_XXXXXX)
-printf '%s' "$CONTACT_CONTENT" > "$_CONTACT_TMP"
-_CONTACT_REMOTE="/tmp/contact_us_$$.html"
-scp "${SSH_KEY_OPTS[@]}" "$_CONTACT_TMP" "${BLUEHOST_USER}@${BLUEHOST_HOST}:${_CONTACT_REMOTE}" 2>/dev/null
-rm -f "$_CONTACT_TMP"
-
-_CONTACT_PHP=$(mktemp /tmp/contact_php_XXXXXX)
-cat > "$_CONTACT_PHP" << PHPEOF
-<?php
-\$content = file_get_contents('${_CONTACT_REMOTE}');
-\$existing = get_posts(['post_type'=>'page','name'=>'contact-us','post_status'=>'any','numberposts'=>1]);
-if (\$existing) {
-    \$id = \$existing[0]->ID;
-    wp_update_post(['ID'=>\$id,'post_content'=>\$content,'post_status'=>'publish']);
-    echo "Updated Contact Us (ID: \$id)\n";
-} else {
-    \$id = wp_insert_post(['post_type'=>'page','post_title'=>'Contact Us','post_name'=>'contact-us','post_status'=>'publish','post_content'=>\$content]);
-    echo "Created Contact Us (ID: \$id)\n";
-}
-// Disable GP featured image and content title
-update_post_meta(\$id, '_generate_disable_title',          true);
-update_post_meta(\$id, '_generate_disable_featured_image', true);
-// Rank Math SEO
-update_post_meta(\$id, 'rank_math_title',       'Contact Us — ${SITE_NAME} Guide | ${HOSTNAME}');
-update_post_meta(\$id, 'rank_math_description', 'Get in touch with the ${SITE_NAME} Guide team. Questions about tickets, tours, or visiting? We\'re here to help.');
-update_post_meta(\$id, 'rank_math_robots',      array('noindex'));
-unlink('${_CONTACT_REMOTE}');
-PHPEOF
-_CONTACT_PHP_REMOTE="/tmp/contact_php_$$.php"
-scp "${SSH_KEY_OPTS[@]}" "$_CONTACT_PHP" "${BLUEHOST_USER}@${BLUEHOST_HOST}:${_CONTACT_PHP_REMOTE}" 2>/dev/null
-rm -f "$_CONTACT_PHP"
-ssh "${SSH_KEY_OPTS[@]}" "${BLUEHOST_USER}@${BLUEHOST_HOST}" \
-  "wp eval-file '${_CONTACT_PHP_REMOTE}' --path='${WP_PATH}' 2>&1; rm -f '${_CONTACT_PHP_REMOTE}'"
-
-# 4. Deploy Author Box CSS
+# 2. Deploy Author Box CSS via SCP + eval-file (avoids shell quoting issues)
 echo "🎨 Deploying Author Box CSS..."
 CSS_TEMPLATE=$(cat "templates/author-box-css-template.css")
 CSS_CONTENT=$(substitute_template "$CSS_TEMPLATE")
 
-ssh "${SSH_KEY_OPTS[@]}" "${BLUEHOST_USER}@${BLUEHOST_HOST}" "
-cd '$WP_PATH'
-# Get existing custom CSS
-EXISTING_CSS=\$(wp theme mod get custom_css 2>/dev/null | sed '1d' || echo '')
+_CSS_TMP=$(mktemp /tmp/author_css_XXXXXX)
+printf '%s' "$CSS_CONTENT" > "$_CSS_TMP"
+_CSS_REMOTE="/tmp/author_css_$$.txt"
+scp "${SSH_KEY_OPTS[@]}" "$_CSS_TMP" "${BLUEHOST_USER}@${BLUEHOST_HOST}:${_CSS_REMOTE}" 2>/dev/null
+rm -f "$_CSS_TMP"
 
-# Check if our CSS is already present
-if ! echo \"\$EXISTING_CSS\" | grep -q 'Author Box (GenerateBlocks)'; then
-    echo '🎨 Adding Author Box CSS to Additional CSS'
-    NEW_CSS=\"\$EXISTING_CSS
+_CSS_PHP=$(mktemp /tmp/author_css_php_XXXXXX)
+cat > "$_CSS_PHP" << PHPEOF
+<?php
+\$new_css = file_get_contents('${_CSS_REMOTE}');
+\$existing = get_theme_mod('custom_css', '');
+if (strpos(\$existing, 'Author Box (GenerateBlocks)') !== false) {
+    // Replace existing block: from marker to .site-info { display: none; } (inclusive)
+    \$pattern = '/\/\* ========= Author Box \(GenerateBlocks\).*\.site-info\s*\{[^}]*\}/s';
+    \$existing = preg_replace(\$pattern, '', \$existing);
+    echo "📝 Replacing existing Author Box CSS\n";
+} else {
+    echo "🎨 Adding Author Box CSS to Additional CSS\n";
+}
+\$final = trim(\$existing) . "\n\n" . \$new_css;
+set_theme_mod('custom_css', \$final);
+echo "Done\n";
+unlink('${_CSS_REMOTE}');
+PHPEOF
+_CSS_PHP_REMOTE="/tmp/author_css_php_$$.php"
+scp "${SSH_KEY_OPTS[@]}" "$_CSS_PHP" "${BLUEHOST_USER}@${BLUEHOST_HOST}:${_CSS_PHP_REMOTE}" 2>/dev/null
+rm -f "$_CSS_PHP"
+ssh "${SSH_KEY_OPTS[@]}" "${BLUEHOST_USER}@${BLUEHOST_HOST}" \
+    "wp eval-file '${_CSS_PHP_REMOTE}' --path='${WP_PATH}' 2>&1; rm -f '${_CSS_PHP_REMOTE}'"
 
-$CSS_CONTENT\"
-    wp theme mod set custom_css \"\$NEW_CSS\"
-else
-    echo '📝 Author Box CSS already present, updating...'
-    # Replace existing author box CSS block
-    UPDATED_CSS=\$(echo \"\$EXISTING_CSS\" | sed '/\/\* ========= Author Box (GenerateBlocks)/,/\.site-info {/{//!d;}')
-    FINAL_CSS=\"\$UPDATED_CSS
-
-$CSS_CONTENT\"
-    wp theme mod set custom_css \"\$FINAL_CSS\"
-fi
-"
-
-# 5. Clear cache
+# 3. Clear cache
 echo "🧹 Clearing cache..."
 ssh "${SSH_KEY_OPTS[@]}" "${BLUEHOST_USER}@${BLUEHOST_HOST}" "
 wp cache flush --path='${WP_PATH}' 2>/dev/null || true
@@ -258,8 +187,6 @@ echo "✅ Template deployment completed for $HOSTNAME!"
 echo ""
 echo "🎯 Templates deployed:"
 echo "   • Footer element with social links"
-echo "   • About Us page with company info"
-echo "   • Contact Us page with contact form"
 echo "   • Author Box CSS with $SITE_THEME theme colors"
 echo ""
 echo "🌐 Site is ready at: $SITE_URL"

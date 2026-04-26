@@ -203,18 +203,39 @@ if not article_title:
     seo_m = re.search(r'^SEO Title:\s*(.+)', content, re.MULTILINE | re.IGNORECASE)
     article_title = seo_m.group(1).strip() if seo_m else ''
 
-# Determine if ticket-specific: article title matches a ticket title
-# Exact match first, then substring (to avoid T3 matching "Family guided tour...")
+# Determine self_ticket: article maps to one specific ticket in tickets.md
+# Pass 0 (most reliable): product ID match — extract GYG/Tiqets/Viator IDs from
+# article's Top Tickets URLs and match against tickets.md URLs
+def extract_pid(url):
+    m = re.search(r'-t(\d+)/?', url)
+    if m: return ('gyg', m.group(1))
+    m = re.search(r'-p(\d+)', url, re.IGNORECASE)
+    if m: return ('tiq', m.group(1))
+    m = re.search(r'/tours/[^/]+/([^/]+)', url)
+    if m: return ('via', m.group(1))
+    return None
+
+md_urls = re.findall(r'\]\((https?://[^\)]+)\)', content)
+md_pids  = {extract_pid(u) for u in md_urls if extract_pid(u)}
+ticket_pids = {extract_pid(t['url']): t for t in tickets if extract_pid(t['url'])}
+
 self_ticket = None
 if 'ticket' in silo.lower() or 'tour' in silo.lower():
-    at = article_title.lower().strip()
-    # Pass 1: exact match
-    for t in tickets:
-        if at == t['title'].lower().strip():
-            self_ticket = t
+    # Pass 0: product ID match (most reliable — title can differ between MD and tickets.md)
+    for pid in md_pids:
+        if pid in ticket_pids:
+            self_ticket = ticket_pids[pid]
             break
-    # Pass 2: substring match
+    # Pass 1: exact title match
     if not self_ticket:
+        at = article_title.lower().strip()
+        for t in tickets:
+            if at == t['title'].lower().strip():
+                self_ticket = t
+                break
+    # Pass 2: substring title match
+    if not self_ticket:
+        at = article_title.lower().strip()
         for t in tickets:
             tt = t['title'].lower().strip()
             if at in tt or tt in at:
@@ -225,9 +246,9 @@ if 'ticket' in silo.lower() or 'tour' in silo.lower():
 cmp_base = f"{campaign_prefix}-{slug}-top"
 top_links = []
 
-# Priority 1: parse ## Top Tickets or ## Book This Tour from MD — has correct titles
+# Priority 1: parse Top Tickets or Book This Tour from MD (## heading or **bold**)
 import json, os
-md_tt_section = re.search(r'## (?:Top Tickets|Book This Tour)\s*\n((?:- .+\n)*)', content)
+md_tt_section = re.search(r'(?:## |\*\*)(?:Top Tickets|Book This Tour)(?:\*\*)?\s*\n((?:\n?- .+\n)*)', content)
 if md_tt_section:
     for m in re.finditer(r'- \[(.+?)\]\((.+?)\)', md_tt_section.group(1)):
         title, url = m.group(1), m.group(2)
@@ -252,8 +273,10 @@ if not top_links:
 
 # Save top ticket links to temp file for post-processing injection
 tt_data = [{'title': t, 'url': u} for t, u in top_links]
-# Determine label based on section name in MD
-md_tt_header = re.search(r'^## (Top Tickets|Book This Tour)', content, re.MULTILINE)
+# Determine label based on section name in MD (## heading or **bold** format)
+md_tt_h2 = re.search(r'^## (Top Tickets|Book This Tour)', content, re.MULTILINE)
+md_tt_bold = re.search(r'^\*\*(Top Tickets|Book This Tour)\*\*', content, re.MULTILINE)
+md_tt_header = md_tt_h2 or md_tt_bold
 if md_tt_header:
     tt_label = md_tt_header.group(1)
 elif self_ticket:
@@ -268,6 +291,9 @@ with open(tt_tmp, 'w') as f:
 # Strip ## Top Tickets / ## Book This Tour from content — bar injected in post-processing
 content = re.sub(r'## Top Tickets\s*\n(?:- .+\n)*\n?', '\n', content)
 content = re.sub(r'## Book This Tour\s*\n(?:- .+\n)*\n?', '\n', content)
+# Strip **Top Tickets** / **Book This Tour** bold format too
+content = re.sub(r'\*\*Top Tickets\*\*\s*\n(?:\n?- .+\n)*\n?', '\n', content)
+content = re.sub(r'\*\*Book This Tour\*\*\s*\n(?:\n?- .+\n)*\n?', '\n', content)
 
 sys.stdout.write(content)
 TOP_TICKETS_PYEOF
@@ -278,6 +304,12 @@ fi
 
 # ── Rewrite absolute internal links to relative paths ────────────────────────
 REGISTRY_FILE="$REPO_ROOT/output/$SITE_SLUG/url-registry.json"
+if [[ ! -f "$REGISTRY_FILE" ]]; then
+  echo "  url-registry.json missing — generating..."
+  python3 "$REPO_ROOT/scripts/content/build-url-registry.py" "$SITE_SLUG" \
+    && echo "  ✓ url-registry.json generated" \
+    || echo "  ⚠ url-registry.json generation failed — internal links will stay absolute"
+fi
 _LINK_PY=$(mktemp /tmp/link-rewrite-XXXXXX)
 cat > "$_LINK_PY" << 'LINK_REWRITE_PYEOF'
 import sys, re, json, os
@@ -321,6 +353,37 @@ LINK_REWRITE_PYEOF
 MD_CONTENT=$(echo "$MD_CONTENT" | python3 "$_LINK_PY" "$SITE_SLUG" "$REGISTRY_FILE")
 rm -f "$_LINK_PY"
 
+# ── Convert [CTA: "label" → url] markers to raw HTML buttons ─────────────────
+# These inline CTA markers (one per ticket section) must appear at exact positions.
+# Convert before sending to Claude so it passes them through as raw HTML.
+_CTA_TMP=$(mktemp /tmp/cta-convert-XXXXXX)
+echo "$MD_CONTENT" > "$_CTA_TMP"
+MD_CONTENT=$(python3 - "$_CTA_TMP" << 'CTA_PYEOF'
+import sys, re
+
+content = open(sys.argv[1], encoding='utf-8').read()
+
+def make_btn(m):
+    label = m.group(1).strip()
+    url   = m.group(2).strip()
+    # Use att-buy-now-btn-inline so post-processing strip (which removes
+    # att-buy-now-btn) doesn't kill these; renamed back after strip runs.
+    return (
+        f'\n<a\n  href="{url}"\n  class="att-buy-now-btn-inline"\n'
+        f'  rel="nofollow sponsored"\n  target="_blank"\n>{label}</a>\n'
+    )
+
+# Match: `[CTA — "label" → url]` or [CTA: "label" → url]  (backtick-wrapped or plain, em-dash or colon)
+content = re.sub(
+    r'`?\[CTA\s*(?:—|-|:)\s*"([^"]+)"\s*(?:→|→|->)\s*([^\]`]+)\]`?',
+    make_btn,
+    content
+)
+sys.stdout.write(content)
+CTA_PYEOF
+)
+rm -f "$_CTA_TMP"
+
 # ── Strip ## Book This Tour / ## Buy This Ticket block from MD ────────────────
 # These H2 blocks confuse the converter — it mistakes them for the article end
 # and skips the rest of the body. CTA buttons are handled by fix-cta-buttons.py.
@@ -334,9 +397,14 @@ content = re.sub(
     '\n',
     content
 )
-# Also strip ## Top Tickets — the bar is injected in post-processing
+# Also strip Top Tickets — the bar is injected in post-processing (## or **bold**)
 content = re.sub(
     r'\n## Top Tickets\s*\n(?:- .+\n)*\n?',
+    '\n',
+    content
+)
+content = re.sub(
+    r'\n\*\*Top Tickets\*\*\s*\n(?:\n?- .+\n)*\n?',
     '\n',
     content
 )
@@ -378,7 +446,7 @@ cat >> "$TMP_PROMPT" << 'PROMPT_BOUNDARY'
 5. **FAQ section:** If the MD contains a `## Frequently Asked Questions` section with Q&A pairs, convert them to `<details class="att-faq-details"><summary class="att-faq-summary">Question</summary><div class="att-faq-content"><p>Answer</p></div></details>` inside `<div class="att-faq">`. If the MD has fewer than 4 FAQ questions (or none at all), generate 5 relevant, practical FAQ Q&A pairs yourself based on the article content. Always generate a `<script type="application/ld+json">` FAQPage schema from all FAQ Q&A pairs.
 6. **Images:** Always use the 1×1 base64 GIF placeholder, never a real URL.
 7. **AEO blocks:** Convert `> **Label:**` blockquotes to `<div class="att-aeo-block"><p class="att-aeo-block__a">...</p></div>`.
-8. **Standalone CTA links:** A line that is only `[Book This Tour](url)` or `[Buy This Ticket](url)` → skip it entirely (handled in post-processing).
+8. **CTA buttons:** Any raw HTML `<a class="att-buy-now-btn-inline" ...>` element in the source → output it exactly as-is, preserving all attributes and the class name. Do NOT wrap in `<p>` tags. Do NOT convert to a regular link.
 9. **YAML frontmatter:** Extract `SEO Title`, `Meta Description`, `URL` from the frontmatter and output this exact SEO comment format at the very top (before any HTML):
     ```
     <!-- SEO
@@ -425,30 +493,55 @@ if [[ "$_NEEDS_CAMPAIGN" == "true" ]]; then
   sed -i '' "s/CAMPAIGN_ID_PLACEHOLDER/${CAMPAIGN_ID}/g" "$TMP_PROMPT"
 fi
 
-# ── Call Claude ───────────────────────────────────────────────────────────────
-echo "  Calling Claude ${CLAUDE_MODEL}..."
+# ── Call Claude (with retry on truncated output) ──────────────────────────────
+_is_valid_html() {
+  local f="$1"
+  [[ -f "$f" ]] || return 1
+  local sz; sz=$(wc -c < "$f" | tr -d ' ')
+  [[ "$sz" -ge 15000 ]] || { echo "  ⚠ Output too small (${sz} bytes — truncated?)"; return 1; }
+  grep -q 'att-article-page' "$f" || { echo "  ⚠ Missing att-article-page structure"; return 1; }
+  return 0
+}
 
-# Heartbeat: print elapsed seconds every 5s so we know it's alive
-_HB_START=$SECONDS
-( while true; do
-    sleep 5
-    printf "    ⏱  %ds elapsed...\n" "$(( SECONDS - _HB_START ))" >&2
-  done ) &
-_HB_PID=$!
+_TIMEOUT_CMD=""
+if command -v gtimeout &>/dev/null; then _TIMEOUT_CMD="gtimeout ${CLAUDE_TIMEOUT_SECS:-300}"
+elif command -v timeout &>/dev/null; then _TIMEOUT_CMD="timeout ${CLAUDE_TIMEOUT_SECS:-300}"; fi
 
-claude -p --model "$CLAUDE_MODEL" --output-format text < "$TMP_PROMPT" > "$OUTPUT_FILE"
-_CLAUDE_EXIT=$?
+_MAX_ATTEMPTS=3
+_ATTEMPT=0
+_CLAUDE_EXIT=1
+while [[ $_ATTEMPT -lt $_MAX_ATTEMPTS ]]; do
+  _ATTEMPT=$(( _ATTEMPT + 1 ))
+  [[ $_ATTEMPT -gt 1 ]] && echo "  ↺ Retry attempt $_ATTEMPT of $_MAX_ATTEMPTS..."
+  echo "  Calling Claude ${CLAUDE_MODEL}..."
 
-kill "$_HB_PID" 2>/dev/null; wait "$_HB_PID" 2>/dev/null || true
-printf "    ✓ Claude finished in %ds\n" "$(( SECONDS - _HB_START ))"
+  _HB_START=$SECONDS
+  ( while true; do
+      sleep 5
+      printf "    ⏱  %ds elapsed...\n" "$(( SECONDS - _HB_START ))" >&2
+    done ) &
+  _HB_PID=$!
 
-[[ $_CLAUDE_EXIT -eq 0 ]] || { echo "✗ Claude exited with code $_CLAUDE_EXIT"; rm -f "$OUTPUT_FILE"; exit 1; }
+  $_TIMEOUT_CMD claude -p --model "$CLAUDE_MODEL" --output-format text < "$TMP_PROMPT" > "$OUTPUT_FILE"
+  _CLAUDE_EXIT=$?
+  [[ $_CLAUDE_EXIT -eq 124 ]] && echo "✗ Claude timed out after ${CLAUDE_TIMEOUT_SECS:-300}s"
 
-if [[ ! -f "$OUTPUT_FILE" || ! -s "$OUTPUT_FILE" ]]; then
-  echo "✗ Error: no output generated"
-  rm -f "$OUTPUT_FILE"
-  exit 1
-fi
+  kill "$_HB_PID" 2>/dev/null; wait "$_HB_PID" 2>/dev/null || true
+  printf "    ✓ Claude finished in %ds\n" "$(( SECONDS - _HB_START ))"
+
+  if [[ $_CLAUDE_EXIT -ne 0 ]]; then
+    echo "  ✗ Claude exited with code $_CLAUDE_EXIT"
+    rm -f "$OUTPUT_FILE"
+    [[ $_ATTEMPT -lt $_MAX_ATTEMPTS ]] && continue || exit 1
+  fi
+
+  if _is_valid_html "$OUTPUT_FILE"; then
+    break
+  else
+    rm -f "$OUTPUT_FILE"
+    [[ $_ATTEMPT -lt $_MAX_ATTEMPTS ]] || { echo "✗ Failed after $_MAX_ATTEMPTS attempts"; exit 1; }
+  fi
+done
 
 # ── Inject CSS block between SEO comment and HTML body ───────────────────────
 # Claude outputs: <!-- SEO ... --> then <div class="att-article-page">
@@ -492,6 +585,9 @@ if matches:
 pos = content.find('<div')
 if pos > 0:
     content = content[:pos] + '\n' + css_block + '\n\n' + content[pos:]
+
+# Rename inline CTA buttons back to the real class (survived the strip above)
+content = content.replace('class="att-buy-now-btn-inline"', 'class="att-buy-now-btn"')
 
 open(path, 'w').write(content)
 PYEOF
@@ -576,9 +672,8 @@ links = tt.get('links', [])
 if not links:
     sys.exit(0)
 
-# For self-ticket articles, the first link in tt is the self ticket
-# For generic articles, use first core ticket
-# Strip -top suffix from campaign — only top-tickets bar gets -top
+# Self-ticket already resolved in TOP_TICKETS_PYEOF and stored as links[0] in JSON.
+# Strip -top suffix (top-tickets bar uses it; CTA button should not).
 url = re.sub(r'-top([&"\'>\s]|$)', r'\1', links[0]['url'])
 
 # Build button HTML
@@ -593,8 +688,8 @@ btn_html = (
 # 2. After decision-point sections (informational articles)
 # 3. Before FAQ section (last resort)
 placement_patterns = [
-    # Tour review articles: after What's Included
-    r"(<h2[^>]*>(?:What(?:&rsquo;|'|&#8217;|\u2019)?s Included|What the .+? Covers|Included in .+?)</h2>.*?</ul>)",
+    # Ticket/tour articles: after What Is/What's Included section (ul or table or p)
+    r"(<h2[^>]*>(?:What(?:&rsquo;|'|&#8217;|\u2019)?s Included|What Is Included|What the .+? Covers|Included in .+?|What(?:&rsquo;|')?s in (?:the )?(?:ticket|tour|package))</h2>.*?(?:</ul>|</table>|</p>)\s*)",
     # Informational: after buying/booking/comparison sections
     r"(<h2[^>]*>(?:Where to Buy|Method 1|Buy Online|Available .+? Options|Side-by-Side Comparison|How to Book)[^<]*</h2>.*?(?:</ul>|</p>)\s*)",
     # Last resort: before FAQ

@@ -159,9 +159,14 @@ import json, sys
 try:
     d = json.load(sys.stdin)
     if 'id' in d: print(int(d['id']))
-    else: print(0)
-except (ValueError, KeyError, TypeError): print(0)
-" <<< "$RESPONSE" 2>/dev/null
+    else:
+        msg = d.get('message', d.get('code', 'unknown error'))
+        print(f'  Upload API error: {msg}', file=sys.stderr)
+        print(0)
+except (ValueError, KeyError, TypeError) as e:
+    print(f'  Upload parse error: {e}', file=sys.stderr)
+    print(0)
+" <<< "$RESPONSE"
 }
 
 # ── Upload logo ───────────────────────────────────────────────────────────────

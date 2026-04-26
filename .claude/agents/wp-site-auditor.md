@@ -17,8 +17,12 @@ You are the Live Site Auditor — the companion agent to wp-site-builder. While 
 - SSH Key: `~/.ssh/id_rsa_bluehost2`
 - Base path: `/home1/dpskbcmy/public_html/`
 
+> **Important:** Always set `SSH_AUTH_SOCK=""` for Server 2 to prevent SSH agent offering wrong keys → failed auth attempts → cPHulk/CSF firewall auto-blocks port 22. `~/.ssh/config` has `bluehost2` alias with `IdentitiesOnly yes`.
+
 ```bash
-ssh -i ~/.ssh/id_rsa_bluehost2 -o StrictHostKeyChecking=no dpskbcmy@50.6.155.174 "COMMAND"
+SSH_AUTH_SOCK="" ssh -i ~/.ssh/id_rsa_bluehost2 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes dpskbcmy@50.6.155.174 "COMMAND"
+# or use alias:
+ssh bluehost2 "COMMAND"
 ```
 
 **Server 1 (old — fallback):**
@@ -161,7 +165,36 @@ wp post list --path=<wp_path> --post_type=post,page --post_status=publish --fiel
   echo "$id|$slug|${t:-0}|${d:-0}"
 done
 ```
-Note: `rank_math_canonical_url` is intentionally empty — Rank Math auto-generates it from the permalink. Only flag if you see duplicate content issues.
+Flag any post/page with title=0 or desc=0 (skip `sample-page`). Set missing values via `wp post meta update`.
+
+**About Us + Contact Us:** Must have `rank_math_title` and `rank_math_description` set. Do NOT set noindex — these pages should be indexed. If `rank_math_robots` is set to `noindex`, delete it:
+```bash
+for slug in about-us contact-us; do
+  ID=$(wp post list --post_type=page --name=$slug --field=ID --format=ids --path=<wp_path> 2>/dev/null)
+  [[ -z "$ID" ]] && echo "$slug: NOT FOUND" && continue
+  title=$(wp post meta get $ID rank_math_title --path=<wp_path> 2>/dev/null)
+  desc=$(wp post meta get $ID rank_math_description --path=<wp_path> 2>/dev/null)
+  robots=$(wp post meta get $ID rank_math_robots --path=<wp_path> 2>/dev/null)
+  echo "$slug (ID $ID): t=${title:+SET} d=${desc:+SET} robots=${robots:-none}"
+done
+```
+Fix missing title/desc via `wp post meta update`. If robots=noindex present, remove it:
+```bash
+wp post meta delete <ID> rank_math_robots --path=<wp_path>
+```
+
+**Canonical URL cleanup:** `rank_math_canonical_url` must be empty on all posts/pages — Rank Math auto-generates it from the permalink. Any manually set value overrides the auto-canonical and can cause duplicate content issues. Clear all:
+```bash
+# Detect
+wp post list --path=<wp_path> --post_type=post,page --post_status=publish --fields=ID,post_name --format=csv | tail -n +2 | while IFS=, read id slug; do
+  canon=$(wp post meta get $id rank_math_canonical_url --path=<wp_path> 2>/dev/null)
+  [[ -n "$canon" ]] && echo "$id|$slug|$canon"
+done
+
+# Fix — delete the meta key entirely for any that have it
+wp post meta delete <ID> rank_math_canonical_url --path=<wp_path>
+```
+Expected: zero rows returned by the detect query.
 
 ### 6. Absolute URL Detection & Fix
 Find and fix posts with absolute domain URLs that should be relative:
@@ -220,7 +253,7 @@ Legitimate external links (rail sites, official attraction sites, Wikipedia) are
 10. **Article header padding** — verify `att-article-header` has no `padding: 40px 0 0 0` in any post; check GP `content_top` = 0
 11. **Backtick-html artifacts** — search for `` ```html `` code fence leftovers in post content
 12. **Homepage & L1 card images** — verify no placeholder GIFs; all cards should show real featured images
-13. **Additional CSS** — verify customizer `custom_css` post exists with Author Box styles + `.site-info { display:none }`
+13. **Additional CSS** — verify `custom_css` post has Firestorm block markers, Author Box styles, `.site-info` hide, sticky reserve banner CSS
 14. **GP Elements: Menu + Footer** — verify both exist, correct hooks (`generate_before_header` / `generate_footer`), site-wide display conditions, and content is not corrupted (no literal `\n` strings)
 15. **About Us + Contact Us pages** — verify both pages exist, published, correct URL slugs, title+featured image disabled, Rank Math noindex set
 16. **Favicon** — verify `site_icon` option is set to a valid attachment ID
@@ -230,7 +263,8 @@ Legitimate external links (rail sites, official attraction sites, Wikipedia) are
 20. **WP Rocket CSS delivery** — `optimize_css_delivery` must be `1` (enabled) to match Auschwitz content width rendering
 21. **FAQ accordion onclick conflict** — L1 pages must NOT have `onclick=` on `.att-faq-item__q` buttons alongside `addEventListener` in script block (inline onclick fires first → JS sees `wasOpen=true` → removes `open` class → accordion never stays open)
 22. **FAQ "View All" button target** — any "View All FAQs" / "See all questions" button must link to `/plan-your-visit/faq` or `/plan-your-visit/frequently-asked-questions/`. Target post must exist and be published.
-23. **Report** — structured summary per check: ✓ pass / ✗ issues found / fixes applied
+23. **Menu dropdown overflow** — Tickets & Tours dropdown must use 3 columns when >15 articles, all dropdowns must have `max-height` + `overflow-y: auto`, all published articles must appear in both desktop dropdown and mobile panel
+24. **Report** — structured summary per check: ✓ pass / ✗ issues found / fixes applied
 
 ## Fixing Issues
 
@@ -296,14 +330,68 @@ wp search-replace "$SEARCH" "" --path=<wp_path> --all-tables --dry-run 2>&1 | ta
 Expected: `Success: 0 replacements to be made.` If any found, run without `--dry-run` to fix.
 
 ### 12. Homepage & L1 Card Images
-Check that homepage and L1 pages have real images, not placeholder GIFs:
+Check that homepage AND all L1 pages (tickets, plan-your-visit, what-to-see) have real images, not placeholder GIFs. Also verify every card href points to a published post.
+
+**12a. Placeholder GIF detection — all pages:**
 ```bash
 wp post list --path=<wp_path> --post_type=page --post_status=publish --fields=ID,post_name --format=csv | tail -n +2 | while IFS=, read id slug; do
   gif_count=$(wp post get $id --field=post_content --path=<wp_path> | grep -c 'data:image/gif;base64' || true)
   [[ $gif_count -gt 0 ]] && echo "PAGE $id ($slug): $gif_count placeholder GIFs"
 done
 ```
-Expected: 0 placeholder GIFs.
+Expected: 0 placeholder GIFs on homepage AND all L1 pages.
+
+**12b. Card URL + title validity — verify every card href resolves to a published ARTICLE (post_type=post) AND card title matches post title:**
+
+Cards must link to articles (post_type=post), never to pages. A card pointing to a page slug = wrong.
+
+```php
+// wp eval-file — check all card hrefs on homepage + L1 pages
+$pages = get_posts(['post_type'=>'page','post_status'=>'publish','numberposts'=>-1]);
+// Build slug → post_title map for published POSTS only (articles, not pages)
+$slug_to_title = [];
+foreach (get_posts(['post_type'=>'post','post_status'=>'publish','numberposts'=>-1]) as $p) {
+    $slug_to_title[$p->post_name] = $p->post_title;
+}
+$issues = [];
+foreach ($pages as $page) {
+    // Match full card block: capture href + card title text
+    preg_match_all(
+        '/<div class="att-(?:article-card|featured|ticket|highlight|crosslink)[^"]*"[^>]*>(.*?)<\/div>\s*<\/div>/si',
+        $page->post_content, $cards
+    );
+    foreach ($cards[0] as $card_html) {
+        // Extract href
+        if (!preg_match('/href="([^"]+)"/i', $card_html, $hm)) continue;
+        $href = $hm[1];
+        if (strpos($href, 'getyourguide') !== false || strpos($href, 'tiqets') !== false || strpos($href, 'viator') !== false) continue;
+        $slug = end(array_filter(explode('/', trim(parse_url($href, PHP_URL_PATH), '/'))));
+        if (!$slug) continue;
+        // Check slug exists as a published post (article), not just any post type
+        if (!isset($slug_to_title[$slug])) {
+            $issues[] = "PAGE {$page->post_name} → MISSING/WRONG: $href (slug '$slug' not found as published article)";
+            continue;
+        }
+        // Extract card title (h3/h4 or .att-*__title span/p)
+        preg_match('/<(?:h[2-6]|p|span)[^>]*class="[^"]*(?:title|heading)[^"]*"[^>]*>([^<]+)<\/(?:h[2-6]|p|span)>/i', $card_html, $tm);
+        if (!$tm) preg_match('/<h[2-6][^>]*>([^<]+)<\/h[2-6]>/i', $card_html, $tm);
+        if (!$tm) continue; // no extractable title — skip
+        $card_title = trim(html_entity_decode(strip_tags($tm[1])));
+        $post_title = $slug_to_title[$slug];
+        // Fuzzy match: card title should be substring of post title or vice versa (handles truncation)
+        $card_lc = strtolower($card_title);
+        $post_lc = strtolower($post_title);
+        if (strpos($post_lc, $card_lc) === false && strpos($card_lc, $post_lc) === false && similar_text($card_lc, $post_lc, $pct) && $pct < 60) {
+            $issues[] = "PAGE {$page->post_name} → TITLE MISMATCH: card='$card_title' post='$post_title' ($href)";
+        }
+    }
+}
+if (!$issues) echo "PASS — all card hrefs valid and titles match\n";
+else { echo count($issues) . " issues:\n"; foreach($issues as $i) echo "  $i\n"; }
+```
+Expected: PASS. Two failure modes:
+- `MISSING post` — slug deleted/renamed → update card href or remove card
+- `TITLE MISMATCH` — card shows wrong title → update card title text to match post title
 
 **Fix — populate card images from post featured images via PHP eval-file:**
 ```php
@@ -403,17 +491,39 @@ echo count($missing) . " of " . count($posts) . " missing\n";
 Cards linking to posts with no featured image cannot be auto-fixed — upload images in WP Media first, then re-run the script.
 
 ### 13. Additional CSS (Customizer)
-Verify the `custom_css` post exists and contains the required Author Box styles and `.site-info` hide rule:
-```bash
-wp post list --path=<wp_path> --post_type=custom_css --post_status=any \
-  --fields=ID,post_name,post_status --format=table 2>&1
-# Check content
-wp post get <ID> --field=post_content --path=<wp_path> 2>&1 | grep -c "Author Box"
-wp post get <ID> --field=post_content --path=<wp_path> 2>&1 | grep "site-info"
-```
-Expected: post exists, contains `Author Box (GenerateBlocks)` and `.site-info { display: none }`.
+CSS stored as `custom_css` post type (WP core Additional CSS). Post name = active stylesheet slug. Theme mod `custom_css_post_id` points to it. Deploy script: `scripts/base/configure-additional-css.sh`.
 
-To deploy missing CSS via PHP eval-file — use a heredoc PHP script with `wp_insert_post` for `custom_css` post type and `set_theme_mod('custom_css_post_id', $id)`.
+Three required sections wrapped in `/* BEGIN FIRESTORM ADDITIONAL CSS */` … `/* END FIRESTORM ADDITIONAL CSS */` markers:
+1. **Author Box block** — GenerateBlocks layout CSS (`.gb-container-9f3e5cb3`, `.gb-grid-wrapper-8e06dcf5` etc)
+2. **Footer hide** — `.site-info { display:none; }`
+3. **Sticky reserve banner** — `.sticky-reserve-banner` fixed bottom bar + `.sticky-reserve-button` + mobile overrides
+
+**Check:**
+```bash
+# Find the custom_css post
+wp post list --path=<wp_path> --post_type=custom_css --post_status=any \
+  --fields=ID,post_name,post_status --format=table
+
+# Verify all required sections present
+wp eval "
+\$id = (int) get_theme_mod('custom_css_post_id');
+\$css = \$id ? (string) get_post_field('post_content', \$id) : '';
+echo 'POST_ID:' . \$id . PHP_EOL;
+echo 'MARKER:' . (strpos(\$css, 'BEGIN FIRESTORM ADDITIONAL CSS') !== false ? 'present' : 'MISSING') . PHP_EOL;
+echo 'AUTHOR_BOX:' . (strpos(\$css, 'Author Box (GenerateBlocks)') !== false ? 'present' : 'MISSING') . PHP_EOL;
+echo 'SITE_INFO:' . (strpos(\$css, '.site-info') !== false ? 'present' : 'MISSING') . PHP_EOL;
+echo 'STICKY_BANNER:' . (strpos(\$css, 'sticky-reserve-banner') !== false ? 'present' : 'MISSING') . PHP_EOL;
+echo 'CSS_LENGTH:' . strlen(\$css) . PHP_EOL;
+" --path=<wp_path>
+```
+Expected: all sections `present`, CSS_LENGTH > 4000.
+
+**Deploy (if missing or partial):**
+```bash
+WP_SSH_HOST=<host> WP_SSH_USER=<user> WP_SSH_KEY=<key> \
+  ./scripts/base/configure-additional-css.sh <wp_path>
+```
+Script is idempotent — replaces existing Firestorm block on rerun, never duplicates. Backs up old CSS to `/tmp/additional-css-backup-YYYYmmdd-HHMMSS.css` before writing.
 
 ### 14. GP Elements: Menu + Footer
 Verify both elements exist with correct hooks and non-corrupted content:
@@ -481,7 +591,7 @@ Each page must have:
 - `_generate_disable_featured_image = 1` (hides featured image)
 - `rank_math_title` set
 - `rank_math_description` set
-- `rank_math_robots = noindex` (utility pages should not be indexed)
+- `rank_math_robots` must NOT be set to `noindex` — these pages should be indexed
 
 ```bash
 for slug in about-us contact-us; do
@@ -714,6 +824,122 @@ Expected: `max-width: 100%` or `max-width: none` on `.att-container`. If set to 
 # Example: fix 74% → 100%
 wp search-replace '.att-container{max-width:74%' '.att-container{max-width:100%' --path=<wp_path> --all-tables --dry-run
 ```
+
+### 27. Menu Dropdown Viewport Overflow
+Verify nav menu dropdowns don't overflow the viewport. The Tickets & Tours dropdown is the largest (26+ articles) and must use 3 columns (`cols-3`) with a `max-height` + `overflow-y: auto` fallback.
+
+```bash
+# Check dropdown CSS in menu element content
+MENU_ID=$(wp post list --post_type=gp_elements --name=menu --field=ID --format=ids --path=<wp_path> 2>/dev/null)
+content=$(wp post meta get $MENU_ID _generate_element_content --path=<wp_path> 2>/dev/null)
+
+# Check max-height on dropdown
+echo "$content" | grep -c 'dropdown.*max-height\|max-height.*calc(100vh' || echo "MISSING: dropdown max-height"
+
+# Check Tickets & Tours uses cols-3 (not cols-2)
+echo "$content" | grep 'aria-label="Tickets and Tours"' -A2 | grep -o 'cols-[0-9]'
+
+# Count articles in each dropdown vs published posts in each category
+for cat in tickets plan-your-visit what-to-see; do
+  menu_count=$(echo "$content" | grep -c "href=\"/$cat/" || true)
+  live_count=$(wp post list --post_type=post --post_status=publish --fields=ID --format=csv --path=<wp_path> 2>/dev/null | tail -n +2 | while IFS=, read id; do
+    c=$(wp post term list $id category --fields=slug --format=csv --path=<wp_path> 2>/dev/null | tail -n +2)
+    [ "$c" = "$cat" ] && echo "$id"
+  done | wc -l)
+  echo "$cat: menu=$menu_count live=$live_count $([ "$menu_count" -lt "$live_count" ] && echo '✗ MISSING' || echo '✓')"
+done
+```
+Expected:
+- Dropdown has `max-height: calc(100vh - 90px)` and `overflow-y: auto`
+- Tickets & Tours grid uses `cols-3` (3 columns) when article count > 15
+- All published articles appear in both desktop dropdown AND mobile panel
+- Every desktop `drop-item` has a matching mobile `mp-links` entry
+
+**Fix — dropdown overflow:**
+```css
+#site-nav .dropdown { max-height: calc(100vh - 90px); overflow-y: auto; }
+#site-nav .drop-grid.cols-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+```
+
+**Fix — missing articles:** Add `<a class="drop-item" href="/CATEGORY/SLUG/" role="menuitem">SHORT TITLE</a>` to desktop grid and `<a href="/CATEGORY/SLUG/">SHORT TITLE</a>` to mobile `mp-links` section.
+
+## Production Templates — Nav Menu, Footer, About Us, Contact Us
+
+Perfected on **bluemosque-guide.com**. Reuse for every new attraction site. Raw HTML files live in:
+
+```
+~/.claude/projects/-Users-deepak-Desktop-firestormInternet/memory/templates/
+  bm-nav-menu.html    — full nav menu (36KB): desktop dropdowns + mobile panel + search overlay
+  bm-footer.html      — footer: social icons | copyright | About/Contact links
+  bm-about-us.html    — About Us page (8.5KB): Firestorm boilerplate
+  bm-contact-us.html  — Contact Us page (7.6KB): form + map + contact details
+```
+
+### GP Element Deployment Pattern
+
+Both menu and footer are `gp_elements` posts. Deploy via `wp eval`:
+
+```php
+$id = wp_insert_post(['post_type'=>'gp_elements','post_status'=>'publish','post_title'=>'SITE Navigation Menu']);
+update_post_meta($id, '_generate_hook', 'generate_before_header');   // menu
+// update_post_meta($id, '_generate_hook', 'generate_footer');       // footer
+update_post_meta($id, '_generate_element_type', 'hook');
+update_post_meta($id, '_generate_element_display_conditions',
+    array(array('rule'=>'general:site','object'=>'0'))  // MUST be PHP array — plain string → fatal crash
+);
+$content = file_get_contents('/tmp/element_content.html');  // SCP file first
+update_post_meta($id, '_generate_element_content', $content);
+```
+
+> **Critical:** `_generate_element_display_conditions` must be a serialized PHP array. Storing as a plain string causes: `in_array(): Argument #2 must be of type array, string given` and white-screens the site.
+
+### Menu Structure
+
+Grid: `300px logo | 1fr center nav | auto right`
+
+| Dropdown | Content | Target |
+|---|---|---|
+| **Buy Tickets** | External GYG affiliate links (T1–T9) grouped: Single / Combo / Extended | `target="_blank"` + `cmp=SITE-menu` |
+| **Tickets & Tours** | Internal `/tickets/` silo articles grouped by sub-topic | Internal hrefs |
+| **Plan Your Visit** | Internal `/plan-your-visit/` articles (cols-2 grid) | Internal hrefs |
+| **What to See** | Internal `/what-to-see/` articles (cols-2 grid) | Internal hrefs |
+
+Right side: search icon + red **Book Now** CTA → GYG primary product URL with `cmp=SITE-booknow`.
+
+Mobile: hamburger → slide-in panel from right, 4 `<details>` accordion groups + Book Now CTA footer.
+
+### Find-Replace Checklist for New Sites
+
+| Find | Replace with |
+|---|---|
+| `bluemosque-guide.com` | new site domain |
+| `blue-mosque-menu` | `SITE-PREFIX-menu` |
+| `blue-mosque-booknow` | `SITE-PREFIX-booknow` |
+| `partner_id=9BAL9K3` | keep (same GYG partner ID) |
+| Logo `src` URL + `alt` text | new site logo |
+| All GYG `t######` product IDs | site tickets from `input/SLUG/tickets.md` |
+| All internal article slugs | site IA slugs |
+| `Search Blue Mosque Guide` | `Search SITE NAME Guide` |
+| Search hint examples | site-appropriate hints |
+| `Blue Mosque-Guide.com` (About/Contact) | site name |
+| `Sultan Ahmed Mosque in Istanbul` | attraction + city |
+| About Us topic list bullets | site-specific visitor topics |
+| Schema.org `@id` URLs | new domain |
+| Contact Us topic pills | site-specific topics |
+
+### About Us / Contact Us Page Meta
+
+```bash
+# Required on both pages — do NOT set noindex, these should be indexed
+wp post meta update $ID rank_math_title "TITLE" --path=<wp_path>
+wp post meta update $ID rank_math_description "DESC" --path=<wp_path>
+# If rank_math_robots was mistakenly set to noindex, delete it:
+wp post meta delete $ID rank_math_robots --path=<wp_path>
+```
+
+The Firestorm company details (CEO/COO names, phone, address, GSTIN, social links) are the same across all sites — only the site-specific references (attraction name, domain, topic list) need updating.
+
+---
 
 ## Guard Rails
 

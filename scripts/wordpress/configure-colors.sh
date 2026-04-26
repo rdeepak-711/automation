@@ -131,16 +131,28 @@ echo "── Applying GeneratePress color settings ─────────�
 RESULT=$(ssh "${SSH_KEY_OPT[@]}" \
   "${WP_SSH_USER}@${WP_SSH_HOST}" \
   "wp eval '
-    // 1. Body background — white
+    // 1. Body background — use var(--base-3) if GP global color exists, else white
+    \$gp_colors = get_option(\"generate_settings\", []);
+    \$global_colors = \$gp_colors[\"global_colors\"] ?? [];
+    \$base3_hex = \"\";
+    if (is_array(\$global_colors)) {
+      foreach (\$global_colors as \$c) {
+        if (isset(\$c[\"slug\"]) && \$c[\"slug\"] === \"base-3\" && !empty(\$c[\"color\"])) {
+          \$base3_hex = ltrim(\$c[\"color\"], \"#\");
+          break;
+        }
+      }
+    }
+    \$bg = \$base3_hex ?: \"${BODY_BG_COLOR}\";
     //    GP 3.x: stored as WordPress theme mod (hex without #)
     //    GP 2.x: also stored in generate_settings[background_color] (hex with #)
-    set_theme_mod(\"background_color\", \"${BODY_BG_COLOR}\");
-    echo \"body background_color theme mod → ${BODY_BG_COLOR}\n\";
+    set_theme_mod(\"background_color\", \$bg);
+    echo \"body background_color theme mod → \" . \$bg . \" (\" . (\$base3_hex ? \"from var(--base-3)\" : \"fallback white\") . \")\n\";
 
     \$gs = (array) get_option(\"generate_settings\", []);
-    \$gs[\"background_color\"] = \"#${BODY_BG_COLOR}\";
+    \$gs[\"background_color\"] = \"#\" . \$bg;
     update_option(\"generate_settings\", \$gs);
-    echo \"generate_settings[background_color] → #${BODY_BG_COLOR}\n\";
+    echo \"generate_settings[background_color] → #\" . \$bg . \"\n\";
 
     // Verify readback
     \$mod = get_theme_mod(\"background_color\", \"NOT SET\");
