@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Fix L1 page + homepage card images for any attraction site on either server.
-# Matches each card's href slug to the post's featured image and replaces it.
-# Works on Server 1 (kzrmeomy) and Server 2 (dpskbcmy) via env vars.
+# Fix card "Learn more" links AND images on homepage + L1 pages.
+# Matches each card by its <h3> title to find the correct WordPress post,
+# then updates both the href and featured image. Works for wrong/invented slugs.
 #
 # Usage:
-#   ./scripts/base/17-fix-l1-card-images.sh <hostname>
+#   ./scripts/base/18-fix-card-links-and-images.sh <hostname>
 #
 # Example:
-#   ./scripts/base/17-fix-l1-card-images.sh auschwitz-guide.com
-#   ./scripts/base/17-fix-l1-card-images.sh hagiasophia-guide.com
+#   ./scripts/base/18-fix-card-links-and-images.sh vangoghmuseum-guide.com
+#   ./scripts/base/18-fix-card-links-and-images.sh hagiasofia-guide.com
 #
 # Env vars (from .env or parent):
 #   WP_SSH_HOST, WP_SSH_USER, WP_SSH_KEY, WP_PATH (optional — auto-discovered)
@@ -22,7 +22,7 @@ fi
 
 HOSTNAME="$1"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PY_SCRIPT="$SCRIPT_DIR/17-fix-l1-card-images.py"
+PY_SCRIPT="$SCRIPT_DIR/fix-card-links-and-images.py"
 
 # Save any env vars passed on command line BEFORE loading .env (so they take precedence)
 _SAVED_HOST="${WP_SSH_HOST:-}"
@@ -48,11 +48,7 @@ if [[ -n "${WP_SSH_KEY:-}" ]]; then
 fi
 SSH_KEY_OPTS+=(-o StrictHostKeyChecking=no -o ConnectTimeout=15)
 
-# Server 1 needs SSH_AUTH_SOCK="" to avoid agent key conflicts
-_SSH_PREFIX=""
-if [[ "${WP_SSH_KEY:-}" == *"bluehost_old"* ]]; then
-    _SSH_PREFIX="SSH_AUTH_SOCK="
-fi
+_SSH_PREFIX="SSH_AUTH_SOCK="  # always clear agent to prevent cPHulk/CSF port-22 blocks from wrong-key failures
 
 _SSH() { env ${_SSH_PREFIX} ssh "${SSH_KEY_OPTS[@]}" "${WP_SSH_USER}@${WP_SSH_HOST}" "$@"; }
 _SCP() { env ${_SSH_PREFIX} scp "${SSH_KEY_OPTS[@]}" "$@"; }
@@ -78,22 +74,11 @@ echo "Found: $WP_PATH"
 
 SITE_URL="https://$HOSTNAME"
 
-# Prompt for per-page hero image URLs
-echo ""
-echo "Enter hero image URLs for each page."
-echo "Leave blank to use post featured image fallback."
-echo ""
-read -p "Homepage hero image URL    : " HERO_HOMEPAGE
-read -p "Tickets hero image URL     : " HERO_TICKETS
-read -p "Plan Your Visit hero URL   : " HERO_PLAN
-read -p "What To See hero URL       : " HERO_WHATS
-echo ""
-
 echo "Uploading script..."
-_SCP "$PY_SCRIPT" "${WP_SSH_USER}@${WP_SSH_HOST}:/tmp/17-fix-l1-card-images.py"
+_SCP "$PY_SCRIPT" "${WP_SSH_USER}@${WP_SSH_HOST}:/tmp/18-fix-card-links-and-images.py"
 
 echo "Running..."
-_SSH "python3 /tmp/17-fix-l1-card-images.py '$WP_PATH' '$SITE_URL' '$HERO_HOMEPAGE' '$HERO_TICKETS' '$HERO_PLAN' '$HERO_WHATS'; rm -f /tmp/17-fix-l1-card-images.py"
+_SSH "python3 /tmp/18-fix-card-links-and-images.py '$WP_PATH' '$SITE_URL'; rm -f /tmp/18-fix-card-links-and-images.py"
 
 echo ""
 echo "✅ Done for $HOSTNAME"

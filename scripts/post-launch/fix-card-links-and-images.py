@@ -105,6 +105,12 @@ _HERO_IMAGES_ALL = {
         "plan-your-visit": "https://montsaintmichel-guide.com/wp-content/uploads/2026/04/Mont-Saint-Michel-Abbey-at-night-1.avif",
         "what-to-see":     "https://montsaintmichel-guide.com/wp-content/uploads/2026/04/Mont-Saint-Michel-aerial-view.avif",
     },
+    "pyramidsofgiza-guide.com": {
+        "homepage":        "https://pyramidsofgiza-guide.com/wp-content/uploads/2026/04/Pyramids-of-Giza-in-Egypt.avif",
+        "tickets":         "https://pyramidsofgiza-guide.com/wp-content/uploads/2026/04/The-Sphinx-at-Pyramids-of-Giza.avif",
+        "plan-your-visit": "https://pyramidsofgiza-guide.com/wp-content/uploads/2026/04/Camel-ride-at-the-Giza-Pyramids-in-Egypt.avif",
+        "what-to-see":     "https://pyramidsofgiza-guide.com/wp-content/uploads/2026/04/The-inside-of-Giza-Pyramids.avif",
+    },
 }
 # HERO_IMAGES resolved after SITE_DOMAIN is known (see below)
 
@@ -139,6 +145,16 @@ _IMAGE_OVERRIDES_ALL = {
         "plan your visit to mont saint michel":           "https://montsaintmichel-guide.com/wp-content/uploads/2026/04/Mont-Saint-Michel-Abbey-at-night-1.avif",
         "what to see":                                    "https://montsaintmichel-guide.com/wp-content/uploads/2026/04/Mont-Saint-Michel-aerial-view.avif",
         "what to see at mont saint michel":               "https://montsaintmichel-guide.com/wp-content/uploads/2026/04/Mont-Saint-Michel-aerial-view.avif",
+    },
+    "pyramidsofgiza-guide.com": {
+        "tickets tours":                                  "https://pyramidsofgiza-guide.com/wp-content/uploads/2026/04/The-Sphinx-at-Pyramids-of-Giza.avif",
+        "tickets tours to the pyramids of giza":          "https://pyramidsofgiza-guide.com/wp-content/uploads/2026/04/The-Sphinx-at-Pyramids-of-Giza.avif",
+        "tickets tours at the pyramids of giza":          "https://pyramidsofgiza-guide.com/wp-content/uploads/2026/04/The-Sphinx-at-Pyramids-of-Giza.avif",
+        "plan your visit":                                "https://pyramidsofgiza-guide.com/wp-content/uploads/2026/04/Camel-ride-at-the-Giza-Pyramids-in-Egypt.avif",
+        "plan your visit to the pyramids of giza":        "https://pyramidsofgiza-guide.com/wp-content/uploads/2026/04/Camel-ride-at-the-Giza-Pyramids-in-Egypt.avif",
+        "plan your visit to pyramids of giza":            "https://pyramidsofgiza-guide.com/wp-content/uploads/2026/04/Camel-ride-at-the-Giza-Pyramids-in-Egypt.avif",
+        "what to see":                                    "https://pyramidsofgiza-guide.com/wp-content/uploads/2026/04/The-inside-of-Giza-Pyramids.avif",
+        "what to see at the pyramids of giza":            "https://pyramidsofgiza-guide.com/wp-content/uploads/2026/04/The-inside-of-Giza-Pyramids.avif",
     },
 }
 # IMAGE_OVERRIDES resolved after SITE_DOMAIN is known (see below)

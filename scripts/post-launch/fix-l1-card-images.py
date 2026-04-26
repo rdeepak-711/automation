@@ -121,11 +121,12 @@ def get_cat_from_href(href):
 L1_SLUGS = {"tickets", "tickets-tours", "plan-your-visit", "what-to-see",
             "homepage", "home", "tickets-and-tours"}
 
-def find_best_image(text_window):
+def find_best_image(text_window, allow_l1_fallback=True):
     """
     Scan text_window for the nearest internal href, try to match to a post image.
     - /category/slug/  → direct post lookup
     - /category/       → hero image if provided, else first image in that category silo
+      (only when allow_l1_fallback=True — crosslinks only; not for article/highlight cards)
     Returns (label, img_url) or (None, None).
     """
     # First pass: try article links (2 segments) → direct post match
@@ -133,6 +134,9 @@ def find_best_image(text_window):
         slug = get_slug_from_href(m.group(1))
         if slug and slug in slug_img:
             return slug, slug_img[slug]
+
+    if not allow_l1_fallback:
+        return None, None
 
     # Second pass: try any internal href — including L1 page links (1 segment)
     any_href = re.compile(r'href="(?:https?://(?:www\.)?' + re.escape(SITE_DOMAIN) + r')?(/[a-z0-9-]+/?)"')
@@ -174,8 +178,11 @@ def fix_placeholders_in_content(content, page_label, page_slug):
         cls = cls_match.group(1) if cls_match else "unknown"
 
         # Scan forward to find article href
+        # L1 hero fallback only for crosslink images — not article/highlight cards
+        _article_classes = ("att-article-card__img", "att-highlight__img", "att-featured__img", "att-ticket__img")
+        _allow_l1 = not any(c in cls for c in _article_classes)
         window = new_content[pos:pos + 2000]
-        slug, img_url = find_best_image(window)
+        slug, img_url = find_best_image(window, allow_l1_fallback=_allow_l1)
 
         if img_url:
             new_content = new_content[:pos] + img_url + new_content[pos + len(PLACEHOLDER_GIF):]
