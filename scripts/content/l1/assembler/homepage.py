@@ -29,8 +29,8 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 PLACEHOLDER_IMG = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
-TEMPLATE_PATH = Path(__file__).parent.parent.parent.parent / "docs" / "Four Pages" / "attraction-homepage-template.html"
-REPO_ROOT = Path(__file__).parent.parent.parent.parent
+TEMPLATE_PATH = Path(__file__).parent.parent.parent.parent.parent / "docs" / "Four Pages" / "attraction-homepage-template.html"
+REPO_ROOT = Path(__file__).parent.parent.parent.parent.parent
 MODEL = os.environ.get("CLAUDE_L1_MODEL", "claude-haiku-4-5-20251001")
 
 
@@ -412,7 +412,7 @@ def _gen_tips(attraction: str, cfg: dict, site_slug: str, force: bool = False) -
     CACHE_KEY = "_homepage_tips"
     if not force and CACHE_KEY in cfg:
         return cfg[CACHE_KEY]
-    sys.path.insert(0, str(REPO_ROOT / "scripts" / "content" / "l1_assembler"))
+    sys.path.insert(0, str(REPO_ROOT / "scripts" / "content" / "l1" / "assembler"))
     from content_generator import generate_know_tips
     tips = generate_know_tips(attraction)
     if tips:
