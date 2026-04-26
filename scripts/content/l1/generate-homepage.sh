@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ── L0: Homepage Generator ────────────────────────────────────────────────────
-# Thin wrapper — delegates to scripts/content/l1_assembler/homepage.py
+# Thin wrapper — delegates to scripts/content/l1/assembler/homepage.py
 #
 # Usage:
 #   ./scripts/content/generate-homepage.sh <site-slug> [--force]
@@ -14,6 +14,6 @@ if [[ $# -lt 1 ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
-python3 "$REPO_ROOT/scripts/content/l1_assembler/homepage.py" "$@"
+python3 "$REPO_ROOT/scripts/content/l1/assembler/homepage.py" "$@"
