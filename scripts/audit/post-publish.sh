@@ -59,10 +59,16 @@ _WP_KEY="${WP_SSH_KEY/#\~/$HOME}"
 SSH_OPTS=(-i "$_WP_KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no
            -o ConnectTimeout=15 -o ControlMaster=auto
            -o ControlPath="$SSH_CTL" -o ControlPersist=120)
-ssh "${SSH_OPTS[@]}" -N -f "${WP_SSH_USER}@${WP_SSH_HOST}" 2>/dev/null \
-  && echo "  ✓ SSH connected to ${WP_SSH_HOST}" \
-  || echo "  ⚠ SSH multiplexing failed — continuing without ControlMaster"
+ssh "${SSH_OPTS[@]}" -N -f "${WP_SSH_USER}@${WP_SSH_HOST}" 2>/dev/null && true || true
 trap 'ssh -O exit -o ControlPath="$SSH_CTL" "${WP_SSH_USER}@${WP_SSH_HOST}" 2>/dev/null || true' EXIT
+
+# Hard connectivity check — bail out before doing anything if SSH is down
+if ! ssh "${SSH_OPTS[@]}" "${WP_SSH_USER}@${WP_SSH_HOST}" "echo ok" </dev/null 2>/dev/null | grep -q "ok"; then
+  echo "  ✗ Cannot connect to ${WP_SSH_HOST} via SSH"
+  echo "    Check: server is up, port 22 is open, key is correct"
+  exit 1
+fi
+echo "  ✓ SSH connected to ${WP_SSH_HOST}"
 
 _ssh() { ssh "${SSH_OPTS[@]}" "${WP_SSH_USER}@${WP_SSH_HOST}" "$1" </dev/null 2>/dev/null || true; }
 
