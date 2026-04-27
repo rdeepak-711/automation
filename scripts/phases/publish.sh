@@ -82,6 +82,16 @@ else
   echo "  Skipped."
 fi
 
+# ── Step 27: Post-publish audit ──────────────────────────────────────────────
+if prompt_step 27 "Post-publish audit" \
+    "Checks menu/footer/about-us/contact-us are present; syncs card images from WP featured images." \
+    "post_publish_audit_done"; then
+  "$REPO_ROOT/scripts/audit/post-publish.sh" "$CONTENT_SITE_SLUG"
+  mark_done "post_publish_audit_done"
+else
+  echo "  Skipped."
+fi
+
 echo ""
 echo "════════════════════════════════════════════════════════════════════════════"
 echo "  Publish phase complete — ${SITE_HOST}"
