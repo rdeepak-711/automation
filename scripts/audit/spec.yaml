@@ -1,0 +1,76 @@
+# Audit Spec — declarative expectations
+# Single source of truth for "what a correct site looks like"
+# Consumed by: check.py
+# Severities: critical | high | medium | low
+
+site:
+  permalink_structure: "/%category%/%postname%/"
+  site_icon_required: true
+  categories_required: [tickets, plan-your-visit, what-to-see]
+  options_required:
+    # path.in.option: expected_value (or null to assert presence only)
+    generate_spacing_settings.content_top: 0
+    # Disable GP built-in primary nav — custom GP Element menu handles nav instead.
+    # Without this, duplicate navs render (GP default + our hook-injected menu).
+    generate_settings.nav_position_setting: nav-none
+  required_plugins:
+    - fluentform
+  # campaign_prefix: loaded automatically from input/<site>/.env CAMPAIGN_PREFIX
+  ticket_category: tickets      # category slug whose posts must have What's Included + buy-now btn
+  allowed_external_domains:
+    - getyourguide.com
+    - tiqets.com
+    - viator.com
+    - schema.org
+    - fonts.google.com
+    - fonts.gstatic.com
+    - wikipedia.org
+    - wikimedia.org
+
+posts:
+  required_meta:
+    - {key: rank_math_title,       severity: high}
+    - {key: rank_math_description, severity: high}
+  forbidden_nonempty_meta:
+    - {key: rank_math_canonical_url, severity: medium}
+  featured_image_required: {severity: high}
+  forbid_absolute_internal_links: {severity: high}
+  forbidden_content_patterns:
+    - {id: backtick-fence,       pattern: "```html",               severity: medium}
+    - {id: padding-40,           pattern: "padding: 40px 0 0 0",  severity: medium}
+    - {id: padding-24,           pattern: "padding: 24px 0 0 0",  severity: low}
+    - {id: placeholder-gif,      pattern: "data:image/gif;base64", severity: high}
+  faq_onclick_conflict: {severity: high}
+
+pages:
+  required_meta:
+    - {key: rank_math_title,       severity: high}
+    - {key: rank_math_description, severity: high}
+  featured_image_required: {severity: medium}
+  l1_card_pages: [homepage, plan-your-visit, tickets, what-to-see]
+  utility:
+    slugs: [about-us, contact-us]
+    forbidden_nonempty_meta:
+      - {key: rank_math_robots, severity: high}
+  excluded_from_checks: [sample-page]
+
+menu:
+  check: true
+  element_title: Menu
+  min_subgroups: 3
+  max_subgroups: 5
+  buy_tickets_min_subgroups: 2
+  buy_tickets_max_subgroups: 5
+
+internal_links:
+  must_target_published_post: {severity: critical}
+
+# Pointers for Flavor B/C/D steps — checks referenced by id, checker module handles logic
+checker_modules:
+  - card-images              # step 12: placeholder GIFs + broken card hrefs
+  - affiliate-link-integrity # step 18: partner_id + campaign slug
+  - card-image-perf          # step 17: loading/width/height attrs
+  - faq-view-all-target      # step 22: href must point to /plan-your-visit/faq
+  - gp-elements-presence     # step 14: menu + footer exist with correct hooks
+  - custom-css-blocks        # step 13: Firestorm block markers + author box styles
+  - manifest-diff            # step 8: live slugs vs XLSX manifest
