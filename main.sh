@@ -58,11 +58,35 @@ if [[ -z "$PHASE" ]]; then
   esac
 fi
 
-# ── Dispatch ──────────────────────────────────────────────────────────────────
-PHASE_SCRIPT="$SCRIPT_DIR/scripts/phases/${PHASE}.sh"
-if [[ ! -f "$PHASE_SCRIPT" ]]; then
-  echo "  ERROR: Phase script not found: $PHASE_SCRIPT"
-  exit 1
-fi
+# ── Phase chain ───────────────────────────────────────────────────────────────
+_NEXT_PHASE() {
+  case "$1" in
+    wordpress) echo "content"  ;;
+    content)   echo "publish"  ;;
+    *)         echo ""         ;;
+  esac
+}
 
-exec "$PHASE_SCRIPT" "${@:2}"
+# ── Dispatch (loop through phases) ────────────────────────────────────────────
+while [[ -n "$PHASE" ]]; do
+  PHASE_SCRIPT="$SCRIPT_DIR/scripts/phases/${PHASE}.sh"
+  if [[ ! -f "$PHASE_SCRIPT" ]]; then
+    echo "  ERROR: Phase script not found: $PHASE_SCRIPT"
+    exit 1
+  fi
+
+  "$PHASE_SCRIPT" "${@:2}"
+
+  NEXT=$(_NEXT_PHASE "$PHASE")
+  if [[ -z "$NEXT" ]]; then
+    break
+  fi
+
+  echo ""
+  printf "  Continue to %s phase? (Y/n): " "$NEXT"
+  read -r _CONT
+  case "${_CONT:-y}" in
+    y|Y|"") PHASE="$NEXT" ;;
+    *)      break ;;
+  esac
+done
