@@ -122,9 +122,25 @@ else
 fi
 
 # ── Step 22: Generate L1 Pages ───────────────────────────────────────────────
+# 2-pass: WTS runs first to create _top_highlights_wts cache in l1-config.json.
+# If cache was just created, article metas are re-run automatically so WTS cards
+# get richer descriptions before all 3 L1 pages are assembled.
 if prompt_step 22 "Generate L1 Pages" \
     "Builds 3 L1 category hub pages (Tickets & Tours, Plan Your Visit, What to See)." \
     "generate_l1_html_done"; then
+  _L1_CFG="$REPO_ROOT/input/$CONTENT_SITE_SLUG/l1-config.json"
+  _BEFORE=$(python3 -c "import json,sys; c=json.load(open('$_L1_CFG')); print(len(c.get('_top_highlights_wts',[])));sys.exit()" 2>/dev/null || echo "0")
+
+  echo "  → Pass 1: generating What to See (builds _top_highlights_wts cache)..."
+  "$REPO_ROOT/scripts/content/l1/generate-what-to-see.sh" "$CONTENT_SITE_SLUG" --force
+
+  _AFTER=$(python3 -c "import json,sys; c=json.load(open('$_L1_CFG')); print(len(c.get('_top_highlights_wts',[])));sys.exit()" 2>/dev/null || echo "0")
+  if [[ "$_BEFORE" == "0" && "$_AFTER" != "0" ]]; then
+    echo "  → _top_highlights_wts cache created ($_AFTER slugs). Re-running article metas for richer WTS descriptions..."
+    python3 "$REPO_ROOT/scripts/content/build-article-metas.py" "$CONTENT_SITE_SLUG" --force
+  fi
+
+  echo "  → Pass 2: generating all 3 L1 pages..."
   "$REPO_ROOT/scripts/content/l1/generate-plan-your-visit.sh" "$CONTENT_SITE_SLUG" --force
   "$REPO_ROOT/scripts/content/l1/generate-what-to-see.sh" "$CONTENT_SITE_SLUG" --force
   "$REPO_ROOT/scripts/content/l1/generate-tickets-tours.sh" "$CONTENT_SITE_SLUG" --force
