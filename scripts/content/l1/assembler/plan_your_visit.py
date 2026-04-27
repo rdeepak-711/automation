@@ -93,7 +93,14 @@ def _stamp_campaign(base_url: str, campaign_id: str) -> str:
 def _load_css() -> str:
     content = TEMPLATE_PATH.read_text(encoding="utf-8")
     m = re.search(r"<style>(.*?)</style>", content, re.DOTALL)
-    return m.group(1) if m else ""
+    if not m:
+        return ""
+    css = m.group(1)
+    # CSS spec: @import must precede all other rules. Move it to the top.
+    imp = re.search(r"[ \t]*@import\s+url\([^)]+\);[ \t]*\n?", css)
+    if imp:
+        css = imp.group(0).lstrip() + css[:imp.start()] + css[imp.end():]
+    return css
 
 
 # ─── Section renderers ────────────────────────────────────────────────────────
@@ -274,7 +281,7 @@ def _render_cta_banner(banner: dict, ticket_url: str) -> str:
   </section>"""
 
 
-def _render_faqs(faqs: list) -> str:
+def _render_faqs(faqs: list, attraction: str = "") -> str:
     items_html = ""
     for faq in faqs:
         if isinstance(faq, dict):
@@ -301,7 +308,7 @@ def _render_faqs(faqs: list) -> str:
       <div class="att-faq" itemscope itemtype="https://schema.org/FAQPage">
 {items_html}      </div>
       <div class="att-section-link">
-        <a href="/faqs/">View All FAQs &rarr;</a>
+        <a href="/faqs/">View All FAQs about {_e(attraction)} &rarr;</a>
       </div>
     </div>
   </section>"""
@@ -454,6 +461,7 @@ def render(site_slug: str, force: bool = False) -> Path:
     raw_ticket_url = (
         env.get("RED_BANNER_TICKET")
         or env.get("red_banner_ticket")
+        or env.get("RED_BUTTON_URL")
         or config.get("gyg_url")
         or (pyv_cfg.get("cta1", ["", ""])[1] if isinstance(pyv_cfg.get("cta1"), list) else "")
     )
@@ -544,7 +552,7 @@ def _assemble(
     parts.append(_render_cta_banner(banner, ticket_url))
     parts.append("")
     if faqs:
-        parts.append(_render_faqs(faqs))
+        parts.append(_render_faqs(faqs, attraction))
         parts.append("")
     parts.append("</div>")
     jsonld = _build_faq_jsonld(faqs)

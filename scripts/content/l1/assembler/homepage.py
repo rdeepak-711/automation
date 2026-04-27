@@ -131,6 +131,10 @@ def _load_css_js() -> tuple[str, str]:
         css_start = css_m.start()
         css_end = content.find("</style>", css_start) + len("</style>")
         css = content[css_start:css_end]
+        # CSS spec: @import must precede all other rules. Move it to top.
+        imp = re.search(r"[ \t]*@import\s+url\([^)]+\);[ \t]*\n?", css)
+        if imp:
+            css = "<style>" + imp.group(0).lstrip() + "\n" + css[len("<style>"):imp.start()] + css[imp.end():]
     else:
         css = "<style></style>"
     js_m = re.search(r"<script>.*?</script>", content, re.DOTALL)
@@ -691,7 +695,7 @@ canonical: https://{domain}
       <div class="att-faq" itemscope itemtype="https://schema.org/FAQPage">{faqs_html}
       </div>
       <div class="att-section-link">
-        <a href="{_e(faq_url)}">View All Frequently Asked Questions &rarr;</a>
+        <a href="{_e(faq_url)}">View All FAQs about {_e(attraction)} &rarr;</a>
       </div>
     </div>
   </section>
@@ -741,7 +745,12 @@ def main() -> None:
     print(f"[{site_slug}] Attraction: {attraction}")
 
     domain = cfg.get("domain", "")
-    cta_url = cfg.get("gyg_url", "/tickets/")
+    cta_url = (
+        env.get("RED_BANNER_TICKET")
+        or env.get("red_banner_ticket")
+        or env.get("RED_BUTTON_URL")
+        or cfg.get("gyg_url", "/tickets/")
+    )
     campaign_id = f"{site_slug}-homepage"
     currency = env.get("CURRENCY", "€")
 
