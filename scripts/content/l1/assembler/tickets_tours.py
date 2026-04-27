@@ -435,7 +435,7 @@ def _render_banner(banner: dict, banner_url: str) -> str:
   </section>"""
 
 
-def _render_faqs(faqs: list, attraction: str = "") -> str:
+def _render_faqs(faqs: list, attraction: str = "", faq_url: str = "/faqs/") -> str:
     items_html = ""
     for faq in faqs:
         if isinstance(faq, dict):
@@ -463,7 +463,7 @@ def _render_faqs(faqs: list, attraction: str = "") -> str:
       <div class="att-faq" itemscope itemtype="https://schema.org/FAQPage">
 {items_html}      </div>
       <div class="att-section-link">
-        <a href="/faqs/">View All FAQs about {_e(attraction)} &rarr;</a>
+        <a href="{_e(faq_url)}">View All FAQs about {_e(attraction)} &rarr;</a>
       </div>
     </div>
   </section>"""
@@ -657,6 +657,7 @@ def render(site_slug: str, force: bool = False) -> Path:
     seo_desc = tt_cfg.get("seo_d", "")
     seo_url = f"https://{config.get('domain', '')}/tickets/"
     css = _load_css()
+    faq_url = article_source.get_faq_url(site_slug, str(REPO_ROOT))
 
     # ── Assemble ──────────────────────────────────────────────────────────────
     print(f"[{site_slug}] Assembling HTML...")
@@ -672,7 +673,7 @@ def render(site_slug: str, force: bool = False) -> Path:
         guide_groups=guide_groups, info_by_slug=info_by_slug,
         xlinks_cfg=tt_cfg, crosslinks=crosslinks,
         banner=banner, banner_url=banner_url,
-        faqs=faqs,
+        faqs=faqs, faq_url=faq_url,
     )
 
     # ── Mechanical validation ─────────────────────────────────────────────────
@@ -713,6 +714,7 @@ def _assemble(
     guide_groups, info_by_slug,
     xlinks_cfg, crosslinks,
     banner, banner_url, faqs,
+    faq_url="/faqs/",
 ) -> str:
     extra_css = """
 .att-tickets-page .att-ticket h3 a,
@@ -780,7 +782,7 @@ def _assemble(
     parts.append("")
     # 10. FAQs
     if faqs:
-        parts.append(_render_faqs(faqs, attraction))
+        parts.append(_render_faqs(faqs, attraction, faq_url))
         parts.append("")
     parts.append("</div>")
     parts.append("")

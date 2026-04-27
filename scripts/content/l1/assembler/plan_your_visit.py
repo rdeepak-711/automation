@@ -281,7 +281,7 @@ def _render_cta_banner(banner: dict, ticket_url: str) -> str:
   </section>"""
 
 
-def _render_faqs(faqs: list, attraction: str = "") -> str:
+def _render_faqs(faqs: list, attraction: str = "", faq_url: str = "/faqs/") -> str:
     items_html = ""
     for faq in faqs:
         if isinstance(faq, dict):
@@ -308,7 +308,7 @@ def _render_faqs(faqs: list, attraction: str = "") -> str:
       <div class="att-faq" itemscope itemtype="https://schema.org/FAQPage">
 {items_html}      </div>
       <div class="att-section-link">
-        <a href="/faqs/">View All FAQs about {_e(attraction)} &rarr;</a>
+        <a href="{_e(faq_url)}">View All FAQs about {_e(attraction)} &rarr;</a>
       </div>
     </div>
   </section>"""
@@ -480,6 +480,7 @@ def render(site_slug: str, force: bool = False) -> Path:
     seo_desc = pyv_cfg.get("seo_d", "")
     seo_url = f"https://{config.get('domain', '')}/plan-your-visit/"
     css = _load_css()
+    faq_url = article_source.get_faq_url(site_slug, str(REPO_ROOT))
 
     # Assemble
     print(f"[{site_slug}] Assembling HTML...")
@@ -491,6 +492,7 @@ def render(site_slug: str, force: bool = False) -> Path:
         practical=practical, know_tips=know_tips,
         xlinks=xlinks, crosslinks=crosslinks, attraction=attraction,
         banner=banner, ticket_url=ticket_url, faqs=faqs,
+        faq_url=faq_url,
     )
 
     # Mechanical validation
@@ -526,6 +528,7 @@ def _assemble(
     seo_title, seo_desc, seo_url, css, h1, desc,
     quicktips, groups, practical, know_tips,
     xlinks, crosslinks, attraction, banner, ticket_url, faqs,
+    faq_url="/faqs/",
 ) -> str:
     parts = [
         f"<!-- SEO\ntitle: {seo_title}\ndescription: {seo_desc}\ncanonical: {seo_url}\n-->",
@@ -552,7 +555,7 @@ def _assemble(
     parts.append(_render_cta_banner(banner, ticket_url))
     parts.append("")
     if faqs:
-        parts.append(_render_faqs(faqs, attraction))
+        parts.append(_render_faqs(faqs, attraction, faq_url))
         parts.append("")
     parts.append("</div>")
     jsonld = _build_faq_jsonld(faqs)

@@ -446,6 +446,22 @@ def load_plan_your_visit_articles(site_slug: str, repo_root: str | None = None) 
     return result
 
 
+def get_faq_url(site_slug: str, repo_root: str | None = None) -> str:
+    """Return the FAQ page URL for this site from the xlsx IA sheet.
+
+    Looks for a plan-your-visit article whose url contains 'faq'.
+    Falls back to '/faqs/' if not found or xlsx is unavailable.
+    """
+    try:
+        articles = load_plan_your_visit_articles(site_slug, repo_root)
+        for a in articles:
+            if "faq" in a.get("url", "").lower() or "faq" in a.get("url_slug", "").lower():
+                return a["url"]
+    except Exception:
+        pass
+    return "/faqs/"
+
+
 def load_what_to_see_articles(site_slug: str, repo_root: str | None = None) -> list[dict]:
     """
     Returns articles for the What to See silo.

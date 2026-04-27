@@ -771,11 +771,8 @@ def main() -> None:
     faqs = _gen_faqs(attraction, cfg, site_slug, force)
     banner = _gen_banner(attraction, cfg, site_slug, force)
 
-    faq_slug = next(
-        (s for s, v in metas.items() if v.get("category") == "plan-your-visit" and "faq" in s),
-        None,
-    )
-    faq_url = f"/{faq_slug}/" if faq_slug else "/faq/"
+    from . import article_source as _asrc
+    faq_url = _asrc.get_faq_url(site_slug, str(REPO_ROOT))
 
     print(f"[{site_slug}] Assembling HTML...")
     page = _assemble(
