@@ -253,18 +253,19 @@ def _select_ticket_articles(metas: dict, cfg: dict, tickets_by_tid: dict) -> lis
     return result
 
 
-def _select_pyv_articles(metas: dict) -> list[dict]:
+def _select_pyv_articles(metas: dict, url_lookup: dict | None = None) -> list[dict]:
     """Return first 6 plan-your-visit articles in metas insertion order."""
     result = []
     for slug, m in metas.items():
         if m.get("category") == "plan-your-visit":
-            result.append({**m, "slug": slug, "article_url": f"/{slug}/"})
+            url = (url_lookup or {}).get(slug) or f"/{slug}/"
+            result.append({**m, "slug": slug, "article_url": url})
             if len(result) >= 6:
                 break
     return result
 
 
-def _select_wts_articles(metas: dict, cfg: dict) -> list[dict]:
+def _select_wts_articles(metas: dict, cfg: dict, url_lookup: dict | None = None) -> list[dict]:
     """Return up to 6 WTS articles — top highlights first, then fill."""
     top_slugs = cfg.get("_top_highlights_wts", [])
     result = []
@@ -276,7 +277,8 @@ def _select_wts_articles(metas: dict, cfg: dict) -> list[dict]:
         m = metas.get(slug)
         if not m or m.get("category") != "what-to-see":
             return False
-        result.append({**m, "slug": slug, "article_url": f"/{slug}/"})
+        url = (url_lookup or {}).get(slug) or f"/{slug}/"
+        result.append({**m, "slug": slug, "article_url": url})
         seen.add(slug)
         return True
 
@@ -758,9 +760,13 @@ def main() -> None:
     tickets_by_tid = {t["tid"]: t for t in _parse_tickets_md(site_slug)}
     css, js = _load_css_js()
 
+    from . import article_source as _asrc
+    _pyv_url_lookup = {a["url_slug"]: a["url"] for a in _asrc.load_plan_your_visit_articles(site_slug, str(REPO_ROOT))}
+    _wts_url_lookup = {a["url_slug"]: a["url"] for a in _asrc.load_what_to_see_articles(site_slug, str(REPO_ROOT))}
+
     ticket_articles = _select_ticket_articles(metas, cfg, tickets_by_tid)
-    pyv_articles = _select_pyv_articles(metas)
-    wts_articles = _select_wts_articles(metas, cfg)
+    pyv_articles = _select_pyv_articles(metas, _pyv_url_lookup)
+    wts_articles = _select_wts_articles(metas, cfg, _wts_url_lookup)
     print(f"[{site_slug}] Selected: {len(ticket_articles)} tickets, {len(pyv_articles)} PYV, {len(wts_articles)} WTS")
 
     ticket_enrich = _enrich_ticket_cards(ticket_articles, cfg, site_slug, attraction, currency, force)
