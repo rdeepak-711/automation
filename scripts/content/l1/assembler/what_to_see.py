@@ -27,8 +27,8 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 PLACEHOLDER_IMG = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
-TEMPLATE_PATH = Path(__file__).parent.parent.parent.parent / "docs" / "Four Pages" / "attraction-what-to-see-template.html"
-REPO_ROOT = Path(__file__).parent.parent.parent.parent
+TEMPLATE_PATH = Path(__file__).parent.parent.parent.parent.parent / "docs" / "Four Pages" / "attraction-what-to-see-template.html"
+REPO_ROOT = Path(__file__).parent.parent.parent.parent.parent
 
 
 # ─── Text helpers ─────────────────────────────────────────────────────────────
