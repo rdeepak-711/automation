@@ -81,6 +81,7 @@ def convert_article(md_path: str, site_slug: str, force: bool = False) -> dict:
             template_path=str(ctx["template_path"]),
             campaign_prefix=ctx["campaign_prefix"],
             article_slug=ctx["article_slug"],
+            accent_color=ctx["accent_color"],
         )
         _log(tag, f"Layer 6 (FAQ hub): assembled {len(html.encode())} bytes")
     else:
@@ -91,6 +92,7 @@ def convert_article(md_path: str, site_slug: str, force: bool = False) -> dict:
             template_path=str(ctx["template_path"]),
             campaign_prefix=ctx["campaign_prefix"],
             article_slug=ctx["article_slug"],
+            accent_color=ctx["accent_color"],
         )
         _log(tag, f"Layer 6: assembled {len(html.encode())} bytes")
 
@@ -116,7 +118,7 @@ def convert_article(md_path: str, site_slug: str, force: bool = False) -> dict:
         hub_faqs = []
         for sec in parsed.get("sections", []):
             hub_faqs.extend(faq_converter._extract_category_faqs(sec.get("content_md", "")))
-        parsed_for_verify = {**parsed, "faq_items": hub_faqs}
+        parsed_for_verify = {**parsed, "faq_items": hub_faqs, "_is_faq_hub": True}
     else:
         parsed_for_verify = parsed
 

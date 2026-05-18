@@ -4,6 +4,9 @@ Fix card images on the homepage and L1 pages — replaces placeholder/wrong
 images with each post's actual featured image, matched by the nearest
 internal article href in the card.
 
+Pass 0 (XLSX slug audit): if xlsx_path provided, checks every internal card
+href against XLSX canonical slugs and fixes mismatches before touching images.
+
 Handles ALL image classes:
   att-hero__img       — page hero banner
   att-article-card__img — 3-col article grid cards
@@ -21,14 +24,14 @@ Hero images and crosslink images use the per-page hero URLs passed as args 3-6.
 Crosslinks are always updated to the designated hero regardless of current src.
 
 Usage:
-    python3 17-fix-l1-card-images.py <wp_path> <site_url> [homepage_img] [tickets_img] [plan_your_visit_img] [what_to_see_img]
+    python3 fix-l1-card-images.py <wp_path> <site_url> [homepage_img] [tickets_img] [plan_your_visit_img] [what_to_see_img] [xlsx_path]
 
 Example:
-    python3 17-fix-l1-card-images.py /home1/kzrmeomy/public_html/website_ce6ca565 https://auschwitz-guide.com
-    python3 17-fix-l1-card-images.py /home1/dpskbcmy/public_html/website_204db6f9 https://hagiasophia-guide.com https://... https://... https://... https://...
+    python3 fix-l1-card-images.py /home1/kzrmeomy/public_html/website_ce6ca565 https://auschwitz-guide.com
+    python3 fix-l1-card-images.py /home1/dpskbcmy/public_html/website_windsor https://windsorcastle-guide.com https://... https://... https://... https://... /tmp/site.xlsx
 """
 
-import subprocess, re, sys
+import subprocess, re, sys, os, tempfile
 
 PLACEHOLDER_GIF = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
 
@@ -58,6 +61,97 @@ if PAGE_HERO_IMGS:
 else:
     print("No hero images provided — will use post featured image fallback for heroes/crosslinks")
 
+# ── XLSX slug audit (optional arg 7) ─────────────────────────────────────────
+XLSX_PATH = sys.argv[7].strip() if len(sys.argv) >= 8 else None
+
+# xlsx_valid_slugs: category → set of canonical slugs from XLSX
+xlsx_valid_slugs = {}   # e.g. {"tickets": {"park-guell-admission-ticket", ...}, ...}
+
+if XLSX_PATH and os.path.exists(XLSX_PATH):
+    try:
+        import openpyxl
+        wb = openpyxl.load_workbook(XLSX_PATH)
+        ws = wb.active
+        headers = [str(c.value).strip() if c.value else "" for c in ws[1]]
+        cat_col  = next((i for i, h in enumerate(headers) if h.lower() == "category"), None)
+        slug_col = next((i for i, h in enumerate(headers) if "slug" in h.lower()), None)
+        if cat_col is not None and slug_col is not None:
+            CAT_PREFIX = {"T": "tickets", "P": "plan-your-visit", "W": "what-to-see"}
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                cat_raw  = str(row[cat_col]).strip()  if row[cat_col]  else ""
+                slug_raw = str(row[slug_col]).strip() if row[slug_col] else ""
+                if not cat_raw or not slug_raw:
+                    continue
+                prefix = cat_raw[0].upper()
+                silo = CAT_PREFIX.get(prefix)
+                if not silo:
+                    continue
+                # Extract just the slug portion: /tickets/my-slug/ → my-slug
+                parts = [p for p in slug_raw.strip("/").split("/") if p]
+                if len(parts) >= 2:
+                    xlsx_valid_slugs.setdefault(silo, set()).add(parts[-1])
+            total_xlsx = sum(len(v) for v in xlsx_valid_slugs.values())
+            print(f"XLSX loaded: {total_xlsx} slugs across {list(xlsx_valid_slugs.keys())}")
+        else:
+            print("WARNING: XLSX missing Category or Slug column — skipping slug audit")
+    except ImportError:
+        print("WARNING: openpyxl not installed — skipping slug audit")
+    except Exception as e:
+        print(f"WARNING: XLSX load failed ({e}) — skipping slug audit")
+elif XLSX_PATH:
+    print(f"WARNING: XLSX not found at {XLSX_PATH} — skipping slug audit")
+
+def _slug_words(text):
+    stop = {"the", "a", "an", "and", "or", "of", "to", "in", "for", "with", "from", "by", "at", "on", "is", "amp"}
+    return set(w for w in re.sub(r"[^a-z0-9\s]", "", text.replace("-", " ").lower()).split()
+               if w not in stop and len(w) > 2)
+
+def find_best_xlsx_slug(wrong_slug, silo):
+    """Word-overlap match wrong_slug against XLSX candidates for silo. Returns best match or None."""
+    candidates = xlsx_valid_slugs.get(silo, set())
+    if not candidates:
+        return None
+    ww = _slug_words(wrong_slug)
+    best, best_score = None, 0
+    for cand in candidates:
+        score = len(ww & _slug_words(cand))
+        if score > best_score:
+            best_score, best = score, cand
+    return best if best_score >= 2 else None
+
+def fix_card_slugs(content, page_label):
+    """
+    Pass 0: find every internal /silo/slug/ href in content.
+    If slug not in XLSX valid set for that silo, find best match and replace.
+    Returns (new_content, fixes_made).
+    """
+    if not xlsx_valid_slugs:
+        return content, 0
+
+    fixes = 0
+    href_pat = re.compile(r'href="(/([a-z0-9-]+)/([a-z0-9-]+)/)"')
+
+    def replacer(m):
+        nonlocal fixes
+        full_path, silo, slug = m.group(1), m.group(2), m.group(3)
+        valid = xlsx_valid_slugs.get(silo)
+        if valid is None:
+            return m.group(0)  # silo not in XLSX (e.g. homepage anchor) — skip
+        if slug in valid:
+            return m.group(0)  # correct — leave alone
+        best = find_best_xlsx_slug(slug, silo)
+        if best:
+            fixes += 1
+            new_path = f"/{silo}/{best}/"
+            print(f"  ✎ slug fix [{silo}]: {slug} → {best}")
+            return f'href="{new_path}"'
+        else:
+            print(f"  ⚠ slug not in XLSX, no match found [{silo}]: {slug}")
+            return m.group(0)
+
+    new_content = href_pat.sub(replacer, content)
+    return new_content, fixes
+
 # Matches internal hrefs with 2+ path segments: /silo/slug/ or https://domain/silo/slug/
 # Trailing slash is optional (some cards omit it)
 ARTICLE_HREF = re.compile(
@@ -71,8 +165,10 @@ def wp(*args):
     )
     return result.stdout.strip()
 
-# ── Build slug → featured image URL map ─────────────────────────────────────
-print("Building slug → image map...")
+# ── Build slug → article header image URL map ────────────────────────────────
+# Source of truth: the att-article-header__image src inside each post's content.
+# This is the image the article itself declares, not the WP featured image meta.
+print("Building slug → image map from article header images...")
 posts_csv = wp("post", "list", "--post_type=post", "--format=csv",
                "--fields=ID,post_name", "--posts_per_page=500")
 slug_img = {}          # post_slug → image URL
@@ -83,11 +179,15 @@ for line in posts_csv.splitlines()[1:]:
     if len(parts) != 2:
         continue
     post_id, post_slug = parts[0].strip(), parts[1].strip()
-    thumb_id = wp("post", "meta", "get", post_id, "_thumbnail_id")
-    if not thumb_id:
+    content = wp("post", "get", post_id, "--field=post_content")
+    m = re.search(r'class="att-article-header__image"\s+src="([^"]+)"', content)
+    if not m:
+        # Also try src before class attribute order
+        m = re.search(r'src="([^"]+)"\s+[^>]*class="att-article-header__image"', content)
+    if not m:
         continue
-    img_url = wp("post", "get", thumb_id, "--field=guid")
-    if not img_url:
+    img_url = m.group(1)
+    if not img_url or img_url.startswith("data:"):
         continue
     slug_img[post_slug] = img_url
     # Track first available image per category (fallback when no hero provided)
@@ -98,7 +198,7 @@ for line in posts_csv.splitlines()[1:]:
         if cat and cat not in cat_first_img:
             cat_first_img[cat] = img_url
 
-print(f"  {len(slug_img)} posts with featured images")
+print(f"  {len(slug_img)} posts with article header images")
 print(f"  Categories with images: {list(cat_first_img.keys())}")
 if not slug_img:
     print("  WARNING: No posts have featured images — nothing to do")
@@ -265,12 +365,39 @@ def fix_hero_image(content, page_slug):
         print(f"  ✓ att-hero__img → {hero_url.split('/')[-1]}")
     return new_content, changed
 
+def set_featured_image(page_id, page_slug):
+    """Set the WP featured image (_thumbnail_id) for an L1 page from PAGE_HERO_IMGS."""
+    hero_url = PAGE_HERO_IMGS.get(page_slug)
+    if not hero_url:
+        return
+    filename = hero_url.split("/")[-1]
+    att_id = wp("attachment", "url-to-id", hero_url)
+    if not att_id or not att_id.isdigit():
+        # Image not yet in media library — import from local uploads path
+        # Derive file path from URL: strip scheme+domain, prepend WP_PATH
+        path_part = re.sub(r"^https?://[^/]+", "", hero_url)
+        local_path = WP_PATH + path_part
+        print(f"  Importing {filename} into media library...")
+        att_id = wp("media", "import", local_path, "--porcelain")
+    if not att_id or not att_id.isdigit():
+        print(f"  ✗ featured image: could not register {filename}")
+        return
+    wp("post", "meta", "update", page_id, "_thumbnail_id", att_id)
+    print(f"  ✓ featured image set → {filename} (ID {att_id})")
+
 def save_page(page_id, content):
+    tmp = f"/tmp/wp_page_{page_id}.html"
+    with open(tmp, "w") as f:
+        f.write(content)
     proc = subprocess.run(
-        ["wp", "--path=" + WP_PATH, "post", "update", page_id,
-         "--post_content=" + content],
+        ["wp", "--path=" + WP_PATH, "eval",
+         f"wp_update_post(['ID'=>{page_id},'post_content'=>file_get_contents('{tmp}')]);"],
         capture_output=True, text=True
     )
+    try:
+        os.unlink(tmp)
+    except OSError:
+        pass
     if proc.returncode == 0:
         print(f"  Saved OK")
     else:
@@ -300,6 +427,12 @@ for page_id, page_slug in pages_to_fix:
     content = wp("post", "get", page_id, "--field=post_content")
     changed = False
 
+    # Pass 0: fix card slugs against XLSX canonical slugs
+    content, slug_fixes = fix_card_slugs(content, page_slug)
+    if slug_fixes:
+        print(f"  Slug fixes: {slug_fixes}")
+        changed = True
+
     # Pass 1: fix placeholder GIFs
     placeholder_count = content.count(PLACEHOLDER_GIF)
     if placeholder_count > 0:
@@ -326,6 +459,9 @@ for page_id, page_slug in pages_to_fix:
         save_page(page_id, content)
     else:
         print(f"  Nothing changed — skipping save")
+
+    # Pass 4: set WP featured image for this page
+    set_featured_image(page_id, page_slug)
 
 # ── Flush all caches ─────────────────────────────────────────────────────────
 print("\nFlushing caches...")

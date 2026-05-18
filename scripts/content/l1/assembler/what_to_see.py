@@ -434,7 +434,10 @@ def render(site_slug: str, force: bool = False) -> Path:
 
     # Banner
     if wts_cfg.get("cta_h") and wts_cfg.get("cta_d"):
-        banner = {"h2": wts_cfg["cta_h"], "desc": wts_cfg["cta_d"]}
+        h2 = wts_cfg["cta_h"]
+        if attraction.lower() not in h2.lower():
+            h2 = f"Ready to see {attraction} for yourself?"
+        banner = {"h2": h2, "desc": wts_cfg["cta_d"]}
     else:
         banner = config.get("_banner_wts") or content_generator.generate_banner_wts(attraction, config, force)
         config["_banner_wts"] = banner

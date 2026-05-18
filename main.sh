@@ -44,7 +44,7 @@ if [[ -z "$PHASE" ]]; then
   echo "  Select a phase:"
   echo "    [1] wordpress  — Steps 0–15: WP install + config"
   echo "    [2] content    — Steps 16–23: tickets, MD→HTML, L1, homepage"
-  echo "    [3] publish    — Steps 24–26: REST publish + cache + menu"
+  echo "    [3] publish    — Steps 24–28: REST publish + images + cache + menu + audit"
   echo "    [4] audit      — Audit any live site"
   echo ""
   printf "  Enter 1–4 (or phase name): "

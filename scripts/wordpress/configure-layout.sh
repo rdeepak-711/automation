@@ -39,11 +39,12 @@ if [[ -z "${WP_SITE_URL:-}" || -z "${WP_USER:-}" || -z "${WP_PASS:-}" ]]; then
 fi
 
 # ── Phase 2: curl pre-flight ──────────────────────────────────────────────────
+_WP_BASE="${WP_SITE_URL%/}"
 echo "Verifying credentials..."
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
   --connect-timeout 10 --max-time 30 \
   -u "$WP_USER:$WP_PASS" \
-  "$WP_SITE_URL/wp-json/wp/v2/users/me/")
+  "${_WP_BASE}/wp-json/wp/v2/users/me/")
 
 if [[ "$HTTP_CODE" != "200" ]]; then
   echo "Error: WordPress authentication failed (HTTP $HTTP_CODE)."
@@ -153,7 +154,7 @@ else
 fi
 
 # ── Phase 3: Read configurable layout values from env (with defaults) ─────────
-CONTAINER_WIDTH=$(( ${CONTAINER_WIDTH:-1365} + 0 ))  # px — set in .env to override
+CONTAINER_WIDTH=$(( ${CONTAINER_WIDTH:-1344} + 0 ))  # px — 1344 = 48px margins at 1440px viewport, aligns navbar with content
 
 # ── Phase 4: Single WP-CLI SSH wp eval round-trip ────────────────────────────
 echo ""
@@ -177,17 +178,14 @@ RESULT=$(ssh "${SSH_KEY_OPT[@]}" \
     \$gs[\"post_content\"]    = \"excerpt\";
     \$gs[\"excerpt_length\"]  = 55;
     \$gs[\"read_more_text\"]  = \"Read More\";
-    \$gs[\"post_author\"]     = 1;     // checked
-    \$gs[\"post_date\"]       = 1;     // checked
+    \$gs[\"post_author\"]     = false; // unchecked
+    \$gs[\"post_date\"]       = false; // unchecked
     \$gs[\"post_categories\"] = false; // unchecked
     \$gs[\"post_tags\"]       = false; // unchecked
     \$gs[\"post_comments\"]   = false; // unchecked
-    // Blog — Single
-    \$gs[\"single_post_categories\"] = 1;     // checked
-    \$gs[\"single_post_tags\"]       = 1;     // checked
-    \$gs[\"single_post_author\"]     = false; // unchecked
-    \$gs[\"single_post_date\"]       = false; // unchecked
-    \$gs[\"single_post_comments\"]   = false; // unchecked
+    // Blog — Single (unset = unchecked; GP checks key presence)
+    foreach ([\"single_post_categories\",\"single_post_tags\",\"single_post_author\",
+              \"single_post_date\",\"single_post_comments\"] as \$k) { unset(\$gs[\$k]); }
     update_option(\"generate_settings\", \$gs);
     echo \"generate_settings updated\n\";
 
@@ -204,9 +202,9 @@ RESULT=$(ssh "${SSH_KEY_OPT[@]}" \
     \$ss[\"mobile_content_bottom\"]     = \"30\";
     \$ss[\"mobile_content_left\"]       = \"0\";
     \$ss[\"header_top\"]                = \"15\";
-    \$ss[\"header_right\"]              = \"20\";
+    \$ss[\"header_right\"]              = \"0\";
     \$ss[\"header_bottom\"]             = \"10\";
-    \$ss[\"header_left\"]               = \"10\";
+    \$ss[\"header_left\"]               = \"0\";
     update_option(\"generate_spacing_settings\", \$ss);
     echo \"generate_spacing_settings updated\n\";
 
@@ -220,17 +218,11 @@ RESULT=$(ssh "${SSH_KEY_OPT[@]}" \
     echo \"generate_menu_plus_settings updated\n\";
 
     // 4. generate_blog_settings — GP Premium Blog module (Archives + Single meta)
+    // GP checks for key presence/truthiness; unset = unchecked (safest)
     \$bl = (array) get_option(\"generate_blog_settings\", []);
-    \$bl[\"author\"]            = true;  // Archives: Display Post Author (checked)
-    \$bl[\"date\"]              = true;  // Archives: Display Post Date (checked)
-    \$bl[\"categories\"]        = false; // Archives: Display Post Categories (unchecked)
-    \$bl[\"tags\"]              = false; // Archives: Display Post Tags (unchecked)
-    \$bl[\"comments\"]          = false; // Archives: Display Comment Count (unchecked)
-    \$bl[\"single_categories\"] = true;  // Single: Display Post Categories (checked)
-    \$bl[\"single_tags\"]       = true;  // Single: Display Post Tags (checked)
-    \$bl[\"single_author\"]     = false; // Single: Display Post Author (unchecked)
-    \$bl[\"single_date\"]       = false; // Single: Display Post Date (unchecked)
-    \$bl[\"single_post_navigation\"] = false; // Single: Display Post Navigation (unchecked)
+    foreach ([\"author\",\"date\",\"categories\",\"tags\",\"comments\",
+              \"single_categories\",\"single_tags\",\"single_author\",\"single_date\",
+              \"single_post_navigation\"] as \$k) { unset(\$bl[\$k]); }
     update_option(\"generate_blog_settings\", \$bl);
     echo \"generate_blog_settings updated\n\";
 
@@ -251,8 +243,8 @@ if [[ "$RESULT" == *"Done"* ]]; then
   echo "  $RESULT"
   echo ""
   echo "Verify in WP Admin → Appearance → GP Premium → Layout:"
-  echo "  Container:        Width ${CONTAINER_WIDTH}px, Content Layout: One Container, Padding: 10/0/40/0, Mobile: 30/0/30/0"
-  echo "  Header:           Contained, Left aligned, Padding: 15/20/10/10, Mobile Header: On"
+  echo "  Container:        Width ${CONTAINER_WIDTH}px (1344 = 48px margins at 1440px viewport, aligns with template .att-container 48px padding)"
+  echo "  Header:           Contained, Left aligned, Padding: 15/0/10/0, Mobile Header: On"
   echo "  Off Canvas Panel: Mobile Only"
   echo "  Sidebars:         All three set to No Sidebar"
   echo "  Blog → Archives:  Excerpt / 55 words / 'Read More' / Author ✓ Date ✓"

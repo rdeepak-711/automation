@@ -42,11 +42,13 @@ declare -A CAT_SLUG_MAP=(
 )
 
 ONLY=""
+FILE_PATH=""
 SAMPLE=false
 POST_STATUS="draft"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --only)   ONLY="$2"; shift 2 ;;
+    --file)   FILE_PATH="$2"; shift 2 ;;
     --sample) SAMPLE=true; shift ;;
     --status) POST_STATUS="$2"; shift 2 ;;
     *) echo "Unknown flag: $1"; exit 1 ;;
@@ -199,9 +201,11 @@ apply_post_meta() {
 
   local cmd=""
 
-  # GP Premium: disable headline and featured image
+  # GP Premium: disable headline always; disable post-image only if not already explicitly set
+  # (post-image may be enabled by the GYG image step — don't overwrite it)
   cmd+="wp post meta update ${post_id} _generate-disable-headline true --path='${WP_PATH}' 2>/dev/null; "
-  cmd+="wp post meta update ${post_id} _generate-disable-post-image true --path='${WP_PATH}' 2>/dev/null; "
+  cmd+="_existing_img=\$(wp post meta get ${post_id} _generate-disable-post-image --path='${WP_PATH}' 2>/dev/null); "
+  cmd+="[[ -z \"\$_existing_img\" ]] && wp post meta update ${post_id} _generate-disable-post-image true --path='${WP_PATH}' 2>/dev/null || true; "
 
   # RankMath SEO (base64-encoded to avoid quoting issues)
   if [[ -n "$seo_title" ]]; then
@@ -213,6 +217,9 @@ apply_post_meta() {
     cmd+="wp post meta update ${post_id} rank_math_description \"\$(printf '%s' '${b64}' | base64 -d)\" --path='${WP_PATH}' 2>/dev/null; "
   fi
   # rank_math_canonical_url left empty — Rank Math auto-generates from post URL
+
+  # Clear RankMath FAQ block meta — prevents duplicate FAQ if post previously had a RM FAQ block
+  cmd+="wp post meta delete ${post_id} rank_math_faq --path='${WP_PATH}' 2>/dev/null || true; "
 
   ssh "${SSH_KEY_OPT[@]}" "${WP_SSH_USER}@${WP_SSH_HOST}" "$cmd" </dev/null 2>/dev/null && \
     echo "  ⚙ Meta set (id=$post_id): GP elements disabled + RankMath SEO applied" || \
@@ -326,7 +333,7 @@ PYEOF
   fi
 
   if [[ -n "$EXISTING_ID" ]]; then
-    RESPONSE=$(curl -s --connect-timeout 10 --max-time 60 \
+    RESPONSE=$(curl -s --connect-timeout 10 --max-time 120 \
       -X POST \
       -u "${WP_USER}:${WP_PASS}" \
       -H "Content-Type: application/json" \
@@ -345,7 +352,7 @@ PYEOF
       COUNT_FAILED=$(( COUNT_FAILED + 1 ))
     fi
   else
-    RESPONSE=$(curl -s --connect-timeout 10 --max-time 60 \
+    RESPONSE=$(curl -s --connect-timeout 10 --max-time 120 \
       -X POST \
       -u "${WP_USER}:${WP_PASS}" \
       -H "Content-Type: application/json" \
@@ -416,11 +423,26 @@ print(cats[0]['id'] if cats else 0)
       -u "${WP_USER}:${WP_PASS}" \
       "${WP_POSTS_API}?slug=${SLUG}&status=any&per_page=1" 2>/dev/null) || EXISTING="[]"
 
+    # Only treat as existing if it belongs to the same category — prevents cross-silo slug collisions
     EXISTING_ID=$(python3 -c "
 import json, sys
 posts = json.loads(sys.argv[1])
+cat_id = int(sys.argv[2])
+if posts and (cat_id == 0 or cat_id in posts[0].get('categories', [])):
+    print(posts[0]['id'])
+else:
+    print('')
+" "$EXISTING" "$CAT_ID" 2>/dev/null) || EXISTING_ID=""
+
+    # Warn if the slug exists under a different silo (would silently overwrite without this check)
+    if [[ -z "$EXISTING_ID" ]]; then
+      COLLISION_ID=$(python3 -c "
+import json, sys
+posts = json.loads(sys.argv[1])
 print(posts[0]['id'] if posts else '')
-" "$EXISTING" 2>/dev/null) || EXISTING_ID=""
+" "$EXISTING" 2>/dev/null) || COLLISION_ID=""
+      [[ -n "$COLLISION_ID" ]] && echo "  ⚠ Slug '$SLUG' exists in a different silo (id=$COLLISION_ID) — creating separate post"
+    fi
 
     TMP_PAYLOAD=$(mktemp /tmp/wp-payload-XXXXXX)
     python3 - "$HTML_FILE" "$TITLE" "$SLUG" "$CAT_ID" "$POST_STATUS" > "$TMP_PAYLOAD" 2>/dev/null << 'PYEOF'
@@ -455,7 +477,7 @@ PYEOF
     fi
 
     if [[ -n "$EXISTING_ID" ]]; then
-      RESPONSE=$(curl -s --connect-timeout 10 --max-time 60 \
+      RESPONSE=$(curl -s --connect-timeout 10 --max-time 120 \
         -X POST \
         -u "${WP_USER}:${WP_PASS}" \
         -H "Content-Type: application/json" \
@@ -473,7 +495,7 @@ PYEOF
         COUNT_FAILED=$(( COUNT_FAILED + 1 ))
       fi
     else
-      RESPONSE=$(curl -s --connect-timeout 10 --max-time 60 \
+      RESPONSE=$(curl -s --connect-timeout 10 --max-time 120 \
         -X POST \
         -u "${WP_USER}:${WP_PASS}" \
         -H "Content-Type: application/json" \
@@ -494,6 +516,110 @@ PYEOF
     fi
   done
 }
+
+publish_one_file() {
+  local HTML_FILE="$1"
+  [[ -f "$HTML_FILE" ]] || { echo "Error: file not found: $HTML_FILE"; return 1; }
+
+  # Derive silo from parent dir name
+  local SILO; SILO="$(basename "$(dirname "$HTML_FILE")")"
+  local SLUG; SLUG="$(basename "$HTML_FILE" .html)"
+
+  # Resolve WP category
+  local CAT_SLUG="${CAT_SLUG_MAP[$SILO]:-$SILO}"
+  local CAT_RESPONSE; CAT_RESPONSE=$(curl -s --connect-timeout 10 --max-time 30 \
+    -u "${WP_USER}:${WP_PASS}" \
+    "${WP_SITE_URL%/}/wp-json/wp/v2/categories/?slug=${CAT_SLUG}&per_page=1" 2>/dev/null) || CAT_RESPONSE="[]"
+  local CAT_ID; CAT_ID=$(python3 -c "
+import json, sys
+cats = json.loads(sys.argv[1])
+print(cats[0]['id'] if cats else 0)
+" "$CAT_RESPONSE" 2>/dev/null) || CAT_ID=0
+
+  echo "  ── post: $SILO/$SLUG (category id=$CAT_ID)"
+
+  parse_seo_comment "$HTML_FILE"
+  local TITLE="${SEO_TITLE:-$SLUG}"
+
+  local EXISTING; EXISTING=$(curl -s --connect-timeout 10 --max-time 30 \
+    -u "${WP_USER}:${WP_PASS}" \
+    "${WP_POSTS_API}?slug=${SLUG}&status=any&per_page=1" 2>/dev/null) || EXISTING="[]"
+  local EXISTING_ID; EXISTING_ID=$(python3 -c "
+import json, sys
+posts = json.loads(sys.argv[1])
+print(posts[0]['id'] if posts else '')
+" "$EXISTING" 2>/dev/null) || EXISTING_ID=""
+
+  local TMP_PAYLOAD; TMP_PAYLOAD=$(mktemp /tmp/wp-payload-XXXXXX)
+  python3 - "$HTML_FILE" "$TITLE" "$SLUG" "$CAT_ID" "$POST_STATUS" > "$TMP_PAYLOAD" 2>/dev/null << 'PYEOF'
+import json, re, sys
+html_file, title, slug, cat_id, status = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5]
+content = open(html_file).read()
+content = re.sub(r'<!--\s*SEO[\s\S]*?-->\s*', '', content, count=1).lstrip()
+for ent, ch in [('&rarr;','→'),('&larr;','←'),('&mdash;','—'),('&ndash;','–'),('&middot;','·'),('&bull;','•'),('&hellip;','…'),('&times;','×')]:
+    content = content.replace(ent, ch)
+WP_SHORTCODE_RE = re.compile(r'\[fluentform\b[^\]]*\]')
+parts = re.split(r'(?=<section\b)', content)
+out = []
+for p in parts:
+    p = p.strip()
+    if not p:
+        continue
+    if WP_SHORTCODE_RE.search(p):
+        out.append('<!-- wp:shortcode -->\n' + p + '\n<!-- /wp:shortcode -->')
+    else:
+        out.append('<!-- wp:html -->\n' + p + '\n<!-- /wp:html -->')
+blocks = '\n\n'.join(out)
+payload = {'title': title, 'slug': slug, 'content': blocks, 'status': status}
+if cat_id > 0:
+    payload['categories'] = [cat_id]
+print(json.dumps(payload))
+PYEOF
+
+  if [[ ! -s "$TMP_PAYLOAD" ]]; then
+    echo "  ✗ Failed to build payload for: $SLUG"
+    rm -f "$TMP_PAYLOAD"
+    COUNT_FAILED=$(( COUNT_FAILED + 1 ))
+    return
+  fi
+
+  if [[ -n "$EXISTING_ID" ]]; then
+    local RESPONSE; RESPONSE=$(curl -s --connect-timeout 10 --max-time 120 \
+      -X POST \
+      -u "${WP_USER}:${WP_PASS}" \
+      -H "Content-Type: application/json" \
+      --data-binary "@${TMP_PAYLOAD}" \
+      "${WP_POSTS_API}/${EXISTING_ID}" 2>/dev/null) || RESPONSE="{}"
+    rm -f "$TMP_PAYLOAD"
+    local STATUS; STATUS=$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); print(d.get('status','error'))" "$RESPONSE" 2>/dev/null) || STATUS="error"
+    if [[ "$STATUS" == "draft" || "$STATUS" == "publish" || "$STATUS" == "pending" ]]; then
+      echo "  ↺ Updated post (id=$EXISTING_ID) [$SILO/$STATUS]: $TITLE"
+      apply_post_meta "$EXISTING_ID" "$SEO_TITLE" "$SEO_DESC" "$SEO_CANONICAL"
+      COUNT_UPDATED=$(( COUNT_UPDATED + 1 ))
+    else
+      echo "  ✗ Update failed for: $SLUG — ${RESPONSE:0:200}"
+      COUNT_FAILED=$(( COUNT_FAILED + 1 ))
+    fi
+  else
+    local RESPONSE; RESPONSE=$(curl -s --connect-timeout 10 --max-time 120 \
+      -X POST \
+      -u "${WP_USER}:${WP_PASS}" \
+      -H "Content-Type: application/json" \
+      --data-binary "@${TMP_PAYLOAD}" \
+      "$WP_POSTS_API" 2>/dev/null) || RESPONSE="{}"
+    rm -f "$TMP_PAYLOAD"
+    local NEW_ID; NEW_ID=$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); print(d.get('id',''))" "$RESPONSE" 2>/dev/null) || NEW_ID=""
+    if [[ -n "$NEW_ID" ]]; then
+      echo "  ✓ Created post (id=$NEW_ID) [$SILO]: $TITLE"
+      apply_post_meta "$NEW_ID" "$SEO_TITLE" "$SEO_DESC" "$SEO_CANONICAL"
+      COUNT_CREATED=$(( COUNT_CREATED + 1 ))
+    else
+      echo "  ✗ Create failed for: $SLUG — ${RESPONSE:0:200}"
+      COUNT_FAILED=$(( COUNT_FAILED + 1 ))
+    fi
+  fi
+}
+
 
 # ── Helper: publish About Us & Contact Us from templates ─────────────────────
 # Renders templates/about-us-template.html and templates/contact-us-template.html
@@ -522,7 +648,7 @@ publish_utility_page() {
 
   # Write rendered HTML to a temp file so publish_page can read it
   local _TMP_HTML
-  _TMP_HTML=$(mktemp /tmp/wp-utility-XXXXXX.html)
+  _TMP_HTML=$(mktemp /tmp/wp-utility-XXXXXX)
   printf '%s' "$_RENDERED" > "$_TMP_HTML"
 
   publish_page "$_TMP_HTML" "$PAGE_SLUG" "$PAGE_TITLE"
@@ -563,7 +689,9 @@ publish_utility_pages() {
 }
 
 # ── Dispatch ──────────────────────────────────────────────────────────────────
-if [[ -z "$ONLY" ]]; then
+if [[ -n "$FILE_PATH" ]]; then
+  publish_one_file "$FILE_PATH"
+elif [[ -z "$ONLY" ]]; then
   # Publish everything
   publish_page "$HOMEPAGE_FILE" "homepage" "homepage"
   # Set homepage as static front page
@@ -599,18 +727,20 @@ elif [[ "$ONLY" == "l1-pages" ]]; then
     local L1_SLUG="$(resolve_l1_slug "$L1_NAME")"
     publish_page "$L1" "$L1_SLUG" "$L1_NAME"
   done
-elif [[ -f "$L1_DIR/${ONLY}.html" ]]; then
-  local ONLY_SLUG="$(resolve_l1_slug "$ONLY")"
-  publish_page "$L1_DIR/${ONLY}.html" "$ONLY_SLUG" "$ONLY"
 elif [[ "$ONLY" == "l2-articles" ]]; then
   [[ -d "$ARTICLES_DIR" ]] || { echo "Error: l2-articles directory not found: $ARTICLES_DIR"; exit 1; }
   for SILO_DIR in "$ARTICLES_DIR"/*/; do
     publish_silo "$(basename "$SILO_DIR")"
   done
-else
-  # Treat as a specific silo name
-  [[ -d "$ARTICLES_DIR" ]] || { echo "Error: l2-articles directory not found: $ARTICLES_DIR"; exit 1; }
+elif [[ -d "$ARTICLES_DIR/$ONLY" ]]; then
+  # Specific silo name — check silo dir before L1 page to avoid name collision
   publish_silo "$ONLY"
+elif [[ -f "$L1_DIR/${ONLY}.html" ]]; then
+  local ONLY_SLUG="$(resolve_l1_slug "$ONLY")"
+  publish_page "$L1_DIR/${ONLY}.html" "$ONLY_SLUG" "$ONLY"
+else
+  echo "Error: '$ONLY' is not a known target (homepage, l1-pages, l2-articles, silo name, or L1 page name)"
+  exit 1
 fi
 
 echo ""

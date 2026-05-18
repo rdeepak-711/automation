@@ -25,8 +25,9 @@ from .components import (
     build_related_links,
     build_top_tickets,
     detect_provider,
+    generate_img_alt,
 )
-from .prose_converter import _inline
+from .prose_converter import convert_section, _inline
 from .template_parser import parse as parse_template
 
 
@@ -76,16 +77,23 @@ def convert(
     template_path: str,
     campaign_prefix: str,
     article_slug: str,
+    accent_color: str = "#c0392b",
 ) -> str:
     """Render the FAQ hub article to HTML."""
     tpl = parse_template(template_path)
     css = tpl["css"]
 
-    h1 = _html.escape(parsed_md.get("title", ""))
+    h1 = _html.escape(parsed_md.get("h1") or parsed_md.get("title", ""))
+    img_src = (
+        parsed_md.get("featured_image")
+        or "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+    )
+    img_alt = generate_img_alt(
+        parsed_md.get("h1") or parsed_md.get("title", ""),
+        parsed_md.get("description", ""),
+    )
     featured_image = (
-        '<img class="att-article-header__image" '
-        'src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" '
-        'alt="" loading="eager"/>'
+        f'<img class="att-article-header__image" src="{img_src}" alt="{img_alt}" loading="eager"/>'
     )
 
     # ── Intro AEO ────────────────────────────────────────────────────────────
@@ -97,9 +105,9 @@ def convert(
     # ── Intro paragraphs ─────────────────────────────────────────────────────
     intro_html_parts = []
     for para in parsed_md.get("intro_paras", []):
-        text = _inline(para, campaign_prefix, article_slug)
-        if text:
-            intro_html_parts.append(f"<p>{text}</p>")
+        html = convert_section(para, campaign_prefix, article_slug)
+        if html:
+            intro_html_parts.append(html)
     intro_html = "\n".join(intro_html_parts)
 
     # ── Top tickets (only if MD declares them) ────────────────────────────────
@@ -123,7 +131,14 @@ def convert(
         heading = sec["heading"]
         qa_items = _extract_category_faqs(sec.get("content_md", ""))
         if not qa_items:
-            category_htmls.append("")  # keep index alignment with blocks
+            # Prose-only section — render as plain H2 + paragraph(s)
+            content = sec.get("content_md", "").strip()
+            if content and heading:
+                prose = _inline(content, campaign_prefix, article_slug)
+                h2 = _html.escape(heading)
+                category_htmls.append(f'<h2>{h2}</h2>\n<p>{prose}</p>')
+            else:
+                category_htmls.append("")  # keep index alignment with blocks
             continue
         all_faq_items.extend(qa_items)
         items_html = "\n".join(
@@ -135,9 +150,6 @@ def convert(
         )
         h2 = _html.escape(heading)
         category_htmls.append(f'<h2>{h2}</h2>\n{items_html}')
-
-    # ── FAQ JSON-LD — one script aggregating all categories ──────────────────
-    faq_jsonld = build_faq_jsonld(all_faq_items) if all_faq_items else ""
 
     # ── Related ──────────────────────────────────────────────────────────────
     related_html = build_related_links(parsed_md.get("related_links", []), registry)
@@ -162,6 +174,23 @@ def convert(
         '    <div class="att-article-body">',
     ]
 
+    # ── FAQ JSON-LD — built after all categories collected (bottom items added below) ──
+    # Bottom faq_items (from ## Frequently Asked Questions section) — render + add to JSON-LD
+    bottom_faq_items = parsed_md.get("faq_items", [])
+    bottom_faq_html = ""
+    if bottom_faq_items:
+        all_faq_items.extend(bottom_faq_items)
+        bottom_faq_html = "\n".join(
+            '<div class="att-faq-qa">'
+            f'<h3 class="att-faq-question">{_html.escape(item["question"])}</h3>'
+            f'<div class="att-faq-answer"><p>{_inline(item["answer"], campaign_prefix, article_slug)}</p></div>'
+            '</div>'
+            for item in bottom_faq_items
+        )
+
+    # JSON-LD built after all_faq_items fully populated (category + bottom items)
+    faq_jsonld = build_faq_jsonld(all_faq_items) if all_faq_items else ""
+
     rendered = []
     for block in parsed_md.get("blocks", _default_blocks(parsed_md)):
         t = block["type"]
@@ -175,6 +204,8 @@ def convert(
             html_chunk = category_htmls[block["index"]]
             if html_chunk:
                 rendered.append(html_chunk)
+        elif t == "faq" and bottom_faq_html:
+            rendered.append(bottom_faq_html)
         elif t == "related" and related_html:
             rendered.append(related_html)
 

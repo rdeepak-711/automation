@@ -155,12 +155,17 @@ _PLACEHOLDER_IMG = re.compile(
     re.DOTALL,
 )
 
-# L1 hub slugs that appear in crosslink hrefs — not article slugs, skip silently
-_HUB_SLUGS = {"tickets", "plan-your-visit", "what-to-see", ""}
+# Maps hub URL slugs (/tickets/, /plan-your-visit/, /what-to-see/) to page_images keys
+_HUB_SLUG_TO_PAGE_KEY = {
+    "tickets":        "tickets-tours",
+    "plan-your-visit": "plan-your-visit",
+    "what-to-see":    "what-to-see",
+}
 
 
 def patch_content(
-    content: str, img_map: dict[str, str], hero_url: str | None
+    content: str, img_map: dict[str, str], hero_url: str | None,
+    page_images: dict[str, str] | None = None,
 ) -> tuple[str, int, list[str]]:
     """
     Replace placeholder img srcs with real featured image URLs.
@@ -170,6 +175,7 @@ def patch_content(
     count = 0
     result: list[str] = []
     pos = 0
+    _page_images = page_images or {}
 
     for m in _PLACEHOLDER_IMG.finditer(content):
         result.append(content[pos : m.start()])
@@ -198,9 +204,19 @@ def patch_content(
                     new_tag = m.group(1) + f'src="{img_map[slug]}"' + m.group(2)
                     result.append(new_tag)
                     count += 1
-                else:
-                    if slug not in _HUB_SLUGS:
+                elif slug in _HUB_SLUG_TO_PAGE_KEY:
+                    # Crosslink to another L1 page — use that page's hero image
+                    page_key = _HUB_SLUG_TO_PAGE_KEY[slug]
+                    hub_url = _page_images.get(page_key)
+                    if hub_url:
+                        new_tag = m.group(1) + f'src="{hub_url}"' + m.group(2)
+                        result.append(new_tag)
+                        count += 1
+                    else:
                         warnings.append(slug)
+                        result.append(img_tag)
+                else:
+                    warnings.append(slug)
                     result.append(img_tag)
             else:
                 result.append(img_tag)
@@ -321,7 +337,7 @@ def main() -> None:
             continue
 
         # Patch images
-        patched, n_replaced, missing = patch_content(content, img_map, hero_url)
+        patched, n_replaced, missing = patch_content(content, img_map, hero_url, page_images)
 
         if hero_url:
             print(f"    ✓ Hero image set")
@@ -334,17 +350,49 @@ def main() -> None:
 
         if patched == content:
             print(f"    — No changes (images already set or no placeholders found)")
-            continue
-
-        # Push back
-        ok = push_page_content(
-            ssh_base, scp_base, user_host,
-            post_id, patched, args.wp_path, args.dry_run,
-        )
-        if ok:
-            print(f"    ✓ Page updated in WordPress")
         else:
-            print(f"    ✗ Failed to update page id={post_id}")
+            # Push back
+            ok = push_page_content(
+                ssh_base, scp_base, user_host,
+                post_id, patched, args.wp_path, args.dry_run,
+            )
+            if ok:
+                print(f"    ✓ Page updated in WordPress")
+            else:
+                print(f"    ✗ Failed to update page id={post_id}")
+
+        # Set featured image on the page itself
+        if hero_url:
+            set_page_featured_image(ssh_base, args.wp_path, post_id, hero_url, args.dry_run)
+
+
+def set_page_featured_image(
+    ssh_base: list[str], wp_path: str, post_id: int, image_url: str, dry_run: bool
+) -> None:
+    """Find the attachment by URL and set it as the featured image for the page."""
+    if dry_run:
+        print(f"    [dry-run] would set featured image for page id={post_id}")
+        return
+    try:
+        # Look up attachment ID by matching the filename in the guid
+        filename = image_url.rstrip("/").split("/")[-1]
+        att_id = ssh_run(
+            ssh_base,
+            f"wp db query \"SELECT ID FROM wp_posts WHERE post_type='attachment'"
+            f" AND guid LIKE '%{filename}%' LIMIT 1;\""
+            f" --skip-column-names --path={shlex.quote(wp_path)} 2>/dev/null",
+        ).strip()
+        if not att_id or not att_id.isdigit():
+            print(f"    ⚠ Featured image attachment not found for: {filename}")
+            return
+        ssh_run(
+            ssh_base,
+            f"wp post meta update {post_id} _thumbnail_id {att_id}"
+            f" --path={shlex.quote(wp_path)}",
+        )
+        print(f"    ✓ Featured image set (attachment id={att_id})")
+    except Exception as e:
+        print(f"    ⚠ Could not set featured image: {e}", file=sys.stderr)
 
 
 if __name__ == "__main__":

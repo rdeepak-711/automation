@@ -107,7 +107,7 @@ def _build_prompt(html: str, parsed_md: dict) -> str:
         f"  - {s['heading']}" + (" (question-phrased)" if s.get("is_question") else "")
         for s in sections
     )
-    if parsed_md.get("faq_items"):
+    if parsed_md.get("faq_items") and not parsed_md.get("_is_faq_hub"):
         expected_h2s += "\n  - Frequently Asked Questions"
     expected_faqs = "\n".join(
         f"  - {i['question']}" for i in parsed_md.get("faq_items", [])
@@ -115,7 +115,14 @@ def _build_prompt(html: str, parsed_md: dict) -> str:
     found_h2s = "\n".join(f"  - {h}" for h in extracted["h2s"])
     found_faqs = "\n".join(f"  - {q}" for q in extracted["faq_questions"])
 
+    faq_hub_note = (
+        "\nNOTE: This is a FAQ hub article. Q&A is distributed across thematic H2 sections "
+        "(no dedicated 'Frequently Asked Questions' H2 exists or is expected).\n"
+        if parsed_md.get("_is_faq_hub") else ""
+    )
+
     return f"""You are a strict content reviewer. Compare what the MD specifies against what was extracted from the generated HTML.
+{faq_hub_note}
 
 ## Expected (from MD source)
 

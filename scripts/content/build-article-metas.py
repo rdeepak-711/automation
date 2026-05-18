@@ -75,31 +75,74 @@ def _strip_site_suffix(title: str) -> str:
 
 
 def _extract_text(html: str) -> tuple[str, str]:
-    """Return (title, opening_text) from article HTML."""
+    """Return (title, seo_description) from article HTML.
+
+    Uses the SEO comment block at the top of the HTML for description —
+    more accurate signal for card_title generation than raw body paragraphs.
+    Falls back to first body paragraph if SEO comment absent.
+    """
     # Try <h1> first (most reliable for article title)
     h1_m = re.search(r"<h1[^>]*>(.*?)</h1>", html, re.IGNORECASE | re.DOTALL)
     if h1_m:
         title = re.sub(r"<[^>]+>", "", h1_m.group(1)).strip()
     else:
-        # Try <title> tag, strip site suffix
         title_m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
         if title_m:
             title = _strip_site_suffix(re.sub(r"<[^>]+>", "", title_m.group(1)).strip())
         else:
-            title = ""  # caller uses slug_to_title fallback
+            title = ""
 
+    # SEO comment block at top of HTML — best description signal
+    seo_m = re.search(r"<!--\s*SEO\s*\ntitle:[^\n]*\ndescription:\s*([^\n]+)", html)
+    if seo_m:
+        return title, seo_m.group(1).strip()
+
+    # Fallback: first substantial body paragraph
     paras = re.findall(r"<p[^>]*>(.*?)</p>", html, re.IGNORECASE | re.DOTALL)
-    text_parts = []
-    total = 0
     for p in paras:
         clean = re.sub(r"<[^>]+>", "", p).strip()
-        if len(clean) < 30:
+        if len(clean) >= 60:
+            return title, clean[:400]
+    return title, ""
+
+
+def _find_md_file(site_slug: str, slug: str, category: str) -> "Path | None":
+    """Find source MD file for an article — input/<site>/<category>/article-NN-<slug>.md."""
+    md_dir = REPO_ROOT / "input" / site_slug / category
+    matches = list(md_dir.glob(f"*{slug}.md"))
+    return matches[0] if matches else None
+
+
+def _extract_cta_url(md_path: "Path", slug: str) -> "str | None":
+    """Return first CTA URL from MD file with cmp/campaign param replaced by card tracking."""
+    try:
+        text = md_path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    m = re.search(r'\[CTA:[^\]]*?→\s*(https?://\S+?)\]', text)
+    if not m:
+        return None
+    url = m.group(1)
+    url = re.sub(r'([?&]cmp=)[^&\]\s]+', rf'\g<1>{slug}-card', url)
+    url = re.sub(r'([?&]tq_campaign=)[^&\]\s]+', rf'\g<1>{slug}-card', url)
+    url = re.sub(r'([?&]campaign=)[^&\]\s]+', rf'\g<1>{slug}-card', url)
+    return url
+
+
+def _backfill_ticket_urls(site_slug: str, metas: dict) -> int:
+    """Add ticket_url to any meta entry that lacks it. Returns count of entries updated."""
+    updated = 0
+    for slug, entry in metas.items():
+        if "ticket_url" in entry:
             continue
-        text_parts.append(clean)
-        total += len(clean)
-        if total >= 1200:
-            break
-    return title, " ".join(text_parts)[:1200]
+        cat = entry.get("category", "")
+        md_path = _find_md_file(site_slug, slug, cat)
+        if md_path:
+            url = _extract_cta_url(md_path, slug)
+            if url:
+                entry["ticket_url"] = url
+                updated += 1
+    return updated
 
 
 def _load_top_ticket_slugs(site_slug: str, repo_root: Path) -> set[str]:
@@ -141,24 +184,25 @@ def _batch_call(articles: list[dict], top_ticket_slugs: set[str], top_highlight_
             prominence = ", prominence: top_highlight"
         lines.append(f"Article {i+1} [slug: {a['slug']}, category: {a['category']}{prominence}]: {a['title']!r}")
         if a["text"]:
-            lines.append(f"  Content excerpt: {a['text'][:400]}")
+            lines.append(f"  SEO description: {a['text']}")
     articles_block = "\n".join(lines)
 
     prompt = f"""For each article below, write metadata for a travel website card.
 
 Return a JSON array with exactly {len(articles)} objects in the same order as the articles.
 Each object:
-  "card_title": 2–4 words max — short label for the card heading (e.g. "Dinner Cruise", "Skip-the-Line", "Family Visit", "Audio Guide"). Never repeat the attraction name. No articles (a/an/the).
+  "card_title": 4–6 words derived from the article title and SEO description provided. Compress the title by keeping the most specific nouns — destinations, product type, access type, key differentiator. Strip generic suffixes: "(2026)", "from London", "from [City]", "Complete Guide", "How to Book", "All Options Compared", "Are They Worth It?". Use & instead of "and" to save space. Never invent words or metaphors not present in the title or description — a visitor must recognise this as the article they want. No articles (a/an/the) at the start. Bad: "UNESCO Duo" (invented), "Triple Landmark" (invented), "Early Bird Express" (invented), "Private Tours" (too vague — which tours?). Good: "Stonehenge & Bath Day Tour", "Windsor, Oxford & Stonehenge Trip", "Inner Circle Access Day Trip", "Half-Day Express Tour from London".
   "description": benefit-focused — what the visitor gets or why it matters. Length varies by category and prominence:
-    - plan-your-visit: 1 sentence, ≤20 words. Practical and direct.
+    - plan-your-visit: 1–2 sentences, 15–25 words. Practical and direct. Complete sentences only.
     - tickets-tours with prominence=top_ticket: 3–4 sentences, 65–100 words. Cover what's included, why it stands out, who it suits.
-    - tickets-tours (booking/experience articles — tours, cruises, skip-the-line, guided): 2–3 sentences, 45–70 words. Focus on the experience and booking benefit.
-    - tickets-tours (planning/info articles — guides, tips, prices, what's included, how-to): 3–4 sentences, 65–100 words. Cover the key practical points a visitor needs.
-    - what-to-see (any): 1–2 sentences, ≤35 words. Describe what the visitor sees and why it's worth visiting.
+    - tickets-tours (booking/experience articles — tours, cruises, skip-the-line, guided): 1–2 sentences, 15–25 words. Focus on the key experience or benefit. One complete thought, never cut mid-sentence.
+    - tickets-tours (planning/info articles — guides, tips, prices, what's included, how-to): 1–2 sentences, 15–25 words. State the main practical point. One complete thought, never cut mid-sentence.
+    - what-to-see with prominence=top_highlight: 2–3 sentences, 30–45 words. Describe what makes it unmissable and why it stands out. Complete sentences only.
+    - what-to-see (regular, no prominence): 1–2 sentences, 15–25 words. Describe what the visitor sees or why it's worth visiting. Complete sentences only.
   "tags": array of 1–2 short labels (≤3 words each) — specific, useful for filtering
-  "bullets": array of 3–4 strings, each ≤10 words — "what's included" style for ticket cards. Examples: "Audio guide in 19 languages", "Skip the queue entry", "Departs from city centre dock". ONLY include this field for tickets-tours articles. For plan-your-visit and what-to-see articles, omit "bullets" entirely.
+  "bullets": array of EXACTLY 3 strings, each ≤10 words — key facts or benefits a visitor needs. For booking/experience articles: what's included (e.g. "Skip the queue entry", "Audio guide in 19 languages", "Hotel pickup included"). For info/comparison/guide articles: key facts the article covers (e.g. "Compares 5 skip-the-line options", "Includes price breakdown by season", "Shows cheapest booking times"). MANDATORY for ALL tickets-tours articles — never return an empty array. For plan-your-visit and what-to-see articles, omit "bullets" entirely.
 
-card_title must be short enough to fit a card h3.
+card_title must fit a card h3 (3–7 words is ideal). It must accurately describe the article — a visitor reading it should know exactly what the article covers without needing to read anything else.
 Tags must reflect the actual article topic — infer from slug, title, and content excerpt.
 
 Articles:
@@ -173,7 +217,14 @@ Return ONLY the JSON array. No markdown, no explanation.
     return None
 
 
-def build_metas(site_slug: str, force: bool = False) -> None:
+def build_metas(site_slug: str, force: bool = False,
+                only_slugs: set[str] | None = None) -> None:
+    """Build or update article-metas.json.
+
+    only_slugs: when set, regenerate only those slugs (regardless of force).
+                Used by the WTS re-run to update just the 2 top-highlight articles
+                without reprocessing the entire site.
+    """
     output_dir = REPO_ROOT / "output" / site_slug
     l2_root = output_dir / "l2-articles"
     metas_path = output_dir / "article-metas.json"
@@ -189,7 +240,7 @@ def build_metas(site_slug: str, force: bool = False) -> None:
 
     # Load existing metas
     metas: dict = {}
-    if metas_path.exists() and not force:
+    if metas_path.exists() and not (force and only_slugs is None):
         metas = json.loads(metas_path.read_text(encoding="utf-8"))
         print(f"[{site_slug}] Loaded {len(metas)} existing metas")
 
@@ -200,7 +251,10 @@ def build_metas(site_slug: str, force: bool = False) -> None:
             continue
         for html_file in sorted(cat_dir.glob("*.html")):
             slug = html_file.stem
-            if slug in metas and not force:
+            # only_slugs mode: skip anything not in the target set
+            if only_slugs is not None and slug not in only_slugs:
+                continue
+            if slug in metas and not force and only_slugs is None:
                 continue
             html = html_file.read_text(encoding="utf-8")
             title, text = _extract_text(html)
@@ -213,6 +267,9 @@ def build_metas(site_slug: str, force: bool = False) -> None:
 
     if not pending:
         print(f"[{site_slug}] All articles already have metas. Use --force to rebuild.")
+        filled = _backfill_ticket_urls(site_slug, metas)
+        if filled:
+            print(f"[{site_slug}] Backfilled ticket_url for {filled} articles")
         _write(metas_path, metas)
         return
 
@@ -239,6 +296,10 @@ def build_metas(site_slug: str, force: bool = False) -> None:
             if article["category"] == "tickets-tours":
                 entry["bullets"] = meta_item.get("bullets", [])
             metas[article["slug"]] = entry
+
+    filled = _backfill_ticket_urls(site_slug, metas)
+    if filled:
+        print(f"[{site_slug}] Backfilled ticket_url for {filled} articles")
 
     _write(metas_path, metas)
     print(f"[{site_slug}] Wrote {len(metas)} metas to {metas_path}")
@@ -312,7 +373,7 @@ def verify_metas(site_slug: str, quiet: bool = False) -> list[str]:
         if title.lower() == _slug_to_title(slug).lower():
             issues.append("title=slug (h1 extraction failed)")
         cat = m.get("category", "")
-        min_desc = 80 if cat == "tickets-tours" else 30
+        min_desc = 80 if cat in ("tickets-tours", "what-to-see", "plan-your-visit") else 30
         if len(desc.strip()) < min_desc:
             issues.append(f"desc too short ({len(desc.strip())} chars, min {min_desc})")
         if not tags:
@@ -430,7 +491,10 @@ if __name__ == "__main__":
     p.add_argument("--force", action="store_true", help="Regenerate all, ignore cache")
     p.add_argument("--verify", action="store_true", help="Check quality of existing metas")
     p.add_argument("--fix", action="store_true", help="Re-generate Claude output for flagged metas")
+    p.add_argument("--only-slugs", help="Comma-separated slugs to regenerate (skips all others)")
     args = p.parse_args()
+
+    only_slugs = set(args.only_slugs.split(",")) if args.only_slugs else None
 
     if args.verify and not args.fix:
         flagged = verify_metas(args.site_slug)
@@ -438,4 +502,4 @@ if __name__ == "__main__":
     elif args.fix:
         fix_metas(args.site_slug)
     else:
-        build_metas(args.site_slug, force=args.force)
+        build_metas(args.site_slug, force=args.force, only_slugs=only_slugs)

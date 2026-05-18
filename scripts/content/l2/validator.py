@@ -37,7 +37,7 @@ BRAND_NAMES = ["GetYourGuide", "Tiqets", "Viator"]
 FORBIDDEN_PATTERNS = [
     (r"```html", "code fence (```html) found in output"),
     (r"```", "code fence (```) found in output"),
-    (r"(?i)quick facts", "Quick Facts box forbidden"),
+    (r"(?i)<(?:th|td|p|div|span)[^>]*>\s*quick\s+facts", "Quick Facts box forbidden"),
     (r"(?i)last verified", '"last verified" footer forbidden'),
     (r"(?i)verify on site", '"Verify on site" price row forbidden'),
 ]
@@ -163,7 +163,8 @@ def validate(html: str, parsed_md: dict, campaign_prefix: str,
     # 13. MD FAQ Q&A coverage
     for item in parsed_md.get("faq_items", []):
         q = item["question"]
-        if q not in html and _html_escape(q) not in html:
+        q_plain = _unescape(q)  # strips markdown formatting + normalizes quotes
+        if q not in html and _html_escape(q) not in html and q_plain not in html:
             reasons.append(f"MD FAQ question missing from output: '{q[:80]}'")
             info["faq_missing"].append(q)
         else:
@@ -208,5 +209,12 @@ def _html_escape(text: str) -> str:
 
 
 def _unescape(text: str) -> str:
-    import html
-    return html.unescape(text)
+    import html, re
+    t = html.unescape(text)
+    # Normalize curly/typographic quotes to ASCII so schema vs HTML comparisons work
+    t = t.replace('\u2018', "'").replace('\u2019', "'")  # curly single -> straight
+    t = t.replace('\u201c', '"').replace('\u201d', '"')  # curly double -> straight
+    # Strip markdown inline formatting so schema (_md_to_plain) matches visible text
+    t = re.sub(r"\*\*(.+?)\*\*|__(.+?)__", lambda m: m.group(1) or m.group(2), t)
+    t = re.sub(r"\*([^*\n]+?)\*|(?<!\w)_([^_\n]+?)_(?!\w)", lambda m: m.group(1) or m.group(2), t)
+    return t

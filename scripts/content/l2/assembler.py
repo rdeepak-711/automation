@@ -26,6 +26,7 @@ from .components import (
     build_top_tickets,
     build_affiliate_url,
     detect_provider,
+    generate_img_alt,
     PARTNER_IDS,
 )
 from .prose_converter import convert_section, _inline
@@ -54,6 +55,7 @@ def assemble(
     template_path: str,
     campaign_prefix: str,
     article_slug: str,
+    accent_color: str = "#c0392b",
 ) -> str:
     """
     Build the complete article HTML string.
@@ -69,16 +71,28 @@ def assemble(
     template_path    : path to the template (CSS extraction only)
     campaign_prefix  : e.g. "hagia"
     article_slug     : e.g. "hagia-sophia-tickets" (from XLSX / registry)
+    accent_color     : hex color from site config, e.g. "#0084C6"
     """
     tpl = parse_template(template_path)
     css = tpl["css"]
 
+    # CSS spec: @import must precede all other rules.
+    imp = re.search(r"[ \t]*@import\s+url\([^)]+\);[ \t]*\n?", css)
+    if imp and css.find(":root") < imp.start():
+        css = imp.group(0).lstrip() + "\n" + css[: imp.start()] + css[imp.end() :]
+
     # ── Header ───────────────────────────────────────────────────────────────
-    h1 = _html.escape(parsed_md.get("title", ""))
+    h1 = _html.escape(parsed_md.get("h1") or parsed_md.get("title", ""))
+    img_src = (
+        parsed_md.get("featured_image")
+        or "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+    )
+    img_alt = generate_img_alt(
+        parsed_md.get("h1") or parsed_md.get("title", ""),
+        parsed_md.get("description", ""),
+    )
     featured_image = (
-        '<img class="att-article-header__image" '
-        'src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" '
-        'alt="" loading="eager"/>'
+        f'<img class="att-article-header__image" src="{img_src}" alt="{img_alt}" loading="eager"/>'
     )
 
     # ── Intro AEO ────────────────────────────────────────────────────────────
@@ -90,9 +104,9 @@ def assemble(
     # ── Intro paragraphs ─────────────────────────────────────────────────────
     intro_html_parts = []
     for para in parsed_md.get("intro_paras", []):
-        text = _inline(para, campaign_prefix, article_slug)
-        if text:
-            intro_html_parts.append(f"<p>{text}</p>")
+        html = convert_section(para, campaign_prefix, article_slug)
+        if html:
+            intro_html_parts.append(html)
     intro_html = "\n".join(intro_html_parts)
 
     # ── Top tickets — use MD link text + URLs verbatim; only fix campaign ID ──

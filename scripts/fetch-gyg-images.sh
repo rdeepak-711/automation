@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ── Fetch GYG Tour Images ───────────────────────────────────────────────────
-# Downloads tour photos from the GetYourGuide API, converts to png/webp/avif,
+# Downloads tour photos from the GetYourGuide API, converts to avif,
 # and writes a manifest.json mapping tours to local image files.
 #
 # Usage:

@@ -272,6 +272,23 @@ Make tips specific to {attraction}."""
     return []
 
 
+def generate_booking_tips(attraction: str) -> list[dict]:
+    """Generate 6 booking-focused tips for the Tickets & Tours page: {emoji, label, desc}."""
+    prompt = f"""Generate 6 practical booking tips for visitors buying tickets to '{attraction}'.
+Focus on: booking in advance, arrival timing, cancellation policy, mobile tickets, what's included/excluded, dress code or access rules.
+Each tip: emoji, bold label (3–5 words ending with em-dash), 1–2 sentence explanation specific to {attraction}.
+
+Return ONLY a JSON array:
+[{{"emoji": "🎫", "label": "Book online in advance —", "desc": "..."}}]
+
+Make tips specific and actionable for {attraction}."""
+    raw = _call_claude(prompt, timeout=60)
+    result = _parse_json(raw)
+    if isinstance(result, list) and result:
+        return result[:6]
+    return []
+
+
 def generate_faqs(attraction: str, articles: list[dict]) -> list[dict]:
     """Generate 8–10 FAQ items: {question, answer}."""
     article_titles = [a["title"] for a in articles]
@@ -292,13 +309,15 @@ def generate_banner(attraction: str) -> dict:
     """Generate CTA banner: {h2, desc}."""
     prompt = (
         f"Write a short CTA banner for a '{attraction} — Plan Your Visit' page.\n"
-        f"h2: 6–10 words, a call-to-action about booking tickets (e.g. 'Ready to book your {attraction} tickets?')\n"
+        f"h2: 6–10 words, a call-to-action about booking tickets. MUST include '{attraction}' in the h2.\n"
         f"desc: 1 sentence, 15–20 words, encouraging visitors to book online.\n"
         f"Return ONLY JSON: {{\"h2\": \"...\", \"desc\": \"...\"}}"
     )
     raw = _call_claude(prompt, timeout=30)
     result = _parse_json(raw)
     if isinstance(result, dict) and "h2" in result and "desc" in result:
+        if attraction.lower() not in result["h2"].lower():
+            result["h2"] = f"Ready to book your {attraction} tickets?"
         return result
     return {
         "h2": f"Ready to book your {attraction} tickets?",
@@ -439,6 +458,10 @@ Return ONLY a JSON array:
     if isinstance(result, list):
         for g in result:
             h2 = g.get("h2", f"{attraction} Tickets")
+            # Strip colon-join pattern: "Stonehenge Tickets: Section" → "Stonehenge Tickets Section"
+            if ":" in h2:
+                before, _, after = h2.partition(":")
+                h2 = f"{before.strip()} {after.strip()}"
             if attraction.lower() not in h2.lower():
                 h2 = f"{attraction} {h2}"
             tids = [tid for tid in g.get("tids", []) if tid in remaining_tids]
@@ -642,13 +665,15 @@ def generate_banner_tickets(attraction: str, cache: dict, force: bool = False) -
         return cache[KEY]
     prompt = (
         f"Write a short CTA banner for a '{attraction} Tickets & Tours' page.\n"
-        f"h2: 6–10 words, call-to-action about booking tickets (e.g. 'Ready to book your {attraction} tickets?')\n"
+        f"h2: 6–10 words, call-to-action about booking tickets. MUST include '{attraction}' in the h2.\n"
         f"desc: 1 sentence, 15–20 words, encouraging visitors to book online.\n"
         f"Return ONLY JSON: {{\"h2\": \"...\", \"desc\": \"...\"}}"
     )
     raw = _call_claude(prompt, timeout=30)
     result = _parse_json(raw)
     if isinstance(result, dict) and "h2" in result and "desc" in result:
+        if attraction.lower() not in result["h2"].lower():
+            result["h2"] = f"Ready to book your {attraction} tickets?"
         cache[KEY] = result
         return result
     fallback = {
@@ -724,11 +749,10 @@ def generate_featured_desc_wts(
 
     title = article.get("card_title") or article["title"]
     prompt = (
-        f"Write a 3-4 sentence description (70-110 words) for a featured card on a '{attraction} — What to See' page.\n"
+        f"Write a 2-3 sentence description (30-45 words) for a featured card on a '{attraction} — What to See' page.\n"
         f"Card heading: {title!r}\n"
-        f"Cover: what the visitor actually sees or experiences, why it's worth prioritising, "
-        f"what makes it distinctive or special at {attraction}. Be specific. No generic fluff.\n"
-        + (f"Article excerpt for context:\n{excerpt[:600]}\n" if excerpt else "")
+        f"Cover: what the visitor sees or experiences and why it's worth prioritising at {attraction}. Be specific. No generic fluff. Complete sentences only.\n"
+        + (f"Article excerpt for context:\n{excerpt[:400]}\n" if excerpt else "")
         + "Return ONLY the plain text description (no quotes, no HTML)."
     )
     raw = _call_claude(prompt, timeout=45)
@@ -888,13 +912,15 @@ def generate_banner_wts(attraction: str, cache: dict, force: bool = False) -> di
         return cache[KEY]
     prompt = (
         f"Write a short CTA banner for a '{attraction} — What to See' page.\n"
-        f"h2: 6–10 words, a call-to-action about seeing the highlights\n"
+        f"h2: 6–10 words, a call-to-action about seeing the highlights. MUST include '{attraction}' in the h2.\n"
         f"desc: 1 sentence, 15–20 words, encouraging visitors to book tickets in advance.\n"
         f"Return ONLY JSON: {{\"h2\": \"...\", \"desc\": \"...\"}}"
     )
     raw = _call_claude(prompt, timeout=30)
     result = _parse_json(raw)
     if isinstance(result, dict) and "h2" in result and "desc" in result:
+        if attraction.lower() not in result["h2"].lower():
+            result["h2"] = f"Ready to see {attraction} for yourself?"
         cache[KEY] = result
         return result
     fallback = {

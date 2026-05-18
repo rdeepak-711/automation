@@ -129,19 +129,25 @@ SILO_MAP = {
 }
 
 slug_to_silo = {}
+num_to_info = {}  # seq_num -> (xlsx_leaf_slug, silo)
 silo_sheets = [s for s in wb.sheetnames if s in SILO_MAP]
 if silo_sheets:
     for sheet_name in silo_sheets:
         silo_folder = SILO_MAP[sheet_name]
         ws = wb[sheet_name]
+        seq = 0
         for row in ws.iter_rows(values_only=True):
             slug_val = row[3] if len(row) > 3 else None
             if not slug_val or not str(slug_val).startswith('/'): continue
+            seq += 1
             leaf = str(slug_val).strip('/').split('/')[-1]
-            if leaf: slug_to_silo[leaf] = silo_folder
+            if leaf:
+                slug_to_silo[leaf] = silo_folder
+                num_to_info[seq] = (leaf, silo_folder)
 else:
     ws = wb.worksheets[0]
     _current_silo = None
+    seq = 0
     for row in ws.iter_rows(min_row=2, values_only=True):
         col0 = str(row[0]).strip() if row[0] else ''
         if col0 and '\n' in col0:
@@ -153,12 +159,24 @@ else:
         if not art_slug: continue
         art_slug = art_slug.strip('/').split('/')[-1]
         if art_slug:
+            seq += 1
             slug_to_silo[art_slug] = _current_silo
+            num_to_info[seq] = (art_slug, _current_silo)
 
 print(f"  Loaded {len(slug_to_silo)} slugs from xlsx")
 
+# Count how many files share each article number (to detect duplicates)
+all_md = sorted(glob.glob(os.path.join(base, 'articles', '*.md')))
+num_file_count = {}
+for md_path in all_md:
+    fname = os.path.basename(md_path)
+    m = re.match(r'^article-?0*(\d+)[_-]', fname)
+    if m:
+        n = int(m.group(1))
+        num_file_count[n] = num_file_count.get(n, 0) + 1
+
 moved, unmatched = 0, []
-for md_path in sorted(glob.glob(os.path.join(base, 'articles', '*.md'))):
+for md_path in all_md:
     fname = os.path.basename(md_path)
     name = os.path.splitext(fname)[0]
     slug = re.sub(r'^(?:article-?\d+[_-]|\d+[-_])', '', name)
@@ -168,11 +186,35 @@ for md_path in sorted(glob.glob(os.path.join(base, 'articles', '*.md'))):
         print(f"  → {slug_to_silo[slug]}/{fname}")
         moved += 1
     else:
-        unmatched.append(fname)
+        # Fallback: match by article number against xlsx sequential order
+        m = re.match(r'^article-?0*(\d+)[_-]', fname)
+        if m:
+            n = int(m.group(1))
+            if num_file_count.get(n, 0) > 1:
+                print(f"  ⚠ Skipped (duplicate number {n}): {fname}")
+                unmatched.append(fname)
+            elif n in num_to_info:
+                xlsx_slug, silo = num_to_info[n]
+                new_fname = f"article-{n:02d}-{xlsx_slug}.md"
+                new_path = os.path.join(base, 'articles', new_fname)
+                os.rename(md_path, new_path)
+                os.makedirs(os.path.join(base, silo), exist_ok=True)
+                shutil.move(new_path, os.path.join(base, silo, new_fname))
+                print(f"  → {silo}/{new_fname}  (renamed from {fname})")
+                moved += 1
+            else:
+                unmatched.append(fname)
+        else:
+            unmatched.append(fname)
 
 print(f"\n  ✓ Moved {moved} files")
 if unmatched:
     print(f"  ⚠ {len(unmatched)} unmatched (left in articles/): {', '.join(unmatched)}")
+else:
+    articles_dir = os.path.join(base, 'articles')
+    if not os.listdir(articles_dir):
+        os.rmdir(articles_dir)
+        print("  ✓ articles/ folder removed (empty)")
 PYEOF
     mark_done "split_articles_done"
   else

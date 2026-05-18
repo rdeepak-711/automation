@@ -23,7 +23,7 @@ Handles:
 import html
 import re
 
-from .components import build_markdown_table, build_affiliate_url, build_cta_button, detect_provider
+from .components import build_markdown_table, build_affiliate_url, build_cta_button, build_tip_box, build_aeo_block, detect_provider
 from .md_parser import CTA_MARKER_RE
 
 
@@ -56,16 +56,47 @@ def convert_section(content_md: str, campaign_prefix: str,
             i += 1
             continue
 
-        # Inline CTA marker — render button at exact MD position
-        cta_m = CTA_MARKER_RE.match(block.strip())
-        if cta_m:
-            ticket = {
-                "url": cta_m.group(2).strip(),
-                "provider": detect_provider(cta_m.group(2).strip()),
-                "title": cta_m.group(1).strip(),
-            }
-            parts.append(build_cta_button(ticket, campaign_prefix, article_slug,
-                                          button_text=cta_m.group(1).strip()))
+        # CTA marker — pure block or embedded alongside other text
+        if CTA_MARKER_RE.search(block):
+            last = 0
+            for cta_m in CTA_MARKER_RE.finditer(block):
+                before = _BUY_LINK_RE.sub("", block[last:cta_m.start()]).strip()
+                if before:
+                    prose = _inline(" ".join(l.strip() for l in before.splitlines() if l.strip()),
+                                    campaign_prefix, article_slug)
+                    if prose:
+                        parts.append(f"<p>{prose}</p>")
+                ticket = {
+                    "url": cta_m.group(2).strip(),
+                    "provider": detect_provider(cta_m.group(2).strip()),
+                    "title": cta_m.group(1).strip(),
+                }
+                parts.append(build_cta_button(ticket, campaign_prefix, article_slug,
+                                              button_text=cta_m.group(1).strip()))
+                last = cta_m.end()
+            after = _BUY_LINK_RE.sub("", block[last:]).strip()
+            if after:
+                prose = _inline(" ".join(l.strip() for l in after.splitlines() if l.strip()),
+                                campaign_prefix, article_slug)
+                if prose:
+                    parts.append(f"<p>{prose}</p>")
+            i += 1
+            continue
+
+        # Blockquote — rendered as aeo-block (Quick Answer style) for all cases
+        bq_lines = block.splitlines()
+        if bq_lines and all(l.strip().startswith(">") for l in bq_lines if l.strip()):
+            stripped = [re.sub(r"^>\s?", "", l) for l in bq_lines]
+            body_md = " ".join(l.strip() for l in stripped if l.strip())
+            # Strip leading AEO/Quick Answer label: **Quick Answer:** or **AEO Answer — question?**
+            body_md = re.sub(r"^\*\*(?:Quick Answer|AEO Answer(?:\s+Block)?)[^*]*\*\*\s*", "", body_md, flags=re.IGNORECASE)
+            body_html = _inline(body_md, campaign_prefix, article_slug)
+            parts.append(build_aeo_block(body_html))
+            i += 1
+            continue
+
+        # Horizontal rule — skip entirely
+        if re.match(r"^-{3,}$|^\*{3,}$|^_{3,}$", block):
             i += 1
             continue
 
@@ -122,13 +153,33 @@ def convert_section(content_md: str, campaign_prefix: str,
         # Regular paragraph — may contain single-line embedded list items
         # that weren't separated by blank lines
         lines = block.splitlines()
-        if len(lines) > 1 and all(re.match(r"^[-*]\s", l) for l in lines if l.strip()):
-            items = [re.sub(r"^[-*]\s+", "", l) for l in lines if l.strip()]
+        non_empty = [l for l in lines if l.strip()]
+        if len(non_empty) > 1 and all(re.match(r"^[-*]\s", l) for l in non_empty):
+            # Pure list block
+            items = [re.sub(r"^[-*]\s+", "", l) for l in non_empty]
             lis = "".join(f"<li>{_inline(item, campaign_prefix, article_slug)}</li>"
                           for item in items)
             parts.append(f"<ul>{lis}</ul>")
+        elif len(non_empty) > 1:
+            # Mixed: label line(s) followed by list items in same block
+            list_start = next((j for j, l in enumerate(non_empty)
+                               if re.match(r"^[-*]\s", l)), None)
+            if list_start and list_start > 0:
+                label = _inline(" ".join(l.strip() for l in non_empty[:list_start]),
+                                campaign_prefix, article_slug)
+                if label:
+                    parts.append(f"<p>{label}</p>")
+                items = [re.sub(r"^[-*]\s+", "", l) for l in non_empty[list_start:]]
+                lis = "".join(f"<li>{_inline(item, campaign_prefix, article_slug)}</li>"
+                              for item in items)
+                parts.append(f"<ul>{lis}</ul>")
+            else:
+                text = _inline(" ".join(l.strip() for l in non_empty),
+                               campaign_prefix, article_slug)
+                if text:
+                    parts.append(f"<p>{text}</p>")
         else:
-            text = _inline(" ".join(l.strip() for l in lines if l.strip()),
+            text = _inline(" ".join(l.strip() for l in non_empty),
                            campaign_prefix, article_slug)
             if text:
                 parts.append(f"<p>{text}</p>")

@@ -44,10 +44,11 @@ fi
 
 # Pre-flight: verify credentials work before launching Claude
 echo "Verifying credentials..."
+_WP_BASE="${WP_SITE_URL%/}"
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
   --connect-timeout 10 --max-time 30 \
   -u "$WP_USER:$WP_PASS" \
-  "$WP_SITE_URL/wp-json/wp/v2/users/me/")
+  "${_WP_BASE}/wp-json/wp/v2/users/me/")
 
 if [[ "$HTTP_CODE" != "200" ]]; then
   echo "Error: WordPress authentication failed (HTTP $HTTP_CODE)."
@@ -59,134 +60,30 @@ if [[ "$HTTP_CODE" != "200" ]]; then
 fi
 echo "Credentials verified."
 
-# ── Plugin Cleanup (via REST API with proper URL-encoding) ──────────────────
+# ── Plugin Cleanup (WP-CLI via SSH — deactivate all then delete all) ─────────
 PROTECTED_PLUGIN="bluehost-wordpress-plugin"
 
-echo "Fetching plugin list..."
-PLUGINS_JSON=$(curl -s --connect-timeout 10 --max-time 30 -u "$WP_USER:$WP_PASS" \
-  "$WP_SITE_URL/wp-json/wp/v2/plugins") || PLUGINS_JSON="[]"
+echo "Deactivating and deleting plugins via WP-CLI..."
+_SSH_KEY_EXPANDED="${WP_SSH_KEY/#\~/$HOME}"
+_SSH_CMD=(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15)
+[[ -n "${_SSH_KEY_EXPANDED:-}" ]] && _SSH_CMD+=(-i "$_SSH_KEY_EXPANDED" -o IdentitiesOnly=yes)
 
-PLUGIN_SLUGS=$(printf '%s' "$PLUGINS_JSON" | python3 -c "
-import json, sys
-data = json.load(sys.stdin)
-protected = '$PROTECTED_PLUGIN'
-for plugin in data:
-    slug = plugin.get('plugin', '')
-    if protected not in slug:
-        print(slug)
-" 2>/dev/null) || PLUGIN_SLUGS=""
-
-echo "Deactivating and deleting plugins..."
-while IFS= read -r slug; do
-  [[ -z "$slug" ]] && continue
-
-  HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
-    --connect-timeout 10 --max-time 30 \
-    -u "$WP_USER:$WP_PASS" -X POST \
-    -H "Content-Type: application/json" \
-    -d '{"status":"inactive"}' \
-    "$WP_SITE_URL/wp-json/wp/v2/plugins/$slug") || HTTP="000"
-  [[ "$HTTP" == "200" ]] && echo "  Deactivated: $slug" \
-    || echo "  WARNING: deactivate $slug returned HTTP $HTTP" >&2
-
-  HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
-    --connect-timeout 10 --max-time 30 \
-    -u "$WP_USER:$WP_PASS" -X DELETE \
-    "$WP_SITE_URL/wp-json/wp/v2/plugins/$slug") || HTTP="000"
-  [[ "$HTTP" == "200" ]] && echo "  Deleted: $slug" \
-    || echo "  WARNING: delete $slug returned HTTP $HTTP" >&2
-
-done <<< "$PLUGIN_SLUGS"
-echo "Plugin cleanup complete."
-
-echo "Verifying plugin cleanup..."
-REMAINING=$(curl -s --connect-timeout 10 --max-time 30 -u "$WP_USER:$WP_PASS" \
-  "$WP_SITE_URL/wp-json/wp/v2/plugins" \
-  | python3 -c "
-import json, sys
-data = json.load(sys.stdin)
-protected = '$PROTECTED_PLUGIN'
-for p in data:
-    slug = p.get('plugin', '')
-    if protected not in slug:
-        print(slug)
-" 2>/dev/null) || REMAINING=""
-
-if [[ -n "$REMAINING" ]]; then
-  echo "  The following plugins could not be auto-deleted (uninstall hook error):"
-  while IFS= read -r s; do
-    echo "    - $s  →  delete manually: WP Admin > Plugins"
-  done <<< "$REMAINING"
-else
-  echo "  All non-protected plugins removed."
-fi
-
-echo "Checking Bluehost plugin version..."
-BH_VERSION=$(curl -s --connect-timeout 10 --max-time 30 -u "$WP_USER:$WP_PASS" \
-  "$WP_SITE_URL/wp-json/wp/v2/plugins" \
-  | python3 -c "
-import json, sys
-for p in json.load(sys.stdin):
-    if 'bluehost' in p.get('plugin','').lower():
-        print(p.get('version','unknown'))
-        break
-" 2>/dev/null) || BH_VERSION=""
-
-if [[ -n "$BH_VERSION" ]]; then
-  LATEST=$(curl -s --connect-timeout 10 --max-time 30 \
-    "https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request[slug]=bluehost-wordpress-plugin" \
-    | python3 -c "import json,sys; print(json.load(sys.stdin).get('version',''))" 2>/dev/null) || LATEST=""
-  if [[ -n "$LATEST" && "$BH_VERSION" != "$LATEST" ]]; then
-    echo "  UPDATE AVAILABLE: Bluehost plugin $BH_VERSION → $LATEST"
-    echo "  Update via WP Admin > Dashboard > Updates"
-  else
-    echo "  Bluehost plugin is up to date ($BH_VERSION)."
-  fi
-fi
-# ───────────────────────────────────────────────────────────────────────────
-
-# ── Page & Post Cleanup (all statuses via REST API) ─────────────────────────
-delete_post_type() {
-  local TYPE="$1"
-  local PAGE=1
-  while true; do
-    IDS=$(curl -s --connect-timeout 10 --max-time 30 -u "$WP_USER:$WP_PASS" \
-      "$WP_SITE_URL/wp-json/wp/v2/${TYPE}?status=publish,draft,pending,private,future,auto-draft&per_page=100&page=${PAGE}&_fields=id" \
-      | python3 -c "import json,sys; [print(x['id']) for x in json.load(sys.stdin)]" 2>/dev/null) || IDS=""
-    [[ -z "$IDS" ]] && break
-    COUNT=0
-    while IFS= read -r id; do
-      [[ -z "$id" ]] && continue
-      HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
-        --connect-timeout 10 --max-time 30 \
-        -u "$WP_USER:$WP_PASS" -X DELETE \
-        "$WP_SITE_URL/wp-json/wp/v2/${TYPE}/${id}?force=true") || HTTP="000"
-      [[ "$HTTP" == "200" ]] && echo "  Deleted ${TYPE%s}: $id" \
-        || echo "  WARNING: delete ${TYPE} $id returned HTTP $HTTP" >&2
-      COUNT=$((COUNT+1))
-    done <<< "$IDS"
-    [[ "$COUNT" -lt 100 ]] && break
-    PAGE=$((PAGE+1))
-  done
-}
+"${_SSH_CMD[@]}" "${WP_SSH_USER}@${WP_SSH_HOST}" "
+  wp plugin deactivate --all --path='${WP_PATH}' 2>/dev/null || true
+  wp plugin list --field=name --path='${WP_PATH}' 2>/dev/null \
+    | grep -v '${PROTECTED_PLUGIN}' \
+    | xargs -r wp plugin delete --path='${WP_PATH}' 2>/dev/null || true
+" && echo "Plugin cleanup complete." || echo "  WARNING: WP-CLI plugin cleanup failed"
 
 # ── Safety check: abort if site has too much content (wrong WP_PATH?) ────────
 echo "Counting existing content..."
-_TMP_HDR=$(mktemp /tmp/wp-hdr-XXXXXX)
-# Use index.php?rest_route= fallback — works on Bluehost regardless of permalink config
-curl -s --connect-timeout 10 --max-time 30 -u "$WP_USER:$WP_PASS" \
-  "${WP_SITE_URL%/}/index.php?rest_route=/wp/v2/pages/&status=publish,draft,pending,private,future&per_page=1&_fields=id" \
-  -D "$_TMP_HDR" -o /dev/null 2>/dev/null
-PAGE_COUNT=$(grep -i 'x-wp-total:' "$_TMP_HDR" | tr -d '\r' | sed 's/.*: *//' || true)
-PAGE_COUNT="${PAGE_COUNT:-0}"
-
-curl -s --connect-timeout 10 --max-time 30 -u "$WP_USER:$WP_PASS" \
-  "${WP_SITE_URL%/}/index.php?rest_route=/wp/v2/posts/&status=publish,draft,pending,private,future&per_page=1&_fields=id" \
-  -D "$_TMP_HDR" -o /dev/null 2>/dev/null
-POST_COUNT=$(grep -i 'x-wp-total:' "$_TMP_HDR" | tr -d '\r' | sed 's/.*: *//' || true)
-POST_COUNT="${POST_COUNT:-0}"
-rm -f "$_TMP_HDR"
-
+_COUNTS=$("${_SSH_CMD[@]}" "${WP_SSH_USER}@${WP_SSH_HOST}" "
+  POST_COUNT=\$(wp post list --post_type=post --format=count --path='${WP_PATH}' 2>/dev/null || echo 0)
+  PAGE_COUNT=\$(wp post list --post_type=page --format=count --path='${WP_PATH}' 2>/dev/null || echo 0)
+  echo \"\$POST_COUNT \$PAGE_COUNT\"
+" 2>/dev/null) || _COUNTS="0 0"
+POST_COUNT=$(echo "$_COUNTS" | awk '{print $1}')
+PAGE_COUNT=$(echo "$_COUNTS" | awk '{print $2}')
 POST_COUNT=$(echo "$POST_COUNT" | tr -dc '0-9'); POST_COUNT="${POST_COUNT:-0}"
 PAGE_COUNT=$(echo "$PAGE_COUNT" | tr -dc '0-9'); PAGE_COUNT="${PAGE_COUNT:-0}"
 echo "  Found: ${POST_COUNT} posts, ${PAGE_COUNT} pages"
@@ -204,11 +101,10 @@ if [[ "${POST_COUNT}" -gt 5 || "${PAGE_COUNT}" -gt 1 ]]; then
   fi
 fi
 
-echo "Fetching pages..."
-delete_post_type "pages"
-echo "Page cleanup complete."
-
-echo "Fetching posts..."
-delete_post_type "posts"
-echo "Post cleanup complete."
+# ── Page & Post Cleanup (WP-CLI via SSH) ─────────────────────────────────────
+echo "Deleting pages and posts via WP-CLI..."
+"${_SSH_CMD[@]}" "${WP_SSH_USER}@${WP_SSH_HOST}" "
+  wp post list --post_type=post,page --format=ids --path='${WP_PATH}' 2>/dev/null \
+    | xargs -r wp post delete --force --path='${WP_PATH}' 2>/dev/null || true
+" && echo "Page and post cleanup complete." || echo "  WARNING: WP-CLI page/post cleanup failed"
 # ───────────────────────────────────────────────────────────────────────────

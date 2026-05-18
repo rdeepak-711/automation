@@ -12,10 +12,13 @@
 -->
 
 <style>
+  @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Source+Sans+3:wght@400;500;600;700&display=swap");
+
   :root {
     --accent: #ff0000;
     --accent-light: #ffe5e5;
     --accent-dark: #cc0000;
+    --accent-glow: rgba(255, 0, 0, 0.2);
     --text-primary: #2a2725;
     --text-secondary: #5a5550;
     --text-muted: #8a837c;
@@ -24,8 +27,6 @@
     --border: #ece8e4;
     --border-light: #f4f2f0;
   }
-
-  @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Source+Sans+3:wght@400;500;600;700&display=swap");
 
   .att-article-page,
   .att-article-page *,
@@ -207,7 +208,7 @@
   .att-aeo-block__a {
     font-size: 16px;
     color: var(--text-secondary);
-    margin: 0;
+    margin: 0 !important;
     line-height: 1.8;
   }
 
@@ -345,7 +346,9 @@
     font-weight: 700;
     color: var(--text-primary);
     cursor: pointer;
+    text-decoration: none;
   }
+  .att-faq-summary:hover { text-decoration: none; }
   .att-faq-summary::-webkit-details-marker {
     display: none;
   }
@@ -354,9 +357,11 @@
     font-size: 22px;
     color: var(--accent);
     font-weight: 400;
+    display: inline-block;
+    transition: transform 0.2s ease;
   }
   .att-faq-details[open] .att-faq-summary::after {
-    content: "\2212";
+    transform: rotate(45deg);
   }
   .att-faq-content {
     font-size: 16px;

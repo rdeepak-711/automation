@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fetch GYG tour images for an attraction, convert to png/webp/avif, write manifest.
+Fetch GYG tour images for an attraction, convert to avif, write manifest.
 
 Usage:
     python3 fetch-gyg-images.py <site-slug> "<attraction-name>" [--alias "Name"] [--force]
@@ -201,9 +201,7 @@ def download_and_convert(
         fpath = base_path / fname
         try:
             save_kwargs = {}
-            if ext == "webp":
-                save_kwargs = {"quality": 85}
-            elif ext == "avif":
+            if ext == "avif":
                 save_kwargs = {"quality": 75}
             img.save(str(fpath), format=fmt.upper(), **save_kwargs)
             saved.append(fname)
@@ -238,12 +236,12 @@ def main():
     variants += KNOWN_ALIASES.get(base, [])
     variants = list(dict.fromkeys(variants))  # dedupe preserving order
 
-    # Determine output formats (no PNG — only webp + avif)
-    formats = ["webp"]
+    # Determine output formats (avif only)
+    formats = []
     if AVIF_OK:
         formats.append("avif")
     else:
-        print("  Note: AVIF not supported by Pillow, skipping AVIF output")
+        print("  Note: AVIF not supported by Pillow, no image output")
 
     print("=" * 65)
     print(f"  Fetch GYG Images — {args.site_slug}")

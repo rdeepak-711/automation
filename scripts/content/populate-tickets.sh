@@ -40,13 +40,16 @@ if [[ "$EXISTING_COUNT" -gt 0 ]]; then
 fi
 
 echo "  Parsing tickets.md..."
-TICKETS_RAW=$(grep -v '^#' "$TICKETS_FILE" | grep -v '^$' | grep '|' | grep -v 'Red Button')
+TICKETS_RAW=$(grep -v '^#' "$TICKETS_FILE" | grep -v '^$' | grep '|' | grep -v 'Red Button' | head -6)
 TICKET_COUNT=$(echo "$TICKETS_RAW" | wc -l | tr -d ' ')
-echo "  Found $TICKET_COUNT tickets"
+echo "  Found $TICKET_COUNT tickets (first 6 of $(grep -v '^#' "$TICKETS_FILE" | grep -v '^$' | grep '|' | grep -v 'Red Button' | wc -l | tr -d ' ') total)"
 
 SITE_URL="${WP_SITE_URL:-}"
 CAMPAIGN="${CAMPAIGN_PREFIX:-}"
-CURRENCY=$(python3 -c "import json; print(json.load(open('$HP_CONFIG')).get('currency','€'))" 2>/dev/null || echo "€")
+# Prefer CURRENCY from .env; fall back to homepage-config.json; default €
+if [[ -z "${CURRENCY:-}" ]]; then
+  CURRENCY=$(python3 -c "import json; print(json.load(open('$HP_CONFIG')).get('currency','€'))" 2>/dev/null || echo "€")
+fi
 
 # Build prompt
 TMP_PROMPT=$(mktemp /tmp/populate-tickets-prompt-XXXXXX)
@@ -90,8 +93,8 @@ claude --print -p "$(cat "$TMP_PROMPT")" > "$TMP_OUT" 2>/dev/null || {
 }
 
 # Merge into homepage-config.json
-python3 - "$TMP_OUT" "$HP_CONFIG" << 'PYEOF'
-import sys, json, re
+python3 - "$TMP_OUT" "$HP_CONFIG" "$SCRIPT_DIR/input/$SITE_SLUG/" << 'PYEOF'
+import sys, json, re, glob, os
 
 raw = open(sys.argv[1]).read().strip()
 # Strip markdown fences if present
@@ -105,6 +108,32 @@ except json.JSONDecodeError as e:
     print(f"  ERROR: Could not parse Claude output as JSON: {e}")
     print(f"  Output was: {raw[:300]}")
     sys.exit(1)
+
+# Override l2 slugs with canonical XLSX slugs via l1-config ticket_url→slug map.
+# l1-config.article_slugs already has ticket_url→slug matched by URL (ground truth).
+base = sys.argv[3]
+l1_path = os.path.join(base, 'l1-config.json')
+url_to_slug = {}
+if os.path.exists(l1_path):
+    try:
+        l1 = json.load(open(l1_path))
+        for entry in l1.get('pages', {}).get('Tickets & Tours', {}).get('article_slugs', []):
+            t_url = entry.get('ticket_url', '')
+            slug  = entry.get('slug', '')
+            if t_url and slug:
+                url_to_slug[t_url.split('?')[0].rstrip('/')] = slug
+    except Exception as e:
+        print(f"  ⚠ l1-config read failed ({e}), keeping Claude-generated l2 slugs")
+
+overridden = 0
+for t in tickets:
+    raw_base = t.get('url', '').split('?')[0].rstrip('/')
+    canonical = url_to_slug.get(raw_base)
+    if canonical and t.get('l2') != canonical:
+        t['l2'] = canonical
+        overridden += 1
+if url_to_slug:
+    print(f"  ✓ l2 slugs matched from l1-config ({overridden} corrected)")
 
 config = json.load(open(sys.argv[2]))
 config['tickets'] = tickets

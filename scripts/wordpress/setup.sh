@@ -42,11 +42,12 @@ if [[ -z "${WP_SITE_URL:-}" || -z "${WP_USER:-}" || -z "${WP_PASS:-}" ]]; then
 fi
 
 # Pre-flight: verify credentials
+_WP_BASE="${WP_SITE_URL%/}"
 echo "Verifying credentials..."
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
   --connect-timeout 10 --max-time 30 \
   -u "$WP_USER:$WP_PASS" \
-  "$WP_SITE_URL/wp-json/wp/v2/users/me/")
+  "${_WP_BASE}/wp-json/wp/v2/users/me/")
 
 if [[ "$HTTP_CODE" != "200" ]]; then
   echo "Error: WordPress authentication failed (HTTP $HTTP_CODE)."
@@ -114,51 +115,26 @@ else
   echo "  SSH not configured (WP_SSH_HOST/WP_SSH_USER not set) — zip plugins will need manual upload"
 fi
 
-# ── Helper: install + activate a plugin from WordPress.org ───────────────────
+# ── Helper: install + activate a plugin from WordPress.org via WP-CLI ────────
 install_from_wporg() {
   local SLUG="$1"
   local NAME="$2"
 
-  # Skip if already active
-  local CURRENT_STATUS
-  CURRENT_STATUS=$(curl -s --connect-timeout 10 --max-time 30 -u "$WP_USER:$WP_PASS" \
-    "$WP_SITE_URL/wp-json/wp/v2/plugins" | python3 -c "
-import json, sys
-try:
-    for p in json.load(sys.stdin):
-        if p.get('plugin','').startswith('$SLUG/'):
-            print(p.get('status',''))
-            break
-except (ValueError, KeyError, TypeError): pass
-" 2>/dev/null) || CURRENT_STATUS=""
-  if [[ "$CURRENT_STATUS" == "active" ]]; then
-    echo "  Already active, skipping: $NAME"
+  echo "Installing $NAME..."
+
+  if ! $SSH_OK; then
+    echo "  WARNING: $NAME — SSH unavailable, cannot install via WP-CLI" >&2
     return
   fi
 
-  echo "Installing $NAME..."
+  local OUT
+  OUT=$(ssh "${SSH_KEY_OPT[@]}" "${WP_SSH_USER}@${WP_SSH_HOST}" \
+    "wp plugin install '$SLUG' --activate --force --path='${WP_PATH}' 2>&1") && RC=0 || RC=$?
 
-  BODY=$(curl -s --connect-timeout 10 --max-time 60 -u "$WP_USER:$WP_PASS" -X POST \
-    -H "Content-Type: application/json" \
-    -d "{\"slug\":\"$SLUG\",\"status\":\"active\"}" \
-    "$WP_SITE_URL/wp-json/wp/v2/plugins") || BODY="{}"
-
-  RESULT=$(printf '%s' "$BODY" | python3 -c "
-import json, sys
-try:
-    d = json.load(sys.stdin)
-    if 'code' in d:
-        print('error: ' + d.get('message', 'unknown'))
-    else:
-        print(d.get('status', 'unknown'))
-except (ValueError, KeyError, TypeError):
-    print('parse_error')
-" 2>/dev/null) || RESULT="unknown"
-
-  if [[ "$RESULT" == "active" ]]; then
+  if [[ $RC -eq 0 ]]; then
     echo "  Installed and activated: $NAME"
   else
-    echo "  WARNING: $NAME — $RESULT" >&2
+    echo "  WARNING: $NAME — $OUT" >&2
   fi
 }
 
@@ -229,14 +205,23 @@ echo "── Premium plugins from zip ──────────────
 install_from_zip "$(find_plugin_zip "generateblocks-pro")"     "GenerateBlocks Pro" "generateblocks-pro"
 install_from_zip "$(find_plugin_zip "gp-premium")"             "GP Premium"         "gp-premium"
 install_from_zip "$(find_plugin_zip "wp-rocket")"              "WP Rocket"          "wp-rocket"
+# Update WP Rocket to latest (zip may be outdated; license on server enables the update API)
+if $SSH_OK; then
+  echo "  Updating WP Rocket to latest..."
+  ssh "${SSH_KEY_OPT[@]}" "${WP_SSH_USER}@${WP_SSH_HOST}" \
+    "wp plugin update wp-rocket --path='${WP_PATH}' 2>&1 | head -5" || true
+fi
 install_from_zip "$SCRIPT_DIR/plugins/seo-by-rank-math-pro.zip" "Rank Math Pro"    "seo-by-rank-math-pro"
 
 # ── Post-install fixes ────────────────────────────────────────────────────────
 # Rank Math Pro activates the free version as a dependency, which causes a PHP
-# 8.4 fatal error (wp_rand undefined). Delete the free plugin directory.
+# 8.4 fatal error (wp_rand undefined). Deactivate via WP-CLI first so WordPress
+# removes it from the active plugins list in the DB, then delete the files.
 if $SSH_OK; then
   ssh "${SSH_KEY_OPT[@]}" "${WP_SSH_USER}@${WP_SSH_HOST}" \
-    "rm -rf '${WP_PATH}/wp-content/plugins/seo-by-rank-math' && echo '  Rank Math free removed'" 2>/dev/null || true
+    "wp plugin deactivate seo-by-rank-math --path='${WP_PATH}' 2>/dev/null || true
+     rm -rf '${WP_PATH}/wp-content/plugins/seo-by-rank-math'
+     echo '  Rank Math free deactivated and removed'" 2>/dev/null || true
 fi
 
 # GP Premium 2.5.x has a PHP 8.4 incompatibility in class-conditions.php where

@@ -16,7 +16,33 @@ Campaign ID rules (enforced here and verified in validator.py):
 
 import html
 import json
+import os
 import re
+import subprocess
+
+
+def generate_img_alt(title: str, description: str) -> str:
+    """Call Claude CLI to generate a concise, descriptive alt tag for the article header image."""
+    prompt = (
+        f"Write a concise alt text (max 100 characters) for a header image on an article.\n"
+        f"Article title: {title}\n"
+        f"Article description: {description}\n"
+        f"Rules: describe what a relevant photo would show, no quotes, no punctuation at end, "
+        f"plain text only. Return only the alt text, nothing else."
+    )
+    model = os.environ.get("CLAUDE_L2_MODEL", "claude-haiku-4-5-20251001")
+    try:
+        r = subprocess.run(
+            ["claude", "--print", "--model", model],
+            input=prompt, capture_output=True, text=True, timeout=30,
+        )
+        alt = r.stdout.strip() if r.returncode == 0 else ""
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        alt = ""
+    # Fallback: derive from title
+    if not alt:
+        alt = title.split("—")[0].split("|")[0].strip()
+    return html.escape(alt[:125])
 
 
 ARROW_SVG = (
@@ -141,14 +167,17 @@ def build_cta_button(ticket: dict, campaign_prefix: str, article_slug: str,
     )
 
 
-def build_insider_tip(text: str) -> str:
-    escaped = html.escape(text)
+def build_tip_box(label_html: str, body_html: str) -> str:
     return (
         '<div class="att-tip-box">'
-        '<p class="att-tip-box__label">Insider Tip</p>'
-        f"<p>{escaped}</p>"
+        f'<p class="att-tip-box__label">{label_html}</p>'
+        f"<p>{body_html}</p>"
         "</div>"
     )
+
+
+def build_insider_tip(text: str) -> str:
+    return build_tip_box("Insider Tip", html.escape(text))
 
 
 def build_faq_item(question: str, answer: str) -> str:
@@ -156,8 +185,27 @@ def build_faq_item(question: str, answer: str) -> str:
     FAQ accordion item using native <details>/<summary>.
     Starts closed — user clicks to open. No JavaScript needed.
     """
-    q = html.escape(question, quote=False)
-    a = html.escape(answer, quote=False)
+    def _md(text: str) -> str:
+        # Extract links first, replace with placeholders, escape, then restore
+        links = []
+        def _save_link(m):
+            links.append((html.escape(m.group(1), quote=False), m.group(2)))
+            return f"\x00LINK{len(links)-1}\x00"
+        text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _save_link, text)
+        t = html.escape(text, quote=False)
+        t = re.sub(r"\*\*(.+?)\*\*|__(.+?)__", lambda m: f"<strong>{m.group(1) or m.group(2)}</strong>", t)
+        t = re.sub(r"\*([^*]+?)\*|(?<!\w)_([^_]+?)_(?!\w)", lambda m: f"<em>{m.group(1) or m.group(2)}</em>", t)
+        for i, (link_text, url) in enumerate(links):
+            t = t.replace(f"\x00LINK{i}\x00", f'<a href="{url}">{link_text}</a>')
+        return t
+
+    def _plain(text: str) -> str:
+        t = re.sub(r"\*\*(.+?)\*\*|__(.+?)__", lambda m: m.group(1) or m.group(2), text)
+        t = re.sub(r"\*([^*]+?)\*|(?<!\w)_([^_]+?)_(?!\w)", lambda m: m.group(1) or m.group(2), t)
+        return html.escape(t, quote=False)
+
+    q = _plain(question)  # no inline formatting in <summary> — breaks flex layout
+    a = _md(answer)
     return (
         '<details class="att-faq-details">'
         f'<summary class="att-faq-summary">{q}</summary>'
@@ -209,7 +257,7 @@ def build_related_links(related_links: list, url_registry: dict) -> str:
     from .link_resolver import resolve
 
     items = []
-    for link in related_links:
+    for link in related_links[:6]:
         url = resolve(link["url"], url_registry) or link["url"]
         text = html.escape(link["text"])
         items.append(f'<li><a href="{url}">{text}</a></li>')
@@ -247,11 +295,17 @@ def build_markdown_table(md_table: str) -> str:
     # Skip separator row (---|--- pattern)
     body_lines = [l for l in lines[1:] if not re.match(r"^[\s|:-]+$", l)]
 
-    ths = "".join(f"<th>{html.escape(c)}</th>" for c in header_cells)
+    def _cell(text: str) -> str:
+        t = html.escape(text)
+        t = re.sub(r"\*\*(.+?)\*\*|__(.+?)__", lambda m: f"<strong>{m.group(1) or m.group(2)}</strong>", t)
+        t = re.sub(r"\*([^*]+?)\*|(?<!\w)_([^_]+?)_(?!\w)", lambda m: f"<em>{m.group(1) or m.group(2)}</em>", t)
+        return t
+
+    ths = "".join(f"<th>{_cell(c)}</th>" for c in header_cells)
     rows = []
     for line in body_lines:
         cells = [c.strip() for c in line.strip("|").split("|")]
-        tds = "".join(f"<td>{html.escape(c)}</td>" for c in cells)
+        tds = "".join(f"<td>{_cell(c)}</td>" for c in cells)
         rows.append(f"<tr>{tds}</tr>")
 
     tbody = "\n".join(rows)

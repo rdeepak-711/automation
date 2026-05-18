@@ -6,3 +6,5 @@ output/
 plugins/*.zip
 input/
 images/
+.playwright-mcp/
+docs/

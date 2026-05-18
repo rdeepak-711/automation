@@ -290,14 +290,15 @@ def _render_faqs(faqs: list, attraction: str = "", faq_url: str = "/faqs/") -> s
             q, a = faq[0], faq[1]
         else:
             continue
-        items_html += f"""        <details class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-          <summary class="att-faq-item__q">
+        items_html += f"""        <div class="att-faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <button class="att-faq-item__q" type="button">
             <span itemprop="name">{_raw(q)}</span>
-          </summary>
+            <span class="att-faq-item__icon">+</span>
+          </button>
           <div class="att-faq-item__a" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
             <span itemprop="text">{_raw(a)}</span>
           </div>
-        </details>\n"""
+        </div>\n"""
 
     return f"""  <section id="pyv-faqs" class="att-section">
     <div class="att-container">
@@ -445,7 +446,10 @@ def render(site_slug: str, force: bool = False) -> Path:
 
     # Banner
     if pyv_cfg.get("cta_h") and pyv_cfg.get("cta_d"):
-        banner = {"h2": pyv_cfg["cta_h"], "desc": pyv_cfg["cta_d"]}
+        h2 = pyv_cfg["cta_h"]
+        if attraction.lower() not in h2.lower():
+            h2 = f"Ready to book your {attraction} tickets?"
+        banner = {"h2": h2, "desc": pyv_cfg["cta_d"]}
     else:
         banner = config.get("_banner_pyv") or content_generator.generate_banner(attraction)
         if not config.get("_banner_pyv"):
@@ -561,6 +565,30 @@ def _assemble(
     jsonld = _build_faq_jsonld(faqs)
     if jsonld:
         parts.append(jsonld)
+    parts.append("""<script>
+(function() {
+  'use strict';
+  document.querySelectorAll('.att-plan-page .att-faq-item__q').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var item = this.parentElement;
+      var wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.att-plan-page .att-faq-item').forEach(function(el) { el.classList.remove('open'); });
+      if (!wasOpen) item.classList.add('open');
+    });
+  });
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) { entry.target.style.opacity='1'; entry.target.style.transform='translateY(0)'; observer.unobserve(entry.target); }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.att-plan-page .att-article-card, .att-plan-page .att-faq-item, .att-plan-page .att-tip, .att-plan-page .att-practical-card, .att-plan-page .att-quicktip').forEach(function(el) {
+      el.style.opacity='0'; el.style.transform='translateY(16px)'; el.style.transition='opacity 0.45s ease-out, transform 0.45s ease-out';
+      observer.observe(el);
+    });
+  }
+})();
+</script>""")
     return "\n".join(parts)
 
 

@@ -43,8 +43,9 @@ echo "  Site: $WP_SITE_URL"
 echo "  Categories: $WP_CATEGORIES"
 echo "========================================================="
 
+_WP_BASE="${WP_SITE_URL%/}"
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 30 \
-  -u "$WP_USER:$WP_PASS" "$WP_SITE_URL/wp-json/wp/v2/users/me/")
+  -u "$WP_USER:$WP_PASS" "${_WP_BASE}/wp-json/wp/v2/users/me/")
 [[ "$HTTP_CODE" == "200" ]] || { echo "Error: Auth failed (HTTP $HTTP_CODE)"; exit 1; }
 echo "  ✓ Authenticated"
 
@@ -77,7 +78,7 @@ done | {
   echo "── Deleting other existing categories ──────────────────────────────────────"
   EXISTING=$(curl -s --connect-timeout 10 --max-time 30 \
     -u "$WP_USER:$WP_PASS" \
-    "$WP_SITE_URL/wp-json/wp/v2/categories/?per_page=100&hide_empty=false")
+    "${_WP_BASE}/wp-json/wp/v2/categories/?per_page=100&hide_empty=false")
   echo "$EXISTING" | python3 -c "
 import sys,json
 for c in json.load(sys.stdin):
@@ -87,7 +88,7 @@ for c in json.load(sys.stdin):
     HTTP=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
       --connect-timeout 10 --max-time 30 \
       -u "$WP_USER:$WP_PASS" \
-      "$WP_SITE_URL/wp-json/wp/v2/categories/${cat_id}?force=true")
+      "${_WP_BASE}/wp-json/wp/v2/categories/${cat_id}?force=true")
     echo "  Deleted: $cat_name (id=$cat_id, HTTP $HTTP)"
   done
 
@@ -101,7 +102,7 @@ for c in json.load(sys.stdin):
     RESP=$(curl -s -w "\n%{http_code}" -X POST \
       --connect-timeout 10 --max-time 30 \
       -u "$WP_USER:$WP_PASS" -H "Content-Type: application/json" \
-      -d "$PAYLOAD" "$WP_SITE_URL/wp-json/wp/v2/categories")
+      -d "$PAYLOAD" "${_WP_BASE}/wp-json/wp/v2/categories")
     HTTP=$(echo "$RESP" | tail -1)
     BODY=$(echo "$RESP" | head -1)
     CAT_ID=$(echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id','?'))" 2>/dev/null || echo "?")
@@ -112,7 +113,7 @@ for c in json.load(sys.stdin):
 echo ""
 echo "── Verification ─────────────────────────────────────────────────────────────"
 curl -s -u "$WP_USER:$WP_PASS" \
-  "$WP_SITE_URL/wp-json/wp/v2/categories/?per_page=20&hide_empty=false" | \
+  "${_WP_BASE}/wp-json/wp/v2/categories/?per_page=20&hide_empty=false" | \
   python3 -c "
 import sys,json
 for c in sorted(json.load(sys.stdin), key=lambda x: x['id']):

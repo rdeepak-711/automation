@@ -2,11 +2,13 @@
 set -euo pipefail
 
 # ── post-publish.sh ───────────────────────────────────────────────────────────
-# Post-publish audit: (A) presence check + (B) card image sync
+# Post-publish audit: (A) presence check + (B) typography fonts + (C) additional CSS + (D) card image sync
 #
 # Usage:
 #   ./scripts/audit/post-publish.sh <site-slug>
 #   ./scripts/audit/post-publish.sh <site-slug> --only presence
+#   ./scripts/audit/post-publish.sh <site-slug> --only fonts
+#   ./scripts/audit/post-publish.sh <site-slug> --only css
 #   ./scripts/audit/post-publish.sh <site-slug> --only images
 #   ./scripts/audit/post-publish.sh <site-slug> --dry-run
 
@@ -146,10 +148,58 @@ run_presence_check() {
   fi
 }
 
-# ── Sub-task B: Card image sync ───────────────────────────────────────────────
+# ── Sub-task B: Typography fonts ─────────────────────────────────────────────
+run_typography() {
+  echo ""
+  echo "  ── Sub-task B: Typography fonts ──"
+  if [[ "$DRY_RUN" == true ]]; then
+    echo "  [dry-run] configure-typography.sh (Source Sans 3 + Playfair Display)"
+    return
+  fi
+  # Load Source Sans 3 as body font
+  WP_SSH_HOST="${WP_SSH_HOST}" \
+  WP_SSH_USER="${WP_SSH_USER}" \
+  WP_SSH_KEY="${_WP_KEY}" \
+  CONTENT_SITE_SLUG="${SITE_SLUG}" \
+  FONT_NAME="Source Sans 3" \
+    zsh "$REPO_ROOT/scripts/wordpress/configure-typography.sh" 2>&1 | grep -E 'Done|Error|Font:|font_body|WARNING' || true
+
+  # Load Playfair Display for headings
+  WP_SSH_HOST="${WP_SSH_HOST}" \
+  WP_SSH_USER="${WP_SSH_USER}" \
+  WP_SSH_KEY="${_WP_KEY}" \
+  CONTENT_SITE_SLUG="${SITE_SLUG}" \
+  FONT_NAME="Playfair Display" \
+    zsh "$REPO_ROOT/scripts/wordpress/configure-typography.sh" 2>&1 | grep -E 'Done|Error|Font:|WARNING' || true
+
+  # Restore font_body to Source Sans 3 (second run overwrites it)
+  local _fix
+  _fix=$(ssh -i "${_WP_KEY}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    "${WP_SSH_USER}@${WP_SSH_HOST}" \
+    "wp eval '\$gs=(array)get_option(\"generate_settings\",[]);\$gs[\"font_body\"]=\"Source Sans 3\";update_option(\"generate_settings\",\$gs);echo \"ok\";' \
+      --path='${WP_PATH}' 2>/dev/null") || true
+  [[ "$_fix" == "ok" ]] && echo "  ✓ Fonts loaded: Source Sans 3 (body) + Playfair Display (headings)" \
+                         || echo "  ✗ font_body restore failed"
+}
+
+# ── Sub-task C: Additional CSS ───────────────────────────────────────────────
+run_additional_css() {
+  echo ""
+  echo "  ── Sub-task C: Additional CSS ──"
+  if [[ "$DRY_RUN" == true ]]; then
+    echo "  [dry-run] configure-additional-css.sh ${WP_PATH}"
+    return
+  fi
+  WP_SSH_HOST="${WP_SSH_HOST}" \
+  WP_SSH_USER="${WP_SSH_USER}" \
+  WP_SSH_KEY="${_WP_KEY}" \
+    bash "$REPO_ROOT/scripts/wordpress/configure-additional-css.sh" "${WP_PATH}"
+}
+
+# ── Sub-task D: Card image sync ───────────────────────────────────────────────
 run_image_sync() {
   echo ""
-  echo "  ── Sub-task B: Card image sync ──"
+  echo "  ── Sub-task D: Card image sync ──"
   local _dry_flag=""
   [[ "$DRY_RUN" == true ]] && _dry_flag="--dry-run"
   python3 "$REPO_ROOT/scripts/audit/post-publish-images.py" \
@@ -163,11 +213,14 @@ run_image_sync() {
 }
 
 # ── Dispatch ──────────────────────────────────────────────────────────────────
-case "${ONLY:-both}" in
+case "${ONLY:-all}" in
   presence) run_presence_check ;;
+  fonts)    run_typography ;;
+  css)      run_additional_css ;;
   images)   run_image_sync ;;
-  both)     run_presence_check; run_image_sync ;;
-  *) echo "Unknown --only value: $ONLY (expected presence|images)"; exit 1 ;;
+  both)     run_presence_check; run_typography; run_additional_css; run_image_sync ;;
+  all)      run_presence_check; run_typography; run_additional_css; run_image_sync ;;
+  *) echo "Unknown --only value: $ONLY (expected presence|fonts|css|images)"; exit 1 ;;
 esac
 
 echo ""

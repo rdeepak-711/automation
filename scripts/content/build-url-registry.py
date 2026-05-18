@@ -75,9 +75,8 @@ def path_to_slug(path):
 def ensure_slashes(path):
     if not path:
         return "/"
-    path = str(path).strip()
-    if not path.startswith("/"):
-        path = "/" + path
+    path = str(path).strip().lstrip("/")  # strip any existing leading slashes
+    path = "/" + path                      # add exactly one
     if not path.endswith("/"):
         path += "/"
     return path
@@ -302,6 +301,77 @@ def build_registry(site_slug, site_dir, xlsx_path, l1_cfg, homepage_cfg):
     }
 
 
+def reconcile_ticket_l2_slugs(homepage_cfg_path, registry):
+    """Patch tickets[].l2 in homepage-config.json to match registry slugs.
+
+    populate-tickets.sh derives l2 slugs from tickets.md column 5, which can
+    diverge from the XLSX-derived slugs in the registry. This runs after the
+    registry is written and fixes any mismatches in-place.
+
+    Matching strategy (in order):
+      1. Exact title match (ticket title == article title)
+      2. Current l2 slug is already a valid registry slug → keep it
+      3. Slug-word overlap: registry slug whose words are a subset of the ticket slug words
+      4. Warn unmatched tickets so they don't silently stay wrong
+    """
+    cfg = load_json(homepage_cfg_path)
+    tickets = cfg.get("tickets", [])
+    if not tickets:
+        return
+
+    # Build lookups from registry L2 pages
+    title_to_slug = {}
+    valid_slugs = set()
+    for page in registry["pages"].values():
+        if page.get("type") == "L2" and page.get("slug"):
+            valid_slugs.add(page["slug"])
+            if page.get("title"):
+                title_to_slug[page["title"].lower()] = page["slug"]
+
+    def _slug_words(s):
+        return set(s.replace("-", " ").split())
+
+    fixes = []
+    unmatched = []
+    for ticket in tickets:
+        title = ticket.get("title", "")
+        current_l2 = ticket.get("l2", "")
+
+        # 1. Exact title match
+        registry_slug = title_to_slug.get(title.lower())
+
+        # 2. Current slug already valid
+        if not registry_slug and current_l2 in valid_slugs:
+            continue
+
+        # 3. Slug-word overlap: find registry slug whose words ⊆ ticket slug words
+        if not registry_slug:
+            ticket_words = _slug_words(current_l2)
+            candidates = [s for s in valid_slugs if _slug_words(s) <= ticket_words]
+            if len(candidates) == 1:
+                registry_slug = candidates[0]
+
+        if registry_slug and current_l2 != registry_slug:
+            fixes.append(f"    {title[:50]}: {current_l2!r} → {registry_slug!r}")
+            ticket["l2"] = registry_slug
+        elif not registry_slug and current_l2 not in valid_slugs:
+            unmatched.append(f"    {title[:50]}: {current_l2!r} not in registry")
+
+    if fixes:
+        with open(homepage_cfg_path, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+        print(f"  ✓ Reconciled {len(fixes)} ticket l2 slug(s) with registry:")
+        for fix in fixes:
+            print(fix)
+    else:
+        print("  ✓ Ticket l2 slugs already match registry — no changes needed")
+
+    if unmatched:
+        print(f"  ⚠ {len(unmatched)} ticket(s) could not be matched to registry slugs:")
+        for u in unmatched:
+            print(u)
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
@@ -324,8 +394,9 @@ def main():
     print(f"Using XLSX: {xlsx_path}")
 
     # Load optional config files
+    homepage_cfg_path = os.path.join(site_dir, "homepage-config.json")
     l1_cfg       = load_json(os.path.join(site_dir, "l1-config.json"))
-    homepage_cfg = load_json(os.path.join(site_dir, "homepage-config.json"))
+    homepage_cfg = load_json(homepage_cfg_path)
 
     # Build registry
     try:
@@ -349,6 +420,10 @@ def main():
     print(f"  L1 silos : {l1_count}")
     print(f"  L2 pages : {l2_count}")
     print(f"  Output   : {out_path}")
+
+    # Reconcile tickets[].l2 slugs with registry (fixes mismatches from Step 18)
+    if os.path.exists(homepage_cfg_path) and homepage_cfg.get("tickets"):
+        reconcile_ticket_l2_slugs(homepage_cfg_path, registry)
 
 
 if __name__ == "__main__":

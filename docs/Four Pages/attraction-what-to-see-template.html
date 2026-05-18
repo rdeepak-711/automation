@@ -23,7 +23,7 @@
 
   .att-see-page, .att-see-page *, .att-see-page *::before, .att-see-page *::after { box-sizing:border-box; }
   .att-see-page { font-family:'Source Sans 3','Segoe UI',sans-serif; color:var(--text-primary); line-height:1.6; -webkit-font-smoothing:antialiased; }
-  .att-see-page h1, .att-see-page h2, .att-see-page h3, .att-see-page h4 { font-family:'Playfair Display',Georgia,serif; line-height:1.2; font-style:normal; }
+  .att-see-page h1, .att-see-page h2, .att-see-page h3, .att-see-page h4 { font-family:'Playfair Display',Georgia,serif; line-height:1.2; }
   .att-see-page .att-hero a, .att-see-page .att-section a, .att-see-page .att-cta-banner a, .att-see-page .att-faq a { text-decoration:none; }
 
   .att-see-page .att-container { max-width:100%; margin:0 auto; padding-left:48px; padding-right:48px; }
@@ -39,7 +39,7 @@
 
   /* Buttons */
   .att-see-page .att-btn { display:inline-flex; align-items:center; gap:8px; padding:14px 28px; border-radius:8px; font-size:15px; font-weight:600; font-family:'Source Sans 3',sans-serif; cursor:pointer; transition:transform 0.2s,opacity 0.2s,background 0.2s,color 0.2s; border:none; }
-  .att-see-page .att-btn:hover { transform:translateY(-1px); }
+  .att-see-page .att-btn:hover { transform:translateY(-1px); text-decoration: none; }
   .att-see-page .att-btn--primary { background:var(--accent); color:#fff; }
   .att-see-page .att-btn--primary:hover { background:var(--accent-dark); color:#fff; }
   .att-see-page .att-btn--outline { background:transparent; color:var(--accent); border:2px solid var(--accent); }
@@ -73,7 +73,7 @@
   .att-see-page .att-featured h3 { font-size:22px; margin:0 0 12px 0; padding:0; color:var(--text-primary); line-height:1.3; }
   .att-see-page .att-featured h3 a { color:var(--text-primary); }
   .att-see-page .att-featured h3 a:hover { color:var(--accent); }
-  .att-featured__desc { font-size:14.5px; color:var(--text-secondary); line-height:1.7; margin:0 0 12px 0; flex:1; }
+  .att-featured__desc { font-size:14.5px; color:var(--text-secondary); line-height:1.7; margin:0 0 20px 0; flex:1; }
   .att-featured__link { font-size:14px; font-weight:600; color:var(--accent); margin-top:auto; }
 
   /* Standard Article Cards &mdash; 3-col */
@@ -87,7 +87,7 @@
   .att-see-page .att-article-card h3 { font-size:19px; margin:0 0 10px 0; padding:0; color:var(--text-primary); line-height:1.3; }
   .att-see-page .att-article-card h3 a { color:var(--text-primary); }
   .att-see-page .att-article-card h3 a:hover { color:var(--accent); }
-  .att-article-card__desc { font-size:14px; color:var(--text-secondary); line-height:1.7; margin:0 0 11px 0; flex:1; }
+  .att-article-card__desc { font-size:14px; color:var(--text-secondary); line-height:1.7; margin:0 0 16px 0; flex:1; }
   .att-article-card__link { font-size:14px; font-weight:600; color:var(--accent); margin-top:auto; }
 
   /* Callout Box */
@@ -100,7 +100,7 @@
   .att-see-page .att-guide-card h3 { font-size:20px; margin:0 0 12px 0; padding:0; color:var(--text-primary); }
   .att-guide-card ul { list-style:none; margin:0 0 16px 0; padding:0; }
   .att-guide-card ul li { font-size:14px; color:var(--text-secondary); line-height:1.6; padding:5px 0 5px 20px; position:relative; }
-  .att-guide-card ul li::before { content:'→'; position:absolute; left:0; color:var(--accent); font-weight:700; }
+  .att-guide-card ul li::before { content:'\2192'; position:absolute; left:0; color:var(--accent); font-weight:700; }
   .att-guide-card a { color:var(--accent); font-weight:600; }
   .att-guide-card p { font-size:14px; color:var(--text-secondary); line-height:1.7; margin:0 0 16px 0; }
   .att-guide-card__rec { font-size:13.5px; color:var(--text-muted); margin:16px 0 0 0; padding:14px 0 0 0; border-top:1px solid var(--border); line-height:1.6; }
@@ -116,7 +116,8 @@
   .att-see-page .att-faq { max-width:920px; margin:0 auto; }
   .att-see-page .att-faq-item { border:1px solid var(--border); border-radius:10px; overflow:hidden; margin:0 0 8px 0; padding:0; transition:background 0.2s; }
   .att-see-page .att-faq-item.open { background:var(--bg-warm); }
-  .att-see-page .att-faq-item__q { width:100%; display:flex; align-items:center; justify-content:space-between; padding:18px 22px; margin:0; border:none; background:transparent; cursor:pointer; font-family:'Source Sans 3',sans-serif; font-size:15px; font-weight:600; color:var(--text-primary); text-align:left; line-height:1.4; gap:12px; }
+  .att-see-page .att-faq-item__q { width:100%; display:flex; align-items:center; justify-content:space-between; padding:18px 22px; margin:0; border:none; background:transparent; cursor:pointer; font-family:'Source Sans 3',sans-serif; font-size:15px; font-weight:600; color:var(--text-primary); text-align:left; line-height:1.4; gap:12px; text-decoration:none; }
+  .att-see-page .att-faq-item__q:hover { text-decoration:none; }
   .att-see-page .att-faq-item__icon { font-size:20px; color:var(--accent); transition:transform 0.25s; flex-shrink:0; font-weight:300; }
   .att-see-page .att-faq-item.open .att-faq-item__icon { transform:rotate(45deg); }
   .att-see-page .att-faq-item__a { display:none; padding:4px 22px 20px; margin:0; font-size:14px; color:var(--text-secondary); line-height:1.72; }
@@ -155,6 +156,13 @@
   @keyframes attFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
   .att-animate { opacity:0; animation:attFadeUp 0.5s ease-out forwards; }
   .att-delay-1 { animation-delay:0.1s; } .att-delay-2 { animation-delay:0.2s; } .att-delay-3 { animation-delay:0.3s; }
+
+  /* Suppress underline on button-style elements that sit inside .att-section */
+  .att-see-page .att-btn:hover,
+  .att-see-page .att-section-link a:hover,
+  .att-see-page .att-featured__link:hover,
+  .att-see-page .att-article-card__link:hover,
+  .att-see-page .att-crosslink__link:hover { text-decoration:none; }
 </style>
 
 
@@ -239,48 +247,94 @@
   </section>
 
 
-  <!-- ═══════════════════════════════════════════
-       ARTICLE SECTIONS — One <section> per entry in article_sections.
-       Each section uses att-articles-grid + att-article-card.
-       EVERY article in article_sections must appear in exactly one section.
-       Do not merge or omit any subgroup — render all of them.
-       ═══════════════════════════════════════════ -->
+  <!-- SECTION 3: THE THREE FA&Ccedil;ADES &mdash; Standard cards -->
   <section class="att-section">
     <div class="att-container">
       <div class="att-section-header">
-        <h2>Inside the Building</h2>
-        <p>The core interior experiences and highlights every visitor should see.</p>
+        <h2>The Three Fa&ccedil;ades</h2>
+        <p>Each of Sagrada Fam&iacute;lia&rsquo;s three fa&ccedil;ades tells a different chapter of the story of Christ.</p>
       </div>
 
       <div class="att-articles-grid">
 
         <div class="att-article-card">
-          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="What to see inside" />
+          <img class="att-article-card__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Nativity+Facade" alt="Nativity Fa&ccedil;ade" />
           <div class="att-article-card__body">
-            <div class="att-article-card__tags"><span class="att-article-card__tag">Interior</span><span class="att-article-card__tag">Guide</span></div>
-            <h3><a href="/what-to-see/inside-complete-guide/">What to see inside: complete guide</a></h3>
-            <p class="att-article-card__desc">A room-by-room guide to the interior, covering the nave, columns, mosaics, and the features that make this structure extraordinary.</p>
-            <a href="/what-to-see/inside-complete-guide/" class="att-article-card__link">Read more &rarr;</a>
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Gaud&iacute;&rsquo;s Original</span><span class="att-article-card__tag">UNESCO</span></div>
+            <h3><a href="/nativity-facade-sagrada-familia/">The Nativity Fa&ccedil;ade</a></h3>
+            <p class="att-article-card__desc">The only fa&ccedil;ade completed in Gaud&iacute;&rsquo;s lifetime, depicting the birth of Jesus with incredibly detailed stone carvings of plants, animals, and celestial bodies.</p>
+            <a href="/nativity-facade-sagrada-familia/" class="att-article-card__link">Know more &rarr;</a>
           </div>
         </div>
 
         <div class="att-article-card">
-          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Upper gallery" />
+          <img class="att-article-card__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Passion+Facade" alt="Passion Fa&ccedil;ade" />
           <div class="att-article-card__body">
-            <div class="att-article-card__tags"><span class="att-article-card__tag">Gallery</span><span class="att-article-card__tag">Mosaics</span></div>
-            <h3><a href="/what-to-see/upper-gallery/">The upper gallery</a></h3>
-            <p class="att-article-card__desc">The upper gallery offers elevated views of the nave and up-close access to mosaics, and is included with most standard entry tickets.</p>
-            <a href="/what-to-see/upper-gallery/" class="att-article-card__link">Read more &rarr;</a>
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Subirachs</span><span class="att-article-card__tag">Dramatic</span></div>
+            <h3><a href="/passion-facade-sagrada-familia/">The Passion Fa&ccedil;ade</a></h3>
+            <p class="att-article-card__desc">Josep Maria Subirachs&rsquo; angular, austere depiction of Christ&rsquo;s suffering and crucifixion. A dramatic contrast to the ornate Nativity Fa&ccedil;ade, full of hidden symbols.</p>
+            <a href="/passion-facade-sagrada-familia/" class="att-article-card__link">Know more &rarr;</a>
           </div>
         </div>
 
         <div class="att-article-card">
-          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Hidden details" />
+          <img class="att-article-card__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Glory+Facade" alt="Glory Fa&ccedil;ade" />
           <div class="att-article-card__body">
-            <div class="att-article-card__tags"><span class="att-article-card__tag">Secrets</span><span class="att-article-card__tag">Details</span></div>
-            <h3><a href="/what-to-see/hidden-details/">Hidden details most visitors miss</a></h3>
-            <p class="att-article-card__desc">Lesser-known details, symbols, and features scattered throughout the building that reveal the depth of its design and history.</p>
-            <a href="/what-to-see/hidden-details/" class="att-article-card__link">Read more &rarr;</a>
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Under Construction</span><span class="att-article-card__tag">Future Main Entrance</span></div>
+            <h3><a href="/glory-facade-sagrada-familia/">The Glory Fa&ccedil;ade</a></h3>
+            <p class="att-article-card__desc">Still under construction, this will become the basilica&rsquo;s main entrance and largest fa&ccedil;ade, depicting humanity&rsquo;s path to God through death, judgment, and glory.</p>
+            <a href="/glory-facade-sagrada-familia/" class="att-article-card__link">Know more &rarr;</a>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="att-callout">
+        <strong>Nativity vs Passion:</strong> Not sure which fa&ccedil;ade entrance or tower to choose? Read our
+        <a href="/nativity-vs-passion/">Nativity vs Passion comparison guide</a> for a side-by-side breakdown
+        of what each offers, including tower views, architectural style, and visitor experience.
+      </div>
+    </div>
+  </section>
+
+
+  <!-- SECTION 4: INSIDE THE BASILICA &mdash; Standard cards -->
+  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Inside the Basilica</h2>
+        <p>Sacred spaces, worship, and the deeper experiences housed within Sagrada Fam&iacute;lia.</p>
+      </div>
+
+      <div class="att-articles-grid">
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Holy+Mass" alt="Holy Mass" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Worship</span><span class="att-article-card__tag">Free Entry</span></div>
+            <h3><a href="/holy-mass-at-sagrada-familia/">Attending Holy Mass</a></h3>
+            <p class="att-article-card__desc">Mass is held regularly at Sagrada Fam&iacute;lia and is free to attend. Learn about schedules, how to register, what to expect, and visitor etiquette during services.</p>
+            <a href="/holy-mass-at-sagrada-familia/" class="att-article-card__link">Read more &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Altar+%26+Apse" alt="Altar and Apse" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Interior</span><span class="att-article-card__tag">Symbolism</span></div>
+            <h3><a href="/altar-and-apse/">The Altar &amp; Apse</a></h3>
+            <p class="att-article-card__desc">The central altar sits beneath a suspended canopy of light, surrounded by Gaud&iacute;&rsquo;s nature-inspired columns and rich religious symbolism in every detail.</p>
+            <a href="/altar-and-apse/" class="att-article-card__link">Read more &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Stained+Glass" alt="Stained glass windows" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Light</span><span class="att-article-card__tag">Photography</span></div>
+            <h3><a href="/stained-glass-windows/">The Stained Glass Windows</a></h3>
+            <p class="att-article-card__desc">Floor-to-ceiling stained glass bathes the interior in shifting colour throughout the day. Warm tones in the morning, cool blues in the afternoon &mdash; a photographer&rsquo;s dream.</p>
+            <a href="/stained-glass-windows/" class="att-article-card__link">Read more &rarr;</a>
           </div>
         </div>
 
@@ -289,46 +343,72 @@
   </section>
 
 
-  <!-- Second article section example — History & Architecture -->
+  <!-- SECTION 5: BEYOND THE MAIN INTERIOR -->
   <section class="att-section">
     <div class="att-container">
       <div class="att-section-header">
-        <h2>History &amp; Architecture</h2>
-        <p>The story behind this extraordinary structure — its origins, design, and what makes it unique.</p>
+        <h2>Beyond the Main Interior</h2>
+        <p>Additional spaces and experiences that deepen the Sagrada Fam&iacute;lia visit.</p>
       </div>
 
       <div class="att-articles-grid">
 
         <div class="att-article-card">
-          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="History" />
+          <img class="att-article-card__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Crypt" alt="Sagrada Fam&iacute;lia Crypt" />
           <div class="att-article-card__body">
-            <div class="att-article-card__tags"><span class="att-article-card__tag">History</span><span class="att-article-card__tag">Timeline</span></div>
-            <h3><a href="/what-to-see/history/">History of the attraction</a></h3>
-            <p class="att-article-card__desc">A timeline of the key events, rulers, and transformations that shaped this building across centuries of history.</p>
-            <a href="/what-to-see/history/" class="att-article-card__link">Read more &rarr;</a>
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Gaud&iacute;&rsquo;s Tomb</span><span class="att-article-card__tag">Underground</span></div>
+            <h3><a href="/sagrada-familia-crypt/">The Crypt</a></h3>
+            <p class="att-article-card__desc">The basement crypt houses Antoni Gaud&iacute;&rsquo;s tomb and is the oldest part of the basilica, completed before Gaud&iacute; took over the project in 1883.</p>
+            <a href="/sagrada-familia-crypt/" class="att-article-card__link">Read more &rarr;</a>
           </div>
         </div>
 
         <div class="att-article-card">
-          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Architecture" />
+          <img class="att-article-card__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Museum" alt="Sagrada Fam&iacute;lia Museum" />
           <div class="att-article-card__body">
-            <div class="att-article-card__tags"><span class="att-article-card__tag">Architecture</span><span class="att-article-card__tag">Engineering</span></div>
-            <h3><a href="/what-to-see/architecture/">Architecture: what makes it extraordinary</a></h3>
-            <p class="att-article-card__desc">An in-depth look at the structural and design elements that make this building one of the world's great architectural achievements.</p>
-            <a href="/what-to-see/architecture/" class="att-article-card__link">Read more &rarr;</a>
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Models</span><span class="att-article-card__tag">History</span></div>
+            <h3><a href="/sagrada-familia-museum/">The Museum</a></h3>
+            <p class="att-article-card__desc">Original models, drawings, and photographs showing the basilica&rsquo;s evolution over 140+ years. A must-see for architecture enthusiasts and Gaud&iacute; fans.</p>
+            <a href="/sagrada-familia-museum/" class="att-article-card__link">Read more &rarr;</a>
           </div>
         </div>
 
         <div class="att-article-card">
-          <img class="att-article-card__img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Mosaics" />
+          <img class="att-article-card__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Tower+of+Jesus" alt="Tower of Jesus" />
           <div class="att-article-card__body">
-            <div class="att-article-card__tags"><span class="att-article-card__tag">Mosaics</span><span class="att-article-card__tag">Art</span></div>
-            <h3><a href="/what-to-see/mosaics/">The mosaics: history &amp; where to find them</a></h3>
-            <p class="att-article-card__desc">A guide to the famous mosaics — their subjects, locations, artistic significance, and the best way to view them during your visit.</p>
-            <a href="/what-to-see/mosaics/" class="att-article-card__link">Read more &rarr;</a>
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Tallest Tower</span><span class="att-article-card__tag">Under Construction</span></div>
+            <h3><a href="/tower-of-jesus/">The Tower of Jesus</a></h3>
+            <p class="att-article-card__desc">At 172.5 metres, this central tower will make Sagrada Fam&iacute;lia the tallest church in the world. Learn about its progress, symbolism, and expected completion.</p>
+            <a href="/tower-of-jesus/" class="att-article-card__link">Read more &rarr;</a>
           </div>
         </div>
 
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=18+Towers" alt="The 18 Towers" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Architecture</span><span class="att-article-card__tag">Symbolism</span></div>
+            <h3><a href="/sagrada-familia-towers/">The 18 Towers Explained</a></h3>
+            <p class="att-article-card__desc">Each of the 18 towers represents a biblical figure &mdash; 12 apostles, 4 evangelists, the Virgin Mary, and Jesus. Understand the symbolism and which are visitable.</p>
+            <a href="/sagrada-familia-towers/" class="att-article-card__link">Read more &rarr;</a>
+          </div>
+        </div>
+
+        <div class="att-article-card">
+          <img class="att-article-card__img" src="https://placehold.co/600x380/e8ddd4/8a837c?text=Christmas" alt="Christmas at Sagrada Fam&iacute;lia" />
+          <div class="att-article-card__body">
+            <div class="att-article-card__tags"><span class="att-article-card__tag">Seasonal</span><span class="att-article-card__tag">Special Events</span></div>
+            <h3><a href="/christmas-at-sagrada-familia/">Christmas at Sagrada Fam&iacute;lia</a></h3>
+            <p class="att-article-card__desc">Special holiday hours, festive atmosphere, nativity displays, and practical tips for visiting during the Christmas and New Year period in Barcelona.</p>
+            <a href="/christmas-at-sagrada-familia/" class="att-article-card__link">Read more &rarr;</a>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="att-callout">
+        <strong>Suggested approach:</strong> First-time visitors should start with the interior and stained glass,
+        then explore one or both fa&ccedil;ades, and add tower access if time and budget allow. The crypt and museum
+        are included with most tickets and are worth 20&ndash;30 minutes at the end of your visit.
       </div>
     </div>
   </section>

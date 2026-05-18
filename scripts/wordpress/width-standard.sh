@@ -1,27 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Add Firestorm Additional CSS to a live WordPress site over SSH + WP-CLI.
-# Writes into WordPress Customizer "Additional CSS" storage for active theme.
+# width-standard.sh — Audit and apply the Firestorm width standard to a live WP site.
+#
+# Standard: logo left = content left = 48px, Book Now right = content right = 1392px
+#   • container_width = 1344  (GP header inner: 48px margins at 1440px viewport)
+#   • header_left = 0, header_right = 0  (no asymmetric padding inside header)
+#   • Custom CSS: #site-nav .wrap override + full FIRESTORM additional CSS block
 #
 # Usage:
-#   WP_SSH_HOST=50.6.155.174 WP_SSH_USER=dpskbcmy WP_SSH_KEY=~/.ssh/id_rsa_bluehost2 \
-#     ./scripts/base/configure-additional-css.sh /home1/dpskbcmy/public_html/website_topkapi
+#   WP_SSH_HOST=50.6.109.30 WP_SSH_USER=kzrmeomy WP_SSH_KEY=~/.ssh/id_rsa_bluehost_old \
+#     ./scripts/wordpress/width-standard.sh <wp_path> [audit|apply]
 #
-# Required env:
-#   WP_SSH_HOST, WP_SSH_USER
-# Optional env:
-#   WP_SSH_KEY
+# Modes:
+#   audit  (default) — show current vs expected, no changes made
+#   apply             — apply all fixes, clear cache, then re-audit to confirm
+#
+# Required env: WP_SSH_HOST, WP_SSH_USER
+# Optional env: WP_SSH_KEY
+
+# ── Args ─────────────────────────────────────────────────────────────────────
 
 if [[ $# -lt 1 ]]; then
-    echo "Usage: $0 <wp_path>"
-    exit 1
+  echo "Usage: $0 <wp_path> [audit|apply]"
+  echo ""
+  echo "  audit   Show current state vs expected standard (default)"
+  echo "  apply   Apply all fixes, clear cache, then re-audit"
+  exit 1
 fi
 
 WP_PATH="${1%/}"
+MODE="${2:-audit}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Preserve SSH vars passed by caller before loading .env.
+# ── Credentials ───────────────────────────────────────────────────────────────
+
 _SAVED_HOST="${WP_SSH_HOST:-}"
 _SAVED_USER="${WP_SSH_USER:-}"
 _SAVED_KEY="${WP_SSH_KEY:-}"
@@ -38,20 +51,137 @@ ENV_FILE="$SCRIPT_DIR/../../.env"
 
 SSH_KEY_OPTS=()
 if [[ -n "${WP_SSH_KEY:-}" ]]; then
-    _KEY="${WP_SSH_KEY/#\~/$HOME}"
-    SSH_KEY_OPTS=(-i "$_KEY" -o IdentitiesOnly=yes)
+  _KEY="${WP_SSH_KEY/#\~/$HOME}"
+  SSH_KEY_OPTS=(-i "$_KEY" -o IdentitiesOnly=yes)
 fi
 SSH_KEY_OPTS+=(-o StrictHostKeyChecking=no -o ConnectTimeout=15)
 
-_SSH_PREFIX="SSH_AUTH_SOCK="  # always clear agent to prevent cPHulk/CSF port-22 blocks from wrong-key failures
-
+_SSH_PREFIX="SSH_AUTH_SOCK="
 _SSH() { env ${_SSH_PREFIX} ssh "${SSH_KEY_OPTS[@]}" "${WP_SSH_USER}@${WP_SSH_HOST}" "$@"; }
 _SCP() { env ${_SSH_PREFIX} scp "${SSH_KEY_OPTS[@]}" "$@"; }
 
-PHP_LOCAL="$(mktemp)"
-trap 'rm -f "$PHP_LOCAL"' EXIT
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
-cat > "$PHP_LOCAL" <<'PHP'
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+RESET='\033[0m'
+
+ok()   { echo -e "  ${GREEN}✓${RESET} $*"; }
+fail() { echo -e "  ${RED}✗${RESET} $*"; }
+info() { echo -e "  ${YELLOW}→${RESET} $*"; }
+
+# ── Phase 1: AUDIT ───────────────────────────────────────────────────────────
+
+run_audit() {
+  echo ""
+  echo "── Phase 1: Audit — Width Standard ─────────────────────────────────────────"
+  echo "   Site: $WP_PATH"
+  echo "   Host: $WP_SSH_USER@$WP_SSH_HOST"
+  echo ""
+
+  RAW=$(_SSH "wp eval '
+    \$gs  = (array) get_option(\"generate_settings\", []);
+    \$ss  = (array) get_option(\"generate_spacing_settings\", []);
+    \$post = wp_get_custom_css_post();
+    \$css  = \$post ? \$post->post_content : \"\";
+    echo \"container_width:\"  . (\$gs[\"container_width\"]  ?? \"unset\") . \"\n\";
+    echo \"header_left:\"      . (\$ss[\"header_left\"]       ?? \"unset\") . \"\n\";
+    echo \"header_right:\"     . (\$ss[\"header_right\"]      ?? \"unset\") . \"\n\";
+    echo \"navbar_css:\"        . (strpos(\$css, \"navbar-content-align\")       !== false ? \"present\" : \"missing\") . \"\n\";
+    echo \"firestorm_css:\"     . (strpos(\$css, \"BEGIN FIRESTORM ADDITIONAL\") !== false ? \"present\" : \"missing\") . \"\n\";
+    echo \"author_box_css:\"    . (strpos(\$css, \"Author Box (GenerateBlocks)\") !== false ? \"present\" : \"missing\") . \"\n\";
+    echo \"sticky_banner_css:\" . (strpos(\$css, \"sticky-reserve-banner\")      !== false ? \"present\" : \"missing\") . \"\n\";
+    echo \"buy_now_css:\"       . (strpos(\$css, \"att-buy-now-btn\")             !== false ? \"present\" : \"missing\") . \"\n\";
+    echo \"masthead_hidden:\"   . (strpos(\$css, \"#masthead\")                   !== false ? \"present\" : \"missing\") . \"\n\";
+    echo \"l1_container:\"     . (strpos(\$css, \"entry-content .att-container\")  !== false ? \"present\" : \"missing\") . \"\n\";
+  ' --path='$WP_PATH' 2>&1")
+
+  _val() { echo "$RAW" | grep "^${1}:" | cut -d: -f2 | tr -d ' \r'; }
+
+  container_width=$(_val container_width)
+  header_left=$(_val header_left)
+  header_right=$(_val header_right)
+  navbar_css=$(_val navbar_css)
+  firestorm_css=$(_val firestorm_css)
+  author_box_css=$(_val author_box_css)
+  sticky_banner_css=$(_val sticky_banner_css)
+  buy_now_css=$(_val buy_now_css)
+  masthead_hidden=$(_val masthead_hidden)
+  l1_container=$(_val l1_container)
+
+  NEEDS_FIX=0
+
+  _check() {
+    local label="$1" actual="$2" expected="$3" fix_hint="$4"
+    if [[ "$actual" == "$expected" ]]; then
+      ok "$label: $actual"
+    else
+      fail "$label: ${actual} — expected ${expected}  ($fix_hint)"
+      NEEDS_FIX=1
+    fi
+  }
+
+  echo "  GP Layout Settings:"
+  _check "container_width"  "$container_width" "1344"    "configure-layout.sh or apply mode"
+  _check "header_left"      "$header_left"     "0"       "configure-layout.sh or apply mode"
+  _check "header_right"     "$header_right"    "0"       "configure-layout.sh or apply mode"
+
+  echo ""
+  echo "  Custom CSS (WordPress Customizer):"
+  _check "navbar-content-align block" "$navbar_css"         "present" "configure-additional-css.sh or apply mode"
+  _check "FIRESTORM CSS block"        "$firestorm_css"      "present" "configure-additional-css.sh or apply mode"
+  _check "Author Box CSS"             "$author_box_css"     "present" "configure-additional-css.sh or apply mode"
+  _check "Sticky Banner CSS"          "$sticky_banner_css"  "present" "configure-additional-css.sh or apply mode"
+  _check "Buy Now Button CSS"         "$buy_now_css"        "present" "configure-additional-css.sh or apply mode"
+  _check "GP masthead hidden"         "$masthead_hidden"    "present" "configure-additional-css.sh or apply mode"
+  _check "L1 att-container override" "$l1_container"       "present" "configure-additional-css.sh or apply mode"
+
+  echo ""
+  if [[ $NEEDS_FIX -eq 0 ]]; then
+    ok "All checks passed — site matches the Firestorm width standard."
+  else
+    fail "Issues found. Run:  $0 $WP_PATH apply"
+  fi
+  echo ""
+
+  return $NEEDS_FIX
+}
+
+# ── Phase 2: APPLY ───────────────────────────────────────────────────────────
+
+run_apply() {
+  echo ""
+  echo "── Phase 2: Apply — Width Standard Fixes ───────────────────────────────────"
+
+  # Step 1: GP layout settings (targeted — only width-related keys)
+  echo ""
+  info "Step 1/3: Updating GP layout settings (container_width, header padding)..."
+  _SSH "wp eval '
+    \$gs = (array) get_option(\"generate_settings\", []);
+    \$gs[\"container_width\"] = 1344;
+    update_option(\"generate_settings\", \$gs);
+
+    \$ss = (array) get_option(\"generate_spacing_settings\", []);
+    \$ss[\"header_top\"]    = \"15\";
+    \$ss[\"header_right\"]  = \"0\";
+    \$ss[\"header_bottom\"] = \"10\";
+    \$ss[\"header_left\"]   = \"0\";
+    update_option(\"generate_spacing_settings\", \$ss);
+
+    echo \"container_width -> \" . \$gs[\"container_width\"] . \"\n\";
+    echo \"header padding  -> top:15 right:0 bottom:10 left:0\n\";
+  ' --path='$WP_PATH' 2>&1"
+  ok "GP settings updated"
+
+  # Step 2: Additional CSS (navbar-content-align + full FIRESTORM block)
+  echo ""
+  info "Step 2/3: Writing additional CSS (navbar align + FIRESTORM block)..."
+
+  PHP_LOCAL="$(mktemp)"
+  trap 'rm -f "$PHP_LOCAL"' EXIT
+
+  cat > "$PHP_LOCAL" <<'PHP'
 <?php
 $start = '/* === navbar-content-align === */';
 $end   = '/* END FIRESTORM ADDITIONAL CSS */';
@@ -432,29 +562,29 @@ body, #page, .site-content { background: #ffffff !important; }
 /* END FIRESTORM ADDITIONAL CSS */
 CSS;
 
-$stylesheet = get_option('stylesheet');
+$stylesheet  = get_option('stylesheet');
 $existing_id = (int) get_theme_mod('custom_css_post_id');
 $current = '';
 $id = 0;
 
 if ($existing_id > 0 && get_post($existing_id)) {
-    $id = $existing_id;
+    $id      = $existing_id;
     $current = (string) get_post_field('post_content', $id);
 } else {
     $found = get_posts([
-        'post_type' => 'custom_css',
-        'post_status' => 'any',
-        'name' => $stylesheet,
+        'post_type'      => 'custom_css',
+        'post_status'    => 'any',
+        'name'           => $stylesheet,
         'posts_per_page' => 1,
-        'fields' => 'ids',
+        'fields'         => 'ids',
     ]);
     if (!empty($found)) {
-        $id = (int) $found[0];
+        $id      = (int) $found[0];
         $current = (string) get_post_field('post_content', $id);
     }
 }
 
-$backup_file = '/tmp/additional-css-backup-' . date('Ymd-His') . '.css';
+$backup_file = '/tmp/width-standard-css-backup-' . date('Ymd-His') . '.css';
 file_put_contents($backup_file, $current);
 
 $pattern = '/' . preg_quote($start, '/') . '.*?' . preg_quote($end, '/') . '\s*/s';
@@ -463,53 +593,61 @@ if (preg_match($pattern, $current)) {
     $mode = 'replaced';
 } else {
     $updated = trim($current);
-    if ($updated !== '') {
-        $updated .= "\n\n";
-    }
+    if ($updated !== '') { $updated .= "\n\n"; }
     $updated .= $block . "\n";
     $mode = 'appended';
 }
 
 if ($id > 0) {
-    wp_update_post([
-        'ID' => $id,
-        'post_content' => $updated,
-        'post_status' => 'publish',
-    ]);
+    wp_update_post(['ID' => $id, 'post_content' => $updated, 'post_status' => 'publish']);
 } else {
     $id = wp_insert_post([
-        'post_type' => 'custom_css',
-        'post_status' => 'publish',
-        'post_title' => sprintf('Additional CSS (%s)', $stylesheet),
-        'post_name' => $stylesheet,
+        'post_type'    => 'custom_css',
+        'post_status'  => 'publish',
+        'post_title'   => sprintf('Additional CSS (%s)', $stylesheet),
+        'post_name'    => $stylesheet,
         'post_content' => $updated,
     ]);
-    if (is_wp_error($id)) {
-        fwrite(STDERR, 'ERROR:' . $id->get_error_message() . PHP_EOL);
-        exit(1);
-    }
+    if (is_wp_error($id)) { fwrite(STDERR, 'ERROR:' . $id->get_error_message() . PHP_EOL); exit(1); }
 }
 
 set_theme_mod('custom_css_post_id', (int) $id);
 $saved = (string) get_post_field('post_content', $id);
 
-echo 'CUSTOM_CSS_ID:'   . $id . PHP_EOL;
-echo 'THEME_MOD:'       . get_theme_mod('custom_css_post_id') . PHP_EOL;
 echo 'MODE:'            . $mode . PHP_EOL;
 echo 'BACKUP:'          . $backup_file . PHP_EOL;
-echo 'MARKER:'          . (strpos($saved, $start) !== false ? 'present' : 'missing') . PHP_EOL;
 echo 'NAVBAR_ALIGN:'    . (strpos($saved, '#site-nav .wrap') !== false ? 'present' : 'missing') . PHP_EOL;
-echo 'SITE_INFO:'       . (strpos($saved, '.site-info') !== false ? 'present' : 'missing') . PHP_EOL;
-echo 'AUTHOR_BOX:'      . (strpos($saved, 'Author Box (GenerateBlocks)') !== false ? 'present' : 'missing') . PHP_EOL;
-echo 'MASTHEAD_HIDDEN:' . (strpos($saved, '#masthead') !== false ? 'present' : 'missing') . PHP_EOL;
+echo 'FIRESTORM:'       . (strpos($saved, 'BEGIN FIRESTORM')  !== false ? 'present' : 'missing') . PHP_EOL;
+echo 'MASTHEAD_HIDDEN:' . (strpos($saved, '#masthead')        !== false ? 'present' : 'missing') . PHP_EOL;
 PHP
 
-REMOTE_PHP="/tmp/configure-additional-css.php"
+  REMOTE_PHP="/tmp/width-standard-css.php"
+  _SCP "$PHP_LOCAL" "${WP_SSH_USER}@${WP_SSH_HOST}:$REMOTE_PHP"
+  CSS_RESULT=$(_SSH "wp eval-file '$REMOTE_PHP' --path='$WP_PATH'; rm -f '$REMOTE_PHP'" 2>&1)
+  echo "$CSS_RESULT"
+  ok "Custom CSS written"
 
-echo "Uploading script..."
-_SCP "$PHP_LOCAL" "${WP_SSH_USER}@${WP_SSH_HOST}:$REMOTE_PHP"
+  # Step 3: Clear WP Rocket cache
+  echo ""
+  info "Step 3/3: Clearing WP Rocket cache..."
+  _SSH "rm -rf '${WP_PATH}/wp-content/cache/wp-rocket/' 2>/dev/null; echo cleared"
+  ok "Cache cleared"
+}
 
-echo "Applying Additional CSS..."
-_SSH "wp eval-file '$REMOTE_PHP' --path='$WP_PATH'; rm -f '$REMOTE_PHP'"
+# ── Main ─────────────────────────────────────────────────────────────────────
 
-echo "Done."
+case "$MODE" in
+  audit)
+    run_audit || true
+    ;;
+  apply)
+    run_apply
+    echo ""
+    echo "── Re-running audit to confirm ─────────────────────────────────────────────"
+    run_audit || true
+    ;;
+  *)
+    echo "ERROR: Unknown mode '$MODE'. Use 'audit' or 'apply'."
+    exit 1
+    ;;
+esac

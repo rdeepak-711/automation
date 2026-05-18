@@ -655,6 +655,7 @@ def load_tickets_tours_articles(site_slug: str, repo_root: str | None = None, fo
             "description": description,
             "subgroup": subgroups.get(title),
             "is_editorial": True,
+            "ticket_url": m_data.get("ticket_url", ""),
         })
 
     # ── Build featured: Claude matches each top ticket → best editorial article ─
@@ -682,29 +683,31 @@ def load_tickets_tours_articles(site_slug: str, repo_root: str | None = None, fo
             featured.append(card)
             featured_slugs.add(article["url_slug"])
 
-    # ── Remaining editorial articles → ticket-type vs informational (Claude) ──
+    # ── Remaining editorial articles → linked (has ticket_url) vs unlinked ──
+    # linked  = article has a specific affiliate booking URL (ticket_url from metas)
+    #           → rendered in ticket-group sections ABOVE the comparison table
+    # unlinked = no affiliate link → rendered in guide sections BELOW table + how-to-pick
     remaining = [a for a in all_editorial if a["url_slug"] not in featured_slugs]
-    if force:
-        cfg.pop("_article_types", None)
-    had_types_cache = "_article_types" in cfg
-    types = _classify_articles_claude(remaining, cfg)
-    if not had_types_cache and config_path.exists():
-        config_path.write_text(
-            json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
-    ticket_list = [a for a in remaining if types.get(a["url_slug"], "ticket") == "ticket"]
-    info_list = [a for a in remaining if types.get(a["url_slug"], "ticket") == "info"]
+    ticket_list = [a for a in remaining if a.get("ticket_url")]
+    info_list = [a for a in remaining if not a.get("ticket_url")]
 
-    # Match each non-featured ticket article to the best affiliate ticket (for CTA link)
-    if force:
-        cfg.pop("_editorial_affiliate_map", None)
-    editorial_affiliate_map = _match_articles_to_affiliate_claude(ticket_list, affiliate_tickets, cfg)
-    if config_path.exists():
-        config_path.write_text(json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8")
+    # Set affiliate_url on linked articles.
+    # For articles without ticket_url, fall back to Claude match against affiliate_tickets.
+    needs_match = [a for a in ticket_list if not a.get("ticket_url")]
+    if needs_match:
+        if force:
+            cfg.pop("_editorial_affiliate_map", None)
+        editorial_affiliate_map = _match_articles_to_affiliate_claude(needs_match, affiliate_tickets, cfg)
+        if config_path.exists():
+            config_path.write_text(json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8")
+        for a in needs_match:
+            matched_tid = editorial_affiliate_map.get(a["url_slug"])
+            if matched_tid and matched_tid in affiliate_tickets_by_tid:
+                a["affiliate_url"] = affiliate_tickets_by_tid[matched_tid]["affiliate_url"]
+
     for a in ticket_list:
-        matched_tid = editorial_affiliate_map.get(a["url_slug"])
-        if matched_tid and matched_tid in affiliate_tickets_by_tid:
-            a["affiliate_url"] = affiliate_tickets_by_tid[matched_tid]["affiliate_url"]
+        if a.get("ticket_url"):
+            a["affiliate_url"] = a["ticket_url"]
 
     # tickets_by_tid: editorial articles keyed by synthetic E-TID (for _render_ticket_groups)
     tickets_by_tid = {a["tid"]: a for a in all_editorial}

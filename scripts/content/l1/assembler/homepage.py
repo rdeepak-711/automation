@@ -161,6 +161,14 @@ def _load_cfg(site_slug: str) -> dict:
     return json.loads(p.read_text(encoding="utf-8"))
 
 
+def _load_homepage_cfg(site_slug: str) -> dict:
+    """Load input/<site>/homepage-config.json (contains tickets[] array)."""
+    p = REPO_ROOT / "input" / site_slug / "homepage-config.json"
+    if not p.exists():
+        return {}
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
 def _save_cfg(site_slug: str, cfg: dict) -> None:
     """Write l1-config.json back."""
     p = REPO_ROOT / "input" / site_slug / "l1-config.json"
@@ -197,72 +205,127 @@ def _parse_tickets_md(site_slug: str) -> list[dict]:
 
 # ─── Article selection ────────────────────────────────────────────────────────
 
-def _select_ticket_articles(metas: dict, cfg: dict, tickets_by_tid: dict) -> list[dict]:
-    """Return up to 6 editorial ticket articles with affiliate data attached.
+def _select_ticket_articles(metas: dict, cfg: dict, tickets_by_tid: dict, url_lookup: dict | None = None) -> list[dict]:
+    """Return up to 6 editorial ticket articles in tickets.md order (T1→T6).
 
-    Order: top tickets first (from _featured_match, TID insertion order),
-    then fill from _editorial_affiliate_map, then remaining TT metas.
-
-    Each returned dict has all metas fields plus:
-      slug, article_url, tid, affiliate_url, affiliate_title
+    Iterates tickets.md in insertion order and finds the matching editorial article
+    for each ticket via _featured_match and _editorial_affiliate_map caches, then
+    falls back to matching ticket_url base URL against the affiliate URL.
     """
-    featured_match = cfg.get("_featured_match", {})
-    editorial_affiliate = cfg.get("_editorial_affiliate_map", {})
+    featured_match = cfg.get("_featured_match", {})       # tid → slug
+    editorial_affiliate = cfg.get("_editorial_affiliate_map", {})  # slug → tid
 
-    # Build slug -> tid map: featured_match takes priority
-    slug_to_tid: dict[str, str] = {v: k for k, v in featured_match.items()}
+    # Build tid → article_slug from both caches
+    tid_to_slug: dict[str, str] = dict(featured_match)
     for slug, tid in editorial_affiliate.items():
-        if slug not in slug_to_tid:
-            slug_to_tid[slug] = tid
+        if tid not in tid_to_slug:
+            tid_to_slug[tid] = slug
 
-    top_slugs = list(featured_match.values())
+    # Fallback: match via ticket_url base URL (strip query params) against affiliate URLs
+    aff_base_to_tid: dict[str, str] = {}
+    for tid, aff_row in tickets_by_tid.items():
+        base = aff_row.get("affiliate_url", "").split("?")[0].rstrip("/")
+        if base:
+            aff_base_to_tid[base] = tid
+
+    for slug, m in metas.items():
+        if m.get("category") != "tickets-tours":
+            continue
+        t_url = m.get("ticket_url", "")
+        if not t_url:
+            continue
+        base = t_url.split("?")[0].rstrip("/")
+        tid = aff_base_to_tid.get(base)
+        if tid and tid not in tid_to_slug:
+            tid_to_slug[tid] = slug
+
     result = []
     seen: set[str] = set()
 
-    def _add(slug: str) -> bool:
-        if slug in seen or len(result) >= 6:
-            return False
+    for tid, aff_row in tickets_by_tid.items():
+        if len(result) >= 6:
+            break
+        slug = tid_to_slug.get(tid, "")
+        if not slug or slug in seen:
+            continue
         m = metas.get(slug)
         if not m or m.get("category") != "tickets-tours":
-            return False
-        tid = slug_to_tid.get(slug, "")
-        aff_row = tickets_by_tid.get(tid, {})
+            continue
         result.append({
             **m,
             "slug": slug,
-            "article_url": f"/{slug}/",
+            "article_url": (url_lookup or {}).get(slug) or f"/tickets/{slug}/",
             "tid": tid,
             "affiliate_url": aff_row.get("affiliate_url", ""),
             "affiliate_title": aff_row.get("title", ""),
         })
         seen.add(slug)
-        return True
-
-    for slug in top_slugs:
-        _add(slug)
-    for slug in editorial_affiliate:
-        if len(result) >= 6:
-            break
-        _add(slug)
-    for slug in metas:
-        if len(result) >= 6:
-            break
-        if metas[slug].get("category") == "tickets-tours":
-            _add(slug)
 
     return result
+
+
+def _tickets_from_config(cfg: dict) -> tuple[list[dict], dict]:
+    """Fallback: build ticket_articles + enrich from cfg['tickets'][:6].
+
+    Used when article-metas.json is not yet available (e.g. before MD→HTML conversion).
+    Returns (ticket_articles, enrich_dict) ready for _render_ticket_card.
+    """
+    articles = []
+    enrich: dict[str, dict] = {}
+    for t in cfg.get("tickets", [])[:6]:
+        slug = t.get("l2", "")
+        if not slug:
+            continue
+        articles.append({
+            "slug": slug,
+            "card_title": t.get("title", slug.replace("-", " ").title()),
+            "article_url": f"/tickets/{slug}/",
+            "affiliate_url": t.get("url", ""),
+            "bullets": t.get("bullets", []),
+            "category": "tickets-tours",
+            "image": t.get("image", ""),
+        })
+        enrich[slug] = {
+            "tag": t.get("tag", "Popular"),
+            "price": t.get("price", ""),
+            "duration": t.get("duration", ""),
+            "lang": t.get("lang", ""),
+        }
+    return articles, enrich
+
+
+_PYV_PRIORITY_KEYWORDS: list[list[str]] = [
+    ["opening", "hours", "open", "times"],
+    ["best time", "when to visit", "when to go"],
+    ["how to get", "how to reach", "getting there", "directions", "transport"],
+    ["official website", "tickets online", "book online"],
+    ["entrance", "entry", "gate", "access"],
+    ["accessibility", "wheelchair", "disabled"],
+    ["dress code", "what to wear"],
+    ["map", "layout", "floor plan"],
+    ["parking", "car park"],
+]
+
+
+def _pyv_priority(slug: str, title: str) -> int:
+    """Return priority index (lower = higher priority) for a PYV article."""
+    text = (slug + " " + title).lower().replace("-", " ")
+    for i, keywords in enumerate(_PYV_PRIORITY_KEYWORDS):
+        if any(kw in text for kw in keywords):
+            return i
+    return len(_PYV_PRIORITY_KEYWORDS)
 
 
 def _select_pyv_articles(metas: dict, url_lookup: dict | None = None) -> list[dict]:
-    """Return first 6 plan-your-visit articles in metas insertion order."""
-    result = []
+    """Return exactly 6 plan-your-visit articles ordered by priority list."""
+    candidates = []
     for slug, m in metas.items():
         if m.get("category") == "plan-your-visit":
-            url = (url_lookup or {}).get(slug) or f"/{slug}/"
-            result.append({**m, "slug": slug, "article_url": url})
-            if len(result) >= 6:
-                break
-    return result
+            url = (url_lookup or {}).get(slug) or f"/plan-your-visit/{slug}/"
+            priority = _pyv_priority(slug, m.get("card_title", ""))
+            candidates.append((priority, slug, {**m, "slug": slug, "article_url": url}))
+    candidates.sort(key=lambda x: (x[0], x[1]))
+    return [c[2] for c in candidates[:6]]
 
 
 def _select_wts_articles(metas: dict, cfg: dict, url_lookup: dict | None = None) -> list[dict]:
@@ -277,7 +340,7 @@ def _select_wts_articles(metas: dict, cfg: dict, url_lookup: dict | None = None)
         m = metas.get(slug)
         if not m or m.get("category") != "what-to-see":
             return False
-        url = (url_lookup or {}).get(slug) or f"/{slug}/"
+        url = (url_lookup or {}).get(slug) or f"/what-to-see/{slug}/"
         result.append({**m, "slug": slug, "article_url": url})
         seen.add(slug)
         return True
@@ -477,11 +540,14 @@ def _render_ticket_card(article: dict, enrich: dict, campaign_id: str) -> str:
     e_data = enrich.get(slug, {})
     tag = _e(e_data.get("tag", "Popular"))
     title = _e(article.get("card_title") or slug.replace("-", " ").title())
-    price_raw = e_data.get("price", "")
+    price_raw = e_data.get("price", "").strip()
+    price_raw = re.sub(r"(?i)^from\s+", "", price_raw)
     price = _e(price_raw) if price_raw else ""
     duration = _e(e_data.get("duration", ""))
     lang = _e(e_data.get("lang", ""))
-    article_url = _e(article.get("article_url", f"/{slug}/"))
+    _cat_prefix = {"tickets-tours": "tickets", "plan-your-visit": "plan-your-visit", "what-to-see": "what-to-see"}
+    cat = article.get("category", "tickets-tours")
+    article_url = _e(article.get("article_url", f"/{_cat_prefix.get(cat, cat)}/{slug}/"))
 
     aff_url = article.get("affiliate_url", "")
     if aff_url:
@@ -510,7 +576,7 @@ def _render_ticket_card(article: dict, enrich: dict, campaign_id: str) -> str:
 
     return f'''
       <div class="att-ticket">
-        <img class="att-ticket__img" src="{PLACEHOLDER_IMG}" alt="{title}" loading="lazy" />
+        <img class="att-ticket__img" src="{article.get('image') or PLACEHOLDER_IMG}" alt="{title}" loading="lazy" />
         <div class="att-ticket__body">
           <span class="att-ticket__tag att-ticket__tag--popular">{tag}</span>
           <h3>{title}</h3>
@@ -529,7 +595,8 @@ def _render_highlight_card(article: dict, cta_text: str = "Read guide &rarr;") -
     slug = article["slug"]
     title = _e(article.get("card_title") or slug.replace("-", " ").title())
     desc = _e(article.get("description", ""))
-    url = _e(article.get("article_url", f"/{slug}/"))
+    cat = article.get("category", "")
+    url = _e(article.get("article_url", f"/{cat}/{slug}/" if cat else f"/{slug}/"))
     return f'''
       <div class="att-highlight">
         <img class="att-highlight__img" src="{PLACEHOLDER_IMG}" alt="{title}" loading="lazy" />
@@ -629,7 +696,7 @@ canonical: https://{domain}
           </div>
         </div>
         <div class="att-hero__image-wrap att-animate att-delay-2">
-          <img class="att-hero__img" src="{PLACEHOLDER_IMG}" alt="{_e(hero.get('h1', attraction))}" loading="eager" />
+          <img class="att-hero__img" src="{hero.get('image', PLACEHOLDER_IMG)}" alt="{_e(hero.get('h1', attraction))}" loading="eager" />
         </div>
       </div>
     </div>
@@ -763,15 +830,26 @@ def main() -> None:
     from . import article_source as _asrc
     _pyv_url_lookup = {a["url_slug"]: a["url"] for a in _asrc.load_plan_your_visit_articles(site_slug, str(REPO_ROOT))}
     _wts_url_lookup = {a["url_slug"]: a["url"] for a in _asrc.load_what_to_see_articles(site_slug, str(REPO_ROOT))}
+    _tt_bundle = _asrc.load_tickets_tours_articles(site_slug, str(REPO_ROOT), force=False)
+    _tt_url_lookup = {a["url_slug"]: a["url"] for a in _tt_bundle.get("featured", []) + _tt_bundle.get("tickets", []) + _tt_bundle.get("informational", [])}
 
-    ticket_articles = _select_ticket_articles(metas, cfg, tickets_by_tid)
+    ticket_articles = _select_ticket_articles(metas, cfg, tickets_by_tid, _tt_url_lookup)
     pyv_articles = _select_pyv_articles(metas, _pyv_url_lookup)
     wts_articles = _select_wts_articles(metas, cfg, _wts_url_lookup)
-    print(f"[{site_slug}] Selected: {len(ticket_articles)} tickets, {len(pyv_articles)} PYV, {len(wts_articles)} WTS")
 
-    ticket_enrich = _enrich_ticket_cards(ticket_articles, cfg, site_slug, attraction, currency, force)
+    if not ticket_articles:
+        hp_cfg = _load_homepage_cfg(site_slug)
+        if hp_cfg.get("tickets"):
+            ticket_articles, ticket_enrich = _tickets_from_config(hp_cfg)
+        print(f"[{site_slug}] Selected: {len(ticket_articles)} tickets (from config), {len(pyv_articles)} PYV, {len(wts_articles)} WTS")
+    else:
+        print(f"[{site_slug}] Selected: {len(ticket_articles)} tickets, {len(pyv_articles)} PYV, {len(wts_articles)} WTS")
+        ticket_enrich = _enrich_ticket_cards(ticket_articles, cfg, site_slug, attraction, currency, force)
 
     hero = _gen_hero(attraction, cfg, site_slug, force)
+    hp_cfg_for_image = _load_homepage_cfg(site_slug)
+    if hp_cfg_for_image.get("hero_image"):
+        hero["image"] = hp_cfg_for_image["hero_image"]
     headings = _gen_section_headings(attraction, cfg, site_slug, force)
     tips = _gen_tips(attraction, cfg, site_slug, force)
     faqs = _gen_faqs(attraction, cfg, site_slug, force)

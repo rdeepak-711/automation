@@ -40,6 +40,23 @@ def _raw(text: str) -> str:
     return str(text)
 
 
+def _short_desc(text: str, limit: int = 130) -> str:
+    """Return complete sentences that fit within limit chars. Never truncates mid-sentence."""
+    import re as _re
+    text = str(text).strip()
+    if len(text) <= limit:
+        return text
+    sentences = _re.split(r'(?<=[.!?])\s+', text)
+    out = ""
+    for s in sentences:
+        candidate = (out + " " + s).strip() if out else s
+        if len(candidate) <= limit:
+            out = candidate
+        else:
+            break
+    return out if out else sentences[0]
+
+
 # ─── Env loading ──────────────────────────────────────────────────────────────
 
 def _load_env(site_slug: str) -> dict:
@@ -181,7 +198,7 @@ def _render_featured_with_attraction(featured: list[dict], campaign_id: str, att
             <p class="att-featured__desc">{desc_text}</p>
             <div class="att-featured__actions">
               <a href="{_e(stamped_url)}" class="att-btn att-btn--primary att-btn--sm" {cta_attrs}>{cta_label}</a>
-              <a href="{article_url}" class="att-featured__more">Read Full Guide</a>
+              <a href="{article_url}" class="att-featured__more">Find Out More</a>
             </div>
           </div>
         </div>"""
@@ -207,7 +224,7 @@ def _render_ticket_card(ticket: dict, campaign_id: str) -> str:
         f'<span class="att-ticket__tag">{_raw(t)}</span>'
         for t in tags[:3]
     )
-    desc_text = _raw(ticket.get("description") or ticket.get("meta_desc") or f"Book your {title} online.")
+    desc_text = _short_desc(ticket.get("description") or ticket.get("meta_desc") or f"Book your {title} online.")
     body_html = f'            <p class="att-ticket__desc">{desc_text}</p>'
     aff_url = ticket.get("affiliate_url", "")
     article_url = _e(ticket.get("article_url", "#"))
@@ -325,16 +342,22 @@ def _render_decision_guide(decision: list[dict], attraction: str) -> str:
   </section>"""
 
 
-def _render_guide_card(article: dict) -> str:
+def _render_guide_card(article: dict, campaign_id: str = "") -> str:
     title = article["title"]
     raw_title = _raw(article.get("card_title") or title)
     url_e = _e(article["url"])
-    summary = _raw(article.get("description") or article.get("summary") or article.get("meta_desc") or f"A practical guide to {title}.")
+    summary = _short_desc(article.get("description") or article.get("summary") or article.get("meta_desc") or f"A practical guide to {title}.")
     tags = article.get("tags") or []
     tags_html = "".join(
         f'<span class="att-ticket__tag">{_raw(t)}</span>'
         for t in tags[:3]
     )
+    ticket_url = article.get("ticket_url", "")
+    if ticket_url and _is_affiliate(ticket_url):
+        stamped = _e(_stamp_campaign(ticket_url, campaign_id))
+        footer_html = f'            <a href="{stamped}" class="att-ticket__cta" rel="nofollow sponsored" target="_blank">Check Availability &rarr;</a>\n            <a href="{url_e}" class="att-ticket__more">Read More &rarr;</a>'
+    else:
+        footer_html = f'            <a href="{url_e}" class="att-ticket__cta">Read More &rarr;</a>'
     return f"""        <div class="att-ticket">
           <img class="att-ticket__img" src="{PLACEHOLDER_IMG}" alt="{_e(title)}" />
           <div class="att-ticket__body">
@@ -343,19 +366,19 @@ def _render_guide_card(article: dict) -> str:
             <p class="att-ticket__desc">{summary}</p>
           </div>
           <div class="att-ticket__footer">
-            <a href="{url_e}" class="att-ticket__cta">Read More &rarr;</a>
+{footer_html}
           </div>
         </div>"""
 
 
-def _render_guide_groups(groups: list[dict], info_by_slug: dict) -> str:
+def _render_guide_groups(groups: list[dict], info_by_slug: dict, campaign_id: str = "") -> str:
     parts = []
     for group in groups:
         h2 = _raw(group.get("h2", "Planning Guides"))
         desc = _raw(group.get("desc", ""))
         slugs = group.get("slugs", [])
         cards = "\n".join(
-            _render_guide_card(info_by_slug[s])
+            _render_guide_card(info_by_slug[s], campaign_id)
             for s in slugs
             if s in info_by_slug
         )
@@ -420,6 +443,31 @@ def _render_crosslinks(cfg: dict, attraction: str, crosslinks: dict) -> str:
             <a href="{what_url}" class="att-crosslink__link">{what_link_text}</a>
           </div>
         </div>
+      </div>
+    </div>
+  </section>"""
+
+
+def _render_booking_tips(tips: list[dict], attraction: str) -> str:
+    if not tips:
+        return ""
+    tips_html = ""
+    for t in tips:
+        emoji = _e(t.get("emoji", "💡"))
+        label = _raw(t.get("label", ""))
+        desc = _raw(t.get("desc", ""))
+        tips_html += f"""
+        <div class="att-tip">
+          <span class="att-tip__icon">{emoji}</span>
+          <span><strong>{label}</strong> {desc}</span>
+        </div>"""
+    return f"""  <section class="att-section">
+    <div class="att-container">
+      <div class="att-section-header">
+        <h2>Booking Tips &amp; Practical Info</h2>
+        <p>What to know before you buy your {_e(attraction)} tickets.</p>
+      </div>
+      <div class="att-tips-grid">{tips_html}
       </div>
     </div>
   </section>"""
@@ -605,13 +653,23 @@ def render(site_slug: str, force: bool = False) -> Path:
     else:
         print(f"[{site_slug}] Cached comparison rows ({len(compare_rows)} rows)")
 
-    # Decision guide — use affiliate_tickets (product variety context)
+    # Decision guide — use editorial articles for inline links (correct XLSX-derived URLs)
     decision = (not force and config.get("_decision_tt")) or None
     if not decision:
         print(f"[{site_slug}] Generating decision guide...")
-        decision = content_generator.generate_decision_guide(attraction, affiliate_tickets, config, force)
+        decision = content_generator.generate_decision_guide(attraction, all_editorial, config, force)
     else:
         print(f"[{site_slug}] Cached decision guide ({len(decision)} cards)")
+
+    # Booking tips
+    booking_tips = (not force and config.get("_booking_tips_tt")) or None
+    if not booking_tips:
+        print(f"[{site_slug}] Generating booking tips...")
+        booking_tips = content_generator.generate_booking_tips(attraction)
+        if booking_tips:
+            config["_booking_tips_tt"] = booking_tips
+    else:
+        print(f"[{site_slug}] Cached booking tips ({len(booking_tips)} items)")
 
     # FAQs — prefer cached in tt_cfg, else cached in root, else generate
     faqs = (not force and tt_cfg.get("faqs")) or (not force and config.get("_faqs_tt")) or None
@@ -623,7 +681,10 @@ def render(site_slug: str, force: bool = False) -> Path:
 
     # Banner
     if tt_cfg.get("cta_h") and tt_cfg.get("cta_d"):
-        banner = {"h2": tt_cfg["cta_h"], "desc": tt_cfg["cta_d"]}
+        h2 = tt_cfg["cta_h"]
+        if attraction.lower() not in h2.lower():
+            h2 = f"Ready to book your {attraction} tickets?"
+        banner = {"h2": h2, "desc": tt_cfg["cta_d"]}
     else:
         banner = (not force and config.get("_banner_tt")) or None
         if not banner:
@@ -670,6 +731,7 @@ def render(site_slug: str, force: bool = False) -> Path:
         compare_rows=compare_rows, tickets=affiliate_tickets,
         affiliate_tickets_by_tid=affiliate_tickets_by_tid,
         decision=decision,
+        booking_tips=booking_tips,
         guide_groups=guide_groups, info_by_slug=info_by_slug,
         xlinks_cfg=tt_cfg, crosslinks=crosslinks,
         banner=banner, banner_url=banner_url,
@@ -711,6 +773,7 @@ def _assemble(
     ticket_groups, tickets_by_tid,
     compare_rows, tickets, affiliate_tickets_by_tid,
     decision,
+    booking_tips,
     guide_groups, info_by_slug,
     xlinks_cfg, crosslinks,
     banner, banner_url, faqs,
@@ -735,10 +798,7 @@ def _assemble(
   padding-top: 1rem;
 }
 .att-tickets-page .att-ticket__desc {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  overflow: visible;
 }
 .att-tickets-page .att-section--warm,
 .att-rec-strip,
@@ -770,9 +830,13 @@ def _assemble(
         _render_decision_guide(decision, attraction),
         "",
     ]
+    # 6.5 Booking tips
+    if booking_tips:
+        parts.append(_render_booking_tips(booking_tips, attraction))
+        parts.append("")
     # 7. Informational guide groups
     if guide_groups:
-        parts.append(_render_guide_groups(guide_groups, info_by_slug))
+        parts.append(_render_guide_groups(guide_groups, info_by_slug, campaign_id))
         parts.append("")
     # 8. Crosslinks
     parts.append(_render_crosslinks(xlinks_cfg, attraction, crosslinks))

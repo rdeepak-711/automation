@@ -85,11 +85,35 @@ read -p "Plan Your Visit hero URL   : " HERO_PLAN
 read -p "What To See hero URL       : " HERO_WHATS
 echo ""
 
+# Find XLSX for this site
+ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+SITE_KEY=$(echo "$HOSTNAME" | sed 's/\.[^.]*$//' | sed 's/-guide$//')
+INPUT_DIR=""
+for d in "$ROOT_DIR/input"/*/; do
+    dname=$(basename "$d")
+    [[ "$dname" == "$SITE_KEY" ]]   && { INPUT_DIR="$d"; break; }
+    [[ "$HOSTNAME" == *"$dname"* ]] && { INPUT_DIR="$d"; break; }
+    [[ "$dname" == *"$SITE_KEY"* ]] && { INPUT_DIR="$d"; break; }
+done
+XLSX_PATH=""
+if [[ -n "$INPUT_DIR" ]]; then
+    XLSX_PATH=$(find "$INPUT_DIR" -maxdepth 1 -name "*.xlsx" | head -1)
+fi
+
 echo "Uploading script..."
-_SCP "$PY_SCRIPT" "${WP_SSH_USER}@${WP_SSH_HOST}:/tmp/17-fix-l1-card-images.py"
+_SCP "$PY_SCRIPT" "${WP_SSH_USER}@${WP_SSH_HOST}:/tmp/fix-l1-card-images.py"
+
+XLSX_ARG=""
+if [[ -n "$XLSX_PATH" ]]; then
+    echo "Uploading XLSX: $XLSX_PATH"
+    _SCP "$XLSX_PATH" "${WP_SSH_USER}@${WP_SSH_HOST}:/tmp/site-ia.xlsx"
+    XLSX_ARG="/tmp/site-ia.xlsx"
+else
+    echo "No XLSX found — slug audit skipped"
+fi
 
 echo "Running..."
-_SSH "python3 /tmp/17-fix-l1-card-images.py '$WP_PATH' '$SITE_URL' '$HERO_HOMEPAGE' '$HERO_TICKETS' '$HERO_PLAN' '$HERO_WHATS'; rm -f /tmp/17-fix-l1-card-images.py"
+_SSH "python3 /tmp/fix-l1-card-images.py '$WP_PATH' '$SITE_URL' '$HERO_HOMEPAGE' '$HERO_TICKETS' '$HERO_PLAN' '$HERO_WHATS' ${XLSX_ARG:+'$XLSX_ARG'}; rm -f /tmp/fix-l1-card-images.py /tmp/site-ia.xlsx"
 
 echo ""
 echo "✅ Done for $HOSTNAME"

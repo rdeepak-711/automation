@@ -28,10 +28,11 @@ fi
 
 
 # ── Phase 2: curl pre-flight ──────────────────────────────────────────────────
+_WP_BASE="${WP_SITE_URL%/}"
 echo "Verifying credentials..."
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
   --connect-timeout 10 --max-time 30 \
-  -u "$WP_USER:$WP_PASS" "$WP_SITE_URL/wp-json/wp/v2/users/me/")
+  -u "$WP_USER:$WP_PASS" "${_WP_BASE}/wp-json/wp/v2/users/me/")
 if [[ "$HTTP_CODE" != "200" ]]; then
   echo "Error: WordPress authentication failed (HTTP $HTTP_CODE)."
   exit 1
@@ -180,7 +181,7 @@ if [[ "$RESULT2" == *"Done"* ]]; then
   echo "  Body:  ${BODY_FONT_SIZE}px / ${BODY_LINE_HEIGHT}em / 0px letter-spacing / ${PARAGRAPH_MARGIN}em paragraph margin"
   echo "  H1:    ${H1_FONT_SIZE}px / 1.2em / 20px bottom margin — weight: bold"
   echo "  H2:    ${H2_FONT_SIZE}px / 1.2em / 20px bottom margin — weight: bold"
-  echo "  H3:    ${H3_FONT_SIZE}px / 1.2em / 20px bottom margin — weight: bold / style: oblique"
+  echo "  H3:    ${H3_FONT_SIZE}px / 1.2em / 20px bottom margin — weight: bold / "
   echo "  H4:    ${H4_FONT_SIZE}px / 1.2em / 20px bottom margin — weight: bold"
 else
   echo "  ERROR: script returned unexpected output:"

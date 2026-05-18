@@ -69,6 +69,15 @@ else
   echo "  Skipped."
 fi
 
+# ── Step 18b: Build URL Registry ─────────────────────────────────────────────
+if prompt_step "18b" "Build URL Registry" \
+    "Builds url-registry.json from xlsx — required by L2 pipeline for internal link resolution." \
+    "build_url_registry_done"; then
+  python3 "$REPO_ROOT/scripts/content/build-url-registry.py" "$CONTENT_SITE_SLUG" && mark_done "build_url_registry_done"
+else
+  echo "  Skipped."
+fi
+
 # ── Step 19: Sample MD to HTML (1 per silo) ──────────────────────────────────
 if prompt_step 19 "Sample MD to HTML (1 per silo)" \
     "Converts 1 article from each silo to HTML for verification before full batch." \
@@ -80,7 +89,7 @@ if prompt_step 19 "Sample MD to HTML (1 per silo)" \
     _LOG=$(mktemp /tmp/md-sample-XXXXXX)
     _LOGS+=("$silo:$_LOG")
     echo "  → $silo: $(basename "$_FIRST")"
-    "$REPO_ROOT/scripts/content/md-to-html.sh" "$CONTENT_SITE_SLUG" "$_FIRST" --force > "$_LOG" 2>&1 &
+    python3 -m scripts.content.l2.convert_one "$CONTENT_SITE_SLUG" "$_FIRST" --force > "$_LOG" 2>&1 &
     _PIDS+=($!)
   done
   _HB_START=$SECONDS
@@ -104,9 +113,9 @@ fi
 
 # ── Step 20: Convert All MD to HTML ──────────────────────────────────────────
 if prompt_step 20 "Convert All MD to HTML" \
-    "Converts all markdown articles to HTML using the article template." \
+    "Converts all markdown articles to HTML using the L2 pipeline (validator + FAQ schema + related links)." \
     "md_to_html_done"; then
-  "$REPO_ROOT/scripts/content/batch-md-to-html.sh" "$CONTENT_SITE_SLUG" && mark_done "md_to_html_done"
+  python3 -m scripts.content.l2.batch "$CONTENT_SITE_SLUG" && mark_done "md_to_html_done"
 else
   echo "  Skipped."
 fi
@@ -136,8 +145,9 @@ if prompt_step 22 "Generate L1 Pages" \
     "$REPO_ROOT/scripts/content/l1/generate-what-to-see.sh" "$CONTENT_SITE_SLUG" --force
     _AFTER=$(python3 -c "import json,sys; c=json.load(open('$_L1_CFG')); print(len(c.get('_top_highlights_wts',[])));sys.exit()" 2>/dev/null || echo "0")
     if [[ "$_AFTER" != "0" ]]; then
-      echo "  → Cache created ($_AFTER slugs). Re-running article metas for richer WTS descriptions..."
-      python3 "$REPO_ROOT/scripts/content/build-article-metas.py" "$CONTENT_SITE_SLUG" --force
+      _WTS_SLUGS=$(python3 -c "import json; c=json.load(open('$_L1_CFG')); print(','.join(c.get('_top_highlights_wts',[])))" 2>/dev/null || echo "")
+      echo "  → Cache created ($_AFTER slugs: $_WTS_SLUGS). Re-running metas for top highlights only..."
+      python3 "$REPO_ROOT/scripts/content/build-article-metas.py" "$CONTENT_SITE_SLUG" --force --only-slugs "$_WTS_SLUGS"
     fi
   fi
 

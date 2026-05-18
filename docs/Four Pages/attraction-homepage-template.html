@@ -102,7 +102,7 @@
     transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s, background 0.2s, color 0.2s;
     border: none;
   }
-  .att-btn:hover { transform: translateY(-1px); }
+  .att-btn:hover { transform: translateY(-1px); text-decoration: none; }
   .att-btn--primary { background: var(--accent); color: #fff; }
   .att-btn--primary:hover { background: var(--accent-dark); color: #fff; }
   .att-btn--outline {
@@ -153,11 +153,11 @@
     font-size: 15.5px;
     color: var(--text-secondary);
     line-height: 1.78;
-    margin: 0 0 28px 0;
+    margin: 0 0 24px 0 !important;
     padding: 0;
     max-width: 540px;
   }
-  .att-hero__actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+  .att-hero__actions { display: flex; gap: 12px; flex-wrap: wrap; }
   .att-hero__image-wrap {
     position: relative;
     border-radius: 16px;
@@ -404,7 +404,9 @@
     text-align: left;
     line-height: 1.4;
     gap: 12px;
+    text-decoration: none;
   }
+  .att-homepage .att-faq-item__q:hover { text-decoration: none; }
   .att-homepage .att-faq-item__icon {
     font-size: 20px;
     color: var(--accent);

@@ -127,6 +127,10 @@ if [[ -n "$SITE_HOST" && -n "${WP_PATH:-}" ]]; then
     if grep -q "^WP_PATH=" "$_SITE_ENV" 2>/dev/null; then
       sed -i '' "s|^WP_PATH=.*|WP_PATH=${WP_PATH}|" "$_SITE_ENV"
     else
+      # Ensure file ends with newline before appending
+      [[ -s "$_SITE_ENV" ]] && [[ "$(tail -c1 "$_SITE_ENV" | wc -c)" -gt 0 ]] && \
+        [[ "$(tail -c1 "$_SITE_ENV" | od -An -tx1 | tr -d ' ')" != "0a" ]] && \
+        echo "" >> "$_SITE_ENV"
       echo "WP_PATH=${WP_PATH}" >> "$_SITE_ENV"
     fi
     echo "  WP_PATH written to input/$_SLUG/.env"

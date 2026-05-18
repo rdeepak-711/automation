@@ -39,11 +39,12 @@ if [[ -z "${WP_SITE_URL:-}" || -z "${WP_USER:-}" || -z "${WP_PASS:-}" ]]; then
 fi
 
 # ── Phase 2: curl pre-flight ──────────────────────────────────────────────────
+_WP_BASE="${WP_SITE_URL%/}"
 echo "Verifying credentials..."
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
   --connect-timeout 10 --max-time 30 \
   -u "$WP_USER:$WP_PASS" \
-  "$WP_SITE_URL/wp-json/wp/v2/users/me/")
+  "${_WP_BASE}/wp-json/wp/v2/users/me/")
 
 if [[ "$HTTP_CODE" != "200" ]]; then
   echo "Error: WordPress authentication failed (HTTP $HTTP_CODE)."
