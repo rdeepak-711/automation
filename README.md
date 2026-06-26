@@ -1,6 +1,6 @@
 # WordPress Site Automation Pipeline
 
-> Scales WordPress site production from **5 → 30 sites/month** (1,200–1,800 pages/month). Reduces per-site build time from 4–10 days to a few hours.
+> Scales WordPress site production from **5 → 32 sites in 4 weeks** (1,200–1,800 pages/month), driving ₹1L+ in affiliate commission in the first month. Reduces per-site build time from 4–10 days to a few hours.
 
 Built for [Firestorm Internet](https://firestorm-internet.com). Powers the full content production pipeline across 40+ client sites.
 
@@ -38,7 +38,7 @@ A single pipeline run takes a blank WordPress install on Bluehost and produces a
 
 | Before | After |
 |--------|-------|
-| ~5 sites/month | ~30 sites/month |
+| ~5 sites/month | ~32 sites/month |
 | 4–10 days per site | A few hours per site |
 | Manual theme config, plugin setup, content writing | Automated end-to-end |
 | ~300 pages/month | 1,200–1,800 pages/month |
